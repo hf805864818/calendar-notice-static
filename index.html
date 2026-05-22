@@ -346,7 +346,7 @@ html,body {
     background:rgba(0,0,0,0.4);
     justify-content:center;
     align-items:flex-start;
-    padding-top:86px;
+    padding-top:24px;
     z-index:1000;
 }
 .modal-content {
@@ -401,19 +401,12 @@ html,body {
 
 .notice-topbar {
     display:flex;
-    align-items:center;
-    justify-content:space-between;
+    align-items:flex-start;
+    justify-content:flex-start;
     gap:10px;
     margin-bottom:12px;
-}
-.notice-badge {
-    display:inline-flex;
-    align-items:center;
-    padding:4px 10px;
-    border-radius:999px;
-    font-size:11px;
-    color:#4D89FF;
-    background:rgba(77,137,255,0.10);
+    position:relative;
+    min-height:30px;
 }
 .notice-close {
     width:30px;
@@ -429,6 +422,9 @@ html,body {
     justify-content:center;
     flex-shrink:0;
     color:#4D89FF;
+    position:absolute;
+    top:0;
+    right:0;
 }
 .notice-title {
     font-size:20px;
@@ -560,7 +556,7 @@ html,body {
     .modal-buttons .cancel { background:#2c2c2e; color:#fff; }
     .notice-close { background:#2c2c2e; color:#8ab4ff; }
     .notice-left { border-right-color: rgba(255,255,255,0.06); }
-    .notice-right { background:#232326; }
+    .notice-right { background:#1c1c1e; }
     .notice-meta,.notice-empty,.notice-admin-hint { color:#aaa; }
     .notice-image-only-mode .notice-right { background:#1c1c1e; }
 }
