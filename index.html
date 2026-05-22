@@ -520,13 +520,17 @@ html,body {
 .notice-image.only-image { max-height:100%; }
 .notice-image-only-mode .notice-left { display:none; }
 .notice-image-only-mode .notice-right { width:100%; min-height:320px; background:#ffffff; }
+.notice-text-only-mode {
+    align-items:flex-start;
+    padding-top:24px;
+}
 .notice-text-only-mode .notice-modal-content {
     width:min(92vw, 360px);
-    max-height:min(84vw, 560px);
+    max-height:420px;
 }
 .notice-text-only-mode .notice-shell {
-    height:100%;
-    min-height:480px;
+    height:420px;
+    min-height:420px;
 }
 .notice-text-only-mode .notice-right { display:none; }
 .notice-text-only-mode .notice-left {
