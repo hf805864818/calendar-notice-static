@@ -535,17 +535,22 @@ html,body {
 .notice-text-only-mode .notice-right { display:none; }
 .notice-text-only-mode .notice-left {
     width:100%;
-    height:100%;
+    height:420px;
+    max-height:420px;
     padding:20px 18px 18px;
     border-right:none;
-    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
 }
 .notice-text-only-mode .notice-text {
     overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     display:block;
     text-align:center;
     flex:1;
-    max-height:calc(100% - 72px);
+    min-height:200px;
+    max-height:320px;
 }
 .notice-text-only-mode .notice-topbar {
     min-height:24px;
