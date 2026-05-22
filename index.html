@@ -443,7 +443,7 @@ html,body {
     margin-bottom:12px;
 }
 .notice-modal-content {
-    width:min(92vw, 360px);
+    width:min(92vw, 760px);
     max-height:72vh;
     overflow:hidden;
     padding:0;
@@ -452,18 +452,21 @@ html,body {
 }
 .notice-shell {
     display:flex;
-    flex-direction:column;
+    flex-direction:row;
+    align-items:stretch;
     max-height:72vh;
 }
 .notice-left,
 .notice-right {
-    width:100%;
+    width:50%;
+    min-width:0;
 }
 .notice-left {
     padding:16px 16px 18px;
     display:flex;
     flex-direction:column;
     min-height:0;
+    border-right:1px solid rgba(0,0,0,0.06);
 }
 .notice-text {
     flex:1;
@@ -485,8 +488,8 @@ html,body {
     background:#f8f8fa;
     position:relative;
     overflow:hidden;
-    min-height:0;
-    padding:14px;
+    min-height:320px;
+    padding:12px;
 }
 .notice-image-wrap {
     width:100%;
@@ -498,7 +501,7 @@ html,body {
 .notice-image {
     display:block;
     max-width:100%;
-    max-height:42vh;
+    max-height:100%;
     width:auto;
     height:auto;
     object-fit:contain;
@@ -507,13 +510,11 @@ html,body {
     user-select:none;
     -webkit-touch-callout:default;
 }
-.notice-image.only-image { max-height:56vh; }
+.notice-image.only-image { max-height:100%; }
 .notice-image-only-mode .notice-left { display:none; }
-.notice-image-only-mode .notice-right { min-height:320px; background:#fff; }
+.notice-image-only-mode .notice-right { width:100%; min-height:320px; background:#fff; }
 .notice-text-only-mode .notice-right { display:none; }
-.notice-text-only-mode .notice-left { min-height:320px; padding-top:24px; }
-.notice-image-only-mode .notice-shell,
-.notice-text-only-mode .notice-shell { justify-content:center; }
+.notice-text-only-mode .notice-left { width:100%; min-height:320px; padding-top:24px; border-right:none; }
 .notice-empty {
     color:#999;
     font-size:13px;
@@ -528,32 +529,23 @@ html,body {
     line-height:1.5;
 }
 
-@media (min-width: 721px) {
-    .notice-shell.notice-has-both {
-        flex-direction:row;
-        align-items:stretch;
-    }
-    .notice-shell.notice-has-both .notice-left,
-    .notice-shell.notice-has-both .notice-right {
-        width:50%;
-    }
-    .notice-shell.notice-has-both .notice-left {
-        min-height:360px;
-    }
-    .notice-shell.notice-has-both .notice-right {
-        min-height:360px;
-    }
-}
-
 @media (max-width: 720px) {
     .notice-modal-content {
-        width:min(94vw, 360px);
+        width:min(94vw, 760px);
+    }
+    .notice-shell {
+        flex-direction:row;
+    }
+    .notice-left,
+    .notice-right {
+        width:50%;
     }
     .notice-right {
-        min-height:220px;
+        min-height:240px;
+        padding:10px;
     }
     .notice-image {
-        max-height:38vh;
+        max-height:100%;
     }
     .notice-image-only-mode .notice-right,
     .notice-text-only-mode .notice-left {
@@ -567,6 +559,7 @@ html,body {
     .modal-content textarea { background:#2c2c2e; color:#fff; box-shadow:inset 0 2px 5px rgba(0,0,0,0.25); }
     .modal-buttons .cancel { background:#2c2c2e; color:#fff; }
     .notice-close { background:#2c2c2e; color:#8ab4ff; }
+    .notice-left { border-right-color: rgba(255,255,255,0.06); }
     .notice-right { background:#232326; }
     .notice-meta,.notice-empty,.notice-admin-hint { color:#aaa; }
     .notice-image-only-mode .notice-right { background:#1c1c1e; }
@@ -810,9 +803,12 @@ function renderNotice(notice){
     var hasImage = !!image;
 
     modal.classList.remove("notice-image-only-mode", "notice-text-only-mode");
-    shell.classList.remove("notice-has-both");
+    shell.style.display = "flex";
     leftPane.style.display = "flex";
     rightPane.style.display = "flex";
+    leftPane.style.width = "50%";
+    rightPane.style.width = "50%";
+    img.classList.remove("only-image");
 
     if(hasImage){
         img.src = image;
@@ -825,18 +821,21 @@ function renderNotice(notice){
     }
 
     if(hasText && hasImage){
-        shell.classList.add("notice-has-both");
-        img.classList.remove("only-image");
+        leftPane.style.display = "flex";
+        rightPane.style.display = "flex";
     }else if(hasText && !hasImage){
         modal.classList.add("notice-text-only-mode");
         rightPane.style.display = "none";
+        leftPane.style.width = "100%";
     }else if(!hasText && hasImage){
         modal.classList.add("notice-image-only-mode");
         leftPane.style.display = "none";
+        rightPane.style.width = "100%";
         img.classList.add("only-image");
     }else{
         modal.classList.add("notice-text-only-mode");
         rightPane.style.display = "none";
+        leftPane.style.width = "100%";
         document.getElementById("noticeTextView").textContent = "暂无公告内容";
     }
 }
