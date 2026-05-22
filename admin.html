@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>公告发布后台</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;}
+body{background:#f6f7fb;color:#1f2329;padding:24px;}
+.wrap{max-width:920px;margin:0 auto;display:grid;gap:18px;}
+.card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 8px 28px rgba(0,0,0,.06);}
+h1{font-size:28px;margin-bottom:8px;}
+.sub{color:#667085;font-size:14px;line-height:1.7;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;}
+input,textarea{width:100%;border:none;background:#f3f5f8;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;}
+textarea{min-height:180px;resize:vertical;line-height:1.7;}
+.row{display:grid;gap:14px;}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;}
+button{border:none;border-radius:12px;padding:12px 16px;font-size:14px;cursor:pointer;}
+.primary{background:#1677ff;color:#fff;}
+.secondary{background:#eef2f6;color:#1f2329;}
+.code{background:#0f172a;color:#e2e8f0;border-radius:14px;padding:16px;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.7;}
+.tip{font-size:13px;color:#667085;line-height:1.8;}
+.preview{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #eaecef;border-radius:18px;overflow:hidden;min-height:320px;background:#fff;}
+.preview-left{padding:18px;border-right:1px solid #eceff3;display:flex;flex-direction:column;}
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;background:#eaf2ff;color:#1677ff;margin-bottom:10px;width:max-content;}
+.preview-title{font-size:22px;font-weight:700;line-height:1.4;margin-bottom:8px;word-break:break-word;}
+.preview-time{font-size:12px;color:#667085;margin-bottom:12px;}
+.preview-content{font-size:14px;line-height:1.8;white-space:pre-wrap;word-break:break-word;overflow:auto;max-height:240px;padding-right:4px;}
+.preview-right{display:flex;align-items:center;justify-content:center;background:#f8fafc;padding:16px;}
+.preview-right img{max-width:100%;max-height:280px;border-radius:14px;object-fit:contain;}
+.empty{color:#98a2b3;font-size:13px;text-align:center;line-height:1.8;}
+.small{font-size:12px;color:#98a2b3;}
+@media (max-width:760px){.grid,.preview{grid-template-columns:1fr;}.preview-left{border-right:none;border-bottom:1px solid #eceff3;}.wrap{padding-bottom:40px;}body{padding:16px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>公告发布后台</h1>
+    <div class="sub">这是方案1：静态发布版。这个后台不会直接上传服务器，而是帮你生成最新的 <code>notice.json</code> 内容。你把它上传替换到网站根目录后，前台日历卡片就会自动检测并弹出新公告。</div>
+  </div>
+
+  <div class="grid">
+    <div class="card row">
+      <div>
+        <label>公告版本 version</label>
+        <input id="version" placeholder="例如：notice-20260522-001">
+      </div>
+      <div>
+        <label>公告标题 title</label>
+        <input id="title" placeholder="例如：系统更新通知">
+      </div>
+      <div>
+        <label>公告时间 time</label>
+        <input id="time" placeholder="例如：2026-05-22 21:30">
+      </div>
+      <div>
+        <label>图片链接 image</label>
+        <input id="image" placeholder="例如：https://example.com/notice.jpg">
+      </div>
+      <div>
+        <label>公告内容 content</label>
+        <textarea id="content" placeholder="这里输入公告正文，支持多行"></textarea>
+      </div>
+      <div class="btns">
+        <button class="primary" id="genBtn">生成公告 JSON</button>
+        <button class="secondary" id="copyBtn">复制 JSON</button>
+        <button class="secondary" id="downloadBtn">下载 notice.json</button>
+        <button class="secondary" id="fillBtn">自动填入当前时间和版本</button>
+      </div>
+      <div class="tip">
+        使用说明：<br>
+        1. 每次发新公告，请修改 <b>version</b>，否则前台不会再次弹出。<br>
+        2. 图片请填可直接访问的链接。<br>
+        3. 生成后，把下载得到的 <b>notice.json</b> 上传并覆盖网站根目录中的同名文件。
+      </div>
+    </div>
+
+    <div class="card row">
+      <div style="font-weight:700;font-size:16px;">前台弹窗预览</div>
+      <div class="preview">
+        <div class="preview-left">
+          <div class="badge">公告通知</div>
+          <div class="preview-title" id="pvTitle">欢迎使用公告系统</div>
+          <div class="preview-time" id="pvTime">2026-05-22 21:30</div>
+          <div class="preview-content" id="pvContent">这是一条默认公告。</div>
+        </div>
+        <div class="preview-right" id="pvImageWrap">
+          <div class="empty" id="pvEmpty">暂无图片<br>填入图片链接后这里会自动预览</div>
+          <img id="pvImg" style="display:none;" alt="公告图片">
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px;">生成结果</div>
+        <div class="code" id="output"></div>
+      </div>
+      <div class="small">提示：如果图片因为防盗链或跨域不显示，通常是图片源站限制，不影响你把链接写进公告 JSON。</div>
+    </div>
+  </div>
+</div>
+<script>
+function pad(n){return String(n).padStart(2,'0');}
+function nowText(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+function autoVersion(){var d=new Date();return 'notice-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());}
+function getVal(id){return document.getElementById(id).value.trim();}
+function setVal(id,val){document.getElementById(id).value=val;}
+function build(){
+  var payload={
+    version:getVal('version')||autoVersion(),
+    title:getVal('title')||'公告通知',
+    content:getVal('content')||'',
+    image:getVal('image')||'',
+    time:getVal('time')||nowText()
+  };
+  return payload;
+}
+function render(){
+  var data=build();
+  var json=JSON.stringify(data,null,2);
+  document.getElementById('output').textContent=json;
+  document.getElementById('pvTitle').textContent=data.title||'公告通知';
+  document.getElementById('pvTime').textContent=data.time||'';
+  document.getElementById('pvContent').textContent=data.content||'暂无公告内容';
+  var img=document.getElementById('pvImg');
+  var empty=document.getElementById('pvEmpty');
+  if(data.image){
+    img.src=data.image;
+    img.style.display='block';
+    empty.style.display='none';
+  }else{
+    img.removeAttribute('src');
+    img.style.display='none';
+    empty.style.display='block';
+  }
+  return {data:data,json:json};
+}
+function download(){
+  var result=render();
+  var blob=new Blob([result.json+'\n'],{type:'application/json;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='notice.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+async function copyJson(){
+  var result=render();
+  try{
+    await navigator.clipboard.writeText(result.json);
+    alert('已复制 JSON');
+  }catch(e){
+    alert('复制失败，请手动复制下方生成结果');
+  }
+}
+document.getElementById('genBtn').onclick=render;
+document.getElementById('copyBtn').onclick=copyJson;
+document.getElementById('downloadBtn').onclick=download;
+document.getElementById('fillBtn').onclick=function(){setVal('time',nowText());setVal('version',autoVersion());render();};
+['version','title','time','image','content'].forEach(function(id){document.getElementById(id).addEventListener('input',render);});
+setVal('version',autoVersion());
+setVal('title','欢迎使用公告系统');
+setVal('time',nowText());
+setVal('content','这是一条默认公告。\n\n你可以在这里编辑公告标题、正文和图片链接，然后导出 notice.json。');
+render();
+</script>
+</body>
+</html>
