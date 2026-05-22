@@ -522,7 +522,7 @@ html,body {
 .notice-image-only-mode .notice-right { width:100%; min-height:320px; background:#ffffff; }
 .notice-text-only-mode {
     align-items:flex-start;
-    padding-top:24px;
+    padding-top:0;
 }
 .notice-text-only-mode .notice-modal-content {
     width:min(92vw, 360px);
@@ -538,13 +538,14 @@ html,body {
     height:100%;
     padding:20px 18px 18px;
     border-right:none;
+    overflow-y:auto;
 }
 .notice-text-only-mode .notice-text {
     overflow-y:auto;
     display:block;
     text-align:center;
     flex:1;
-    max-height:calc(100% - 64px);
+    max-height:calc(100% - 72px);
 }
 .notice-text-only-mode .notice-topbar {
     min-height:24px;
