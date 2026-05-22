@@ -449,7 +449,7 @@ html,body {
 .notice-modal-content {
     width:min(92vw, 760px);
     max-height:72vh;
-    overflow:hidden;
+    overflow:auto;
     padding:0;
     border-radius:20px;
     box-shadow:0 12px 34px rgba(0,0,0,0.18);
@@ -474,10 +474,13 @@ html,body {
     flex-direction:column;
     min-height:0;
     border-right:1px solid rgba(0,0,0,0.06);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
 }
 .notice-text {
-    flex:1;
+    flex:1 1 auto;
     overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     line-height:1.6;
     font-size:12px;
     white-space:pre-wrap;
@@ -485,6 +488,7 @@ html,body {
     padding:0 2px;
     display:block;
     text-align:center;
+    min-height:0;
 }
 .notice-right {
     display:flex;
