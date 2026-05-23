@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>周计划卡片</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;
+}
+html,body {
+    background: transparent;
+    display: flex;
+    justify-content: center;
+}
+
+/* 浅色模式默认底色 */
+.weekly-card {
+    --bg-color: #ffffff;
+    width: 360px;
+    border-radius: 16px;
+    padding: 12px;
+    background: var(--bg-color);
+    color: #1a1a1a;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+/* 深色模式强制覆盖所有背景，禁止自定义颜色 */
+@media (prefers-color-scheme: dark) {
+    .weekly-card {
+        --bg-color: #1c1c1e !important;
+        color: #e5e5e5;
+    }
+}
+
+.card-normal { }
+.card-shadow {
+    box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+}
+.card-blur { 
+    background: rgba(255,255,255,0.55); 
+    backdrop-filter: blur(18px); 
+    -webkit-backdrop-filter: blur(18px); 
+}
+@media (prefers-color-scheme: dark) {
+    .card-shadow { 
+        box-shadow: 0 4px 18px rgba(0,0,0,0.5); 
+    }
+    .card-blur { 
+        background: rgba(28,28,30,0.55) !important; 
+    }
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.title-tag {
+    font-size: 11px;
+    color: #888;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-group {
+    display: flex;
+    background: #f5f5f7;
+    border-radius: 14px;
+    padding: 2px 5px;
+    gap: 3px;
+}
+.btn-group button {
+    border: none;
+    background: transparent;
+    font-size: 11px;
+    padding: 2px 3px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+@media (prefers-color-scheme: dark) {
+    .btn-group { background: #2c2c2e !important; }
+    .btn-group button { color: #e5e5e5; }
+}
+
+.color-dots {
+    display: flex;
+    gap: 4px;
+}
+.dot {
+    width:13px;height:13px;
+    border-radius:50%;
+    cursor:pointer;
+    border:1px solid #ddd;
+}
+.dot.active { border:2px solid #222; }
+.dot:nth-child(1){background:#ffffff;}
+.dot:nth-child(2){background:#e9f5e9;}
+.dot:nth-child(3){background:#fde8f0;}
+.dot:nth-child(4){background:#e8f2fb;}
+@media (prefers-color-scheme: dark) {
+    .color-dots .dot { border-color: #444; }
+    .color-dots .dot.active { border-color: #fff; }
+}
+
+.btn-option {
+    background:#f5f5f7;
+    border:none;
+    border-radius:14px;
+    padding:3px 6px;
+    font-size:10px;
+    cursor:pointer;
+}
+@media (prefers-color-scheme: dark) {
+    .btn-option { background: #2c2c2e !important; color: #e5e5e5 !important; }
+}
+
+.dropdown { position:relative; }
+.dropdown-menu {
+    position:absolute;
+    top:100%;
+    right:0;
+    border-radius:8px;
+    box-shadow:0 3px 12px rgba(0,0,0,0.1);
+    display:none;
+    min-width:90px;
+    z-index:99;
+    padding:8px;
+    background: #fff;
+    color: #111;
+}
+.dropdown-menu.show { display:block; }
+.dropdown-item {
+    padding:6px 10px;
+    font-size:11px;
+    cursor:pointer;
+}
+.dropdown-item:hover { background:#f0f0f2; }
+@media (prefers-color-scheme: dark) {
+    .dropdown-menu { background: #2c2c2e !important; color: #e5e5e5 !important; }
+    .dropdown-item:hover { background: #3a3a3c !important; }
+}
+
+.color-panel{
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap:6px;
+    margin-top:5px;
+}
+.color-opt{
+    width:20px;
+    height:20px;
+    border-radius:4px;
+    cursor:pointer;
+    border:1px solid #eee;
+}
+.color-opt:nth-child(1){background:#ffffff;}
+.color-opt:nth-child(2){background:#e9f5e9;}
+.color-opt:nth-child(3){background:#fde8f0;}
+.color-opt:nth-child(4){background:#e8f2fb;}
+.color-opt:nth-child(5){background:#f5f1ff;}
+.color-opt:nth-child(6){background:#fff6e8;}
+.color-opt:nth-child(7){background:#ffeef0;}
+.color-opt:nth-child(8){background:#f0f8f6;}
+
+.year-month {
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+}
+.main-date { font-size:28px; font-weight:500; }
+.range-date { font-size:12px; color:#666; }
+@media (prefers-color-scheme: dark) {
+    .range-date,.weekday { color: #aaa; }
+}
+
+.week-row {
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+    margin-bottom:10px;
+}
+.day-card {
+    background:#f5f5f7;
+    border-radius:8px;
+    text-align:center;
+    padding:6px 0;
+    cursor:pointer;
+    transition: all 0.25s ease;
+}
+/* 浅色选中背景纯黑色 */
+.day-card.active {
+    background:#000000 !important;
+    color:#ffffff !important;
+}
+.weekly-card.card-shadow .day-card {
+    background: #ffffff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08),0 4px 10px rgba(0,0,0,0.06),inset 0 -1px 2px rgba(0,0,0,0.04);
+}
+@media (prefers-color-scheme: dark) {
+    .day-card { background: #2c2c2e; }
+    .day-card.active { background: #e5e5e5 !important; color: #1c1c1e !important; }
+    .weekly-card.card-shadow .day-card { 
+        background: #2c2c2e !important; 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25),0 5px 12px rgba(0,0,0,0.15),inset 0 -1px 2px rgba(0,0,0,0.2); 
+    }
+    .weekly-card.card-shadow .day-card.active { 
+        background: #e5e5e5 !important; 
+        color: #1c1c1e; 
+        box-shadow:0 4px 10px rgba(0,0,0,0.4),0 8px 20px rgba(0,0,0,0.25); 
+    }
+}
+.weekday { font-size:10px; color:#777; margin-bottom:2px; }
+.daynum { font-size:16px; }
+
+.task-detail {
+    background:#f5f5f7;
+    border-radius:12px;
+    padding:12px;
+    transition: all 0.3s ease;
+}
+.weekly-card.card-shadow .task-detail {
+    background: #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.05),inset 0 0 2px rgba(0,0,0,0.03);
+}
+@media (prefers-color-scheme: dark) {
+    .task-detail { background: #2c2c2e; }
+    .weekly-card.card-shadow .task-detail { 
+        background: #2c2c2e !important; 
+        box-shadow:0 3px 12px rgba(0,0,0,0.3),0 8px 25px rgba(0,0,0,0.15),inset 0 0 3px rgba(0,0,0,0.2); 
+    }
+}
+
+.task-container {
+    display: flex;
+    gap:15px;
+    align-items: flex-start;
+}
+.task-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap:4px;
+    flex-shrink: 0;
+}
+.week-text, .date-text {
+    font-size:20px;
+    font-weight:500;
+    color:#1a1a1a;
+    text-align:center;
+}
+@media (prefers-color-scheme: dark) {
+    .week-text,.date-text { color:#e5e5e5; }
+}
+
+.add-task button {
+    border:none;
+    background: #007AFF;
+    color:#fff;
+    padding:7px 16px;
+    border-radius:20px;
+    cursor:pointer;
+    font-size:11px;
+    margin-top:6px;
+}
+@media (prefers-color-scheme: dark) {
+    .add-task button { background: #0A84FF; }
+}
+
+.task-right { flex: 1; }
+.task-list {
+    height: 90px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+/* 一言字体 18px */
+.hitokoto-text{
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+@media (prefers-color-scheme: dark){
+    .hitokoto-text{ color:#e5e5e5; }
+}
+.task-item {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#fff;
+    padding:8px;
+    border-radius:6px;
+    margin-bottom:6px;
+}
+.task-item:last-child { margin-bottom: 0; }
+.task-item .info {
+    display:flex;
+    flex-direction:column;
+}
+.task-item .time {
+    font-size:11px;
+    color:#888;
+}
+.task-opt button {
+    border:none;
+    background:none;
+    font-size:11px;
+    color:#999;
+    cursor:pointer;
+}
+.weekly-card.card-shadow .task-item {
+    background: #fff;
+    box-shadow:0 2px 4px rgba(0,0,0,0.06),0 3px 8px rgba(0,0,0,0.04);
+}
+@media (prefers-color-scheme: dark) {
+    .task-item { background: #3a3a3c; color:#e5e5e5; }
+    .task-item .time { color:#aaa; }
+    .task-opt button { color: #aaa; }
+    .weekly-card.card-shadow .task-item { 
+        background: #3a3a3c !important; 
+        box-shadow:0 2px 6px rgba(0,0,0,0.2),0 4px 10px rgba(0,0,0,0.12); 
+    }
+}
+
+.task-list::-webkit-scrollbar { width: 4px; }
+.task-list::-webkit-scrollbar-thumb {
+    background:#ccc;
+    border-radius:2px;
+}
+
+.modal {
+    display:none;
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.4);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+.modal-content {
+    background:#fff;
+    width:360px;
+    border-radius:16px;
+    padding:16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+}
+.modal-content h3 {
+    margin-bottom:12px;
+    font-size:15px;
+    font-weight:500;
+}
+.modal-content label {
+    display:block;
+    margin:6px 0 3px;
+    font-size:12px;
+}
+.modal-content input {
+    width:100%;
+    padding:8px;
+    border:none;
+    border-radius:8px;
+    font-size:12px;
+    background:#f5f5f7;
+    box-shadow:inset 0 2px 5px rgba(0,0,0,0.06);
+    outline: none;
+}
+.modal-buttons {
+    display:flex;
+    justify-content:space-between;
+    margin-top:15px;
+    gap:10px;
+}
+.modal-buttons button {
+    flex:1;
+    padding:7px 0;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:12px;
+}
+.modal-buttons .cancel { background:#f5f5f7; }
+.modal-buttons .confirm { background:#007AFF; color:#fff; }
+
+@media (prefers-color-scheme: dark) {
+    .modal-content { background:#1c1c1e; color:#e5e5e5; }
+    .modal-content input { background:#2c2c2e; color:#fff; box-shadow:inset 0 2px 5px rgba(0,0,0,0.25); }
+    .modal-buttons .cancel { background:#2c2c2e; color:#fff; }
+}
+</style>
+</head>
+<body>
+<div class="weekly-card" id="cardBox">
+    <div class="card-header">
+        <div class="header-left">
+            <span class="title-tag">WEEKLY · 周计划</span>
+        </div>
+        <div class="header-right">
+            <div class="btn-group">
+                <button id="prevWeek">&lt;</button>
+                <button id="goToday">今天</button>
+                <button id="nextWeek">&gt;</button>
+            </div>
+            <div class="color-dots" id="colorDots">
+                <div class="dot active" data-color="#ffffff"></div>
+                <div class="dot" data-color="#e9f5e9"></div>
+                <div class="dot" data-color="#fde8f0"></div>
+                <div class="dot" data-color="#e8f2fb"></div>
+            </div>
+            <div class="dropdown">
+                <button class="btn-option" id="shadowBtn">阴影 ∨</button>
+                <div class="dropdown-menu" id="shadowMenu">
+                    <div class="dropdown-item" data-effect="normal">正常</div>
+                    <div class="dropdown-item" data-effect="shadow">阴影</div>
+                    <div class="dropdown-item" data-effect="blur">模糊</div>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="btn-option" id="customBtn">自定义 ∨</button>
+                <div class="dropdown-menu" id="customMenu">
+                    <div class="dropdown-item">选择背景色</div>
+                    <div class="color-panel" id="colorPanel">
+                        <div class="color-opt" data-c="#ffffff"></div>
+                        <div class="color-opt" data-c="#e9f5e9"></div>
+                        <div class="color-opt" data-c="#fde8f0"></div>
+                        <div class="color-opt" data-c="#e8f2fb"></div>
+                        <div class="color-opt" data-c="#f5f1ff"></div>
+                        <div class="color-opt" data-c="#fff6e8"></div>
+                        <div class="color-opt" data-c="#ffeef0"></div>
+                        <div class="color-opt" data-c="#f0f8f6"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="year-month">
+        <div class="main-date" id="yearMonth"></div>
+        <div class="range-date" id="weekRange"></div>
+    </div>
+    <div class="week-row" id="weekRow"></div>
+
+    <div class="task-detail">
+        <div class="task-container">
+            <div class="task-left">
+                <div class="week-text" id="weekText"></div>
+                <div class="date-text" id="taskDate"></div>
+                <div class="add-task">
+                    <button id="addBtn">添加</button>
+                </div>
+            </div>
+            <div class="task-right">
+                <div class="task-list" id="taskList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="taskModal">
+    <div class="modal-content">
+        <h3>添加待办事项</h3>
+        <label>待办内容</label>
+        <input type="text" id="modalTitle" placeholder="例如：下周预备">
+        <label>开始时间</label>
+        <input type="time" id="modalStart">
+        <label>结束时间</label>
+        <input type="time" id="modalEnd">
+        <div class="modal-buttons">
+            <button class="cancel" id="modalCancel">取消</button>
+            <button class="confirm" id="modalConfirm">确定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var now = new Date();
+var year = now.getFullYear();
+var month = now.getMonth() + 1;
+var day = now.getDate();
+
+var currentDate = new Date(year,month-1,day);
+var selectDate  = new Date(year,month-1,day);
+var colorNow    = "#ffffff";
+var effectNow   = "shadow";
+var taskData    = {};
+var saveName    = "week_plan_task";
+var effectKey   = "card_effect";
+var colorKey    = "card_color";
+// 一言缓存key
+var hitokotoKey = "hitokoto_cache";
+
+var weekArr = ["周日","周一","周二","周三","周四","周五","周六"];
+
+let needRefreshHitokoto = false;
+
+if(localStorage.getItem(effectKey)) effectNow = localStorage.getItem(effectKey);
+if(localStorage.getItem(saveName)) taskData = JSON.parse(localStorage.getItem(saveName));
+if(localStorage.getItem(colorKey)) colorNow = localStorage.getItem(colorKey);
+
+function saveTask(){localStorage.setItem(saveName, JSON.stringify(taskData));}
+function saveEffect(){localStorage.setItem(effectKey, effectNow);}
+function saveColor(){localStorage.setItem(colorKey, colorNow);}
+// 保存一言缓存
+function saveHitokoto(txt){localStorage.setItem(hitokotoKey, txt);}
+// 读取一言缓存
+function getCacheHitokoto(){return localStorage.getItem(hitokotoKey) || "认真生活，温柔前行";}
+
+function isDark(){
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function applyBgColor(){
+    if(!isDark()){
+        document.getElementById("cardBox").style.setProperty("--bg-color", colorNow);
+    }
+}
+
+// 获取一言并缓存
+async function getHitokoto(){
+    try{
+        let res = await fetch("https://v1.hitokoto.cn");
+        let json = await res.json();
+        saveHitokoto(json.hitokoto);
+        return json.hitokoto;
+    }catch(e){
+        return getCacheHitokoto();
+    }
+}
+
+initView();
+bindEvent();
+
+function initView(){
+    renderWeek();
+    renderTask();
+    setEffectClass();
+    applyBgColor();
+}
+
+function setEffectClass(){
+    let card = document.getElementById("cardBox");
+    card.classList.remove("card-normal","card-shadow","card-blur");
+    card.classList.add("card-"+effectNow);
+    document.getElementById("shadowBtn").innerText = effectNow==="normal"?"正常 ∨":effectNow==="shadow"?"阴影 ∨":"模糊 ∨";
+    saveEffect();
+}
+
+function renderWeek(){
+    var s = new Date(currentDate);
+    var w = s.getDay();
+    var off = w===0 ? -6 : 1-w;
+    var start = new Date(s.setDate(s.getDate()+off));
+
+    document.getElementById("yearMonth").innerText = start.getFullYear()+" 年 "+(start.getMonth()+1)+" 月";
+    var sDate = (start.getMonth()+1)+"/"+start.getDate();
+    var eDate = (start.getMonth()+1)+"/"+(start.getDate()+6);
+    document.getElementById("weekRange").innerText = sDate+" - "+eDate;
+
+    var arr = ["一","二","三","四","五","六","日"];
+    var box = document.getElementById("weekRow");
+    box.innerHTML = "";
+
+    for(var i=0;i<7;i++){
+        var d = new Date(start);
+        d.setDate(start.getDate()+i);
+        var dom = document.createElement("div");
+        dom.className = "day-card";
+        if(d.toDateString() === selectDate.toDateString()) dom.className+=" active";
+        dom.dataset.date = d.toDateString();
+
+        dom.addEventListener("click", async function(){
+            selectDate = new Date(this.dataset.date);
+            document.querySelectorAll(".day-card").forEach(el=>el.classList.remove("active"));
+            this.classList.add("active");
+
+            let key = selectDate.getFullYear()+"-"+(selectDate.getMonth()+1)+"-"+selectDate.getDate();
+            let list = taskData[key] || [];
+
+            if(list.length === 0){
+                needRefreshHitokoto = true;
+            }
+            renderTask();
+        });
+
+        var weekdayEl = document.createElement("div");
+        weekdayEl.className = "weekday";
+        weekdayEl.textContent = arr[d.getDay()===0?6:d.getDay()-1];
+        var daynumEl = document.createElement("div");
+        daynumEl.className = "daynum";
+        daynumEl.textContent = d.getDate();
+        dom.appendChild(weekdayEl);
+        dom.appendChild(daynumEl);
+        box.appendChild(dom);
+    }
+}
+
+async function renderTask(){
+    var key = selectDate.getFullYear()+"-"+(selectDate.getMonth()+1)+"-"+selectDate.getDate();
+    let weekIdx = selectDate.getDay();
+    document.getElementById("weekText").innerText = weekArr[weekIdx];
+    document.getElementById("taskDate").innerText = (selectDate.getMonth()+1)+"月"+selectDate.getDate()+"日";
+
+    var listBox = document.getElementById("taskList");
+    listBox.innerHTML = "";
+    if(!taskData[key]) taskData[key] = [];
+    var arr = taskData[key];
+
+    if(arr.length === 0){
+        // 优先读取缓存，只有标记刷新才请求新的
+        if(needRefreshHitokoto){
+            let text = await getHitokoto();
+            var hitokotoEl = document.createElement("div");
+            hitokotoEl.className = "hitokoto-text";
+            hitokotoEl.textContent = text;
+            listBox.appendChild(hitokotoEl);
+            needRefreshHitokoto = false;
+        }else{
+            // 首次启动直接加载缓存一言
+            let cacheText = getCacheHitokoto();
+            var hitokotoEl = document.createElement("div");
+            hitokotoEl.className = "hitokoto-text";
+            hitokotoEl.textContent = cacheText;
+            listBox.appendChild(hitokotoEl);
+        }
+        return;
+    }
+
+    let fontSize = arr.length === 1 ? "16px" : "12px";
+    for(var i=0;i<arr.length;i++){
+        var item = document.createElement("div");
+        item.className = "task-item";
+        var info = document.createElement("div");
+        info.className = "info";
+        var taskText = document.createElement("div");
+        taskText.className = "task-text";
+        taskText.style.fontSize = fontSize;
+        taskText.style.fontWeight = "500";
+        taskText.textContent = arr[i].content;
+        var time = document.createElement("div");
+        time.className = "time";
+        time.textContent = arr[i].startTime + " - " + arr[i].endTime;
+        info.appendChild(taskText);
+        info.appendChild(time);
+        var opt = document.createElement("div");
+        opt.className = "task-opt";
+        var btn = document.createElement("button");
+        btn.textContent = "删除";
+        btn.addEventListener("click", (function(idx){ return function(){ delTask(idx); }; })(i));
+        opt.appendChild(btn);
+        item.appendChild(info);
+        item.appendChild(opt);
+        listBox.appendChild(item);
+    }
+}
+
+window.delTask = function(idx){
+    var k = selectDate.getFullYear()+"-"+(selectDate.getMonth()+1)+"-"+selectDate.getDate();
+    taskData[k].splice(idx,1);
+
+    if(taskData[k].length === 0){
+        needRefreshHitokoto = true;
+    }
+    saveTask();
+    renderTask();
+};
+
+function openModal(){
+    document.getElementById("taskModal").style.display = "flex";
+    document.getElementById("modalTitle").value = "";
+    document.getElementById("modalStart").value = "";
+    document.getElementById("modalEnd").value = "";
+}
+function closeModal(){
+    document.getElementById("taskModal").style.display = "none";
+}
+
+function addNewTaskFromModal(){
+    var content = document.getElementById("modalTitle").value.trim();
+    var start = document.getElementById("modalStart").value;
+    var end = document.getElementById("modalEnd").value;
+    if(!content || !start || !end) return;
+
+    var k = selectDate.getFullYear()+"-"+(selectDate.getMonth()+1)+"-"+selectDate.getDate();
+    if(!taskData[k]) taskData[k] = [];
+    taskData[k].push({content,startTime:start,endTime:end});
+    saveTask();
+    renderTask();
+    closeModal();
+}
+
+function bindEvent(){
+    document.getElementById("addBtn").addEventListener("click", openModal);
+
+    document.getElementById("prevWeek").addEventListener("click", function(){
+        currentDate.setDate(currentDate.getDate()-7);
+        renderWeek();
+    });
+    document.getElementById("nextWeek").addEventListener("click", function(){
+        currentDate.setDate(currentDate.getDate()+7);
+        renderWeek();
+    });
+    document.getElementById("goToday").addEventListener("click", function(){
+        currentDate = new Date(year,month-1,day);
+        selectDate  = new Date(year,month-1,day);
+        needRefreshHitokoto = true;
+        renderWeek();
+        renderTask();
+    });
+
+    document.querySelectorAll("#colorDots .dot").forEach(dot=>{
+        dot.addEventListener("click", function(){
+            document.querySelectorAll("#colorDots .dot").forEach(d=>d.classList.remove("active"));
+            this.classList.add("active");
+            colorNow = this.dataset.color;
+            saveColor();
+            applyBgColor();
+        });
+    });
+
+    document.querySelectorAll(".color-opt").forEach(opt=>{
+        opt.addEventListener("click", function(){
+            colorNow = this.dataset.c;
+            saveColor();
+            applyBgColor();
+            document.querySelectorAll("#colorDots .dot").forEach(dot=>{
+                dot.classList.remove("active");
+                if(dot.dataset.color === colorNow) dot.classList.add("active");
+            });
+            document.getElementById("customMenu").classList.remove("show");
+        });
+    });
+
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{
+        applyBgColor();
+    });
+
+    document.getElementById("shadowBtn").addEventListener("click",e=>{
+        e.stopPropagation();
+        document.getElementById("shadowMenu").classList.toggle("show");
+        document.getElementById("customMenu").classList.remove("show");
+    });
+    document.querySelectorAll("#shadowMenu .dropdown-item").forEach(item=>{
+        item.addEventListener("click", function(){
+            effectNow = this.dataset.effect;
+            setEffectClass();
+            document.getElementById("shadowMenu").classList.remove("show");
+        });
+    });
+
+    document.getElementById("customBtn").addEventListener("click",e=>{
+        e.stopPropagation();
+        document.getElementById("customMenu").classList.toggle("show");
+        document.getElementById("shadowMenu").classList.remove("show");
+    });
+
+    document.addEventListener("click",()=>{
+        document.querySelectorAll(".dropdown-menu").forEach(m=>m.classList.remove("show"));
+    });
+
+    document.getElementById("modalCancel").addEventListener("click", closeModal);
+    document.getElementById("modalConfirm").addEventListener("click", addNewTaskFromModal);
+}
+</script>
+</body>
+</html>
