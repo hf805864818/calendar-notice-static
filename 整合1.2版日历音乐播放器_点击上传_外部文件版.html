@@ -7,15 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:330px;background:transparent;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;display:flex;justify-content:center;overflow:visible;box-sizing:border-box}
-.dual-wrap{position:relative;width:100vw;max-width:430px;height:330px;padding-top:10px;padding-bottom:10px;perspective:1400px;transform-style:preserve-3d;isolation:isolate;overflow:visible;filter:blur(0)}
-.locked .dual-wrap{filter:blur(6px);pointer-events:none;user-select:none}
-.auth-mask{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.42);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.auth-box{width:min(88vw,320px);border-radius:18px;padding:18px;background:#fff;color:#111;box-shadow:0 12px 40px rgba(0,0,0,.22)}
-.auth-box h3{font-size:16px;margin-bottom:10px}
-.auth-box p{font-size:13px;line-height:1.6;color:#555;margin-bottom:12px}
-.auth-box input{width:100%;height:42px;border:1px solid #ddd;border-radius:12px;padding:0 12px;font-size:14px;outline:none}
-.auth-box button{margin-top:12px;width:100%;height:42px;border:0;border-radius:12px;background:#0A84FF;color:#fff;font-size:14px}
-.auth-tip{margin-top:8px;font-size:12px;color:#888}
+.dual-wrap{position:relative;width:100vw;max-width:430px;height:330px;padding-top:10px;padding-bottom:10px;perspective:1400px;transform-style:preserve-3d;isolation:isolate;overflow:visible}
 .stage{position:relative;width:100%;height:285px;transform-style:preserve-3d;overflow:visible}
 .panel{position:absolute;left:0;top:0;width:100%;height:285px;opacity:0;pointer-events:none;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(78deg) scale(.84) translateZ(-120px);filter:blur(14px) saturate(.75) brightness(.86);transition:transform .86s cubic-bezier(.16,1,.3,1),opacity .55s ease,filter .72s ease;z-index:1;overflow:visible}
 .panel.active{position:relative;opacity:1;pointer-events:auto;transform:rotateY(0) scale(1) translateZ(0);filter:blur(0) saturate(1) brightness(1);z-index:5}
@@ -39,15 +31,6 @@ html,body{width:100%;height:330px;background:transparent;font-family:-apple-syst
 </style>
 </head>
 <body>
-<div id="authMask" class="auth-mask" style="display:none">
-  <div class="auth-box">
-    <h3>授权验证</h3>
-    <p>请输入授权码后进入卡片页面。</p>
-    <input id="authInput" placeholder="输入授权码">
-    <button id="authBtn">确认进入</button>
-    <div class="auth-tip" id="authTip"></div>
-  </div>
-</div>
 <div class="dual-wrap">
   <div class="flash" id="flash"></div><div class="particles" id="particles"></div>
   <button class="weekly-hotspot" id="toMusic" aria-label="切换到音乐播放器"></button>
@@ -61,53 +44,48 @@ html,body{width:100%;height:330px;background:transparent;font-family:-apple-syst
 const calPanel=document.getElementById('calPanel'), musPanel=document.getElementById('musPanel');
 const toMusic=document.getElementById('toMusic'), toCalendar=document.getElementById('toCalendar');
 const flash=document.getElementById('flash'), particles=document.getElementById('particles');
-const authMask=document.getElementById('authMask'), authInput=document.getElementById('authInput'), authBtn=document.getElementById('authBtn'), authTip=document.getElementById('authTip');
 let current='calendar', lock=false;
-const AUTH_KEY='calendar_music_auth_ok';
-const AUTH_VALUE_KEY='calendar_music_auth_value';
-const AUTH_KEYS_URL='auth_keys.txt';
-function burst(target){flash.classList.remove('run'); void flash.offsetWidth; flash.classList.add('run'); particles.innerHTML=''; const colors=['#6fc7ff','#b66cff','#fff','#73ffd2','#ffd36e']; const ox=target==='music'?46:338, oy=target==='music'?20:28; for(let i=0;i<20;i++){const p=document.createElement('i'); p.className='p'; const a=Math.PI*2*i/20+Math.random()*.5, d=42+Math.random()*135; p.style.setProperty('--x',ox+'px'); p.style.setProperty('--y',oy+'px'); p.style.setProperty('--dx',(Math.cos(a)*d*(target==='music'?1:-1))+'px'); p.style.setProperty('--dy',(Math.sin(a)*d)+'px'); p.style.setProperty('--s',(2.5+Math.random()*4.5)+'px'); p.style.setProperty('--c',colors[i%colors.length]); p.style.animationDelay=(Math.random()*.08)+'s'; particles.appendChild(p);} setTimeout(()=>particles.textContent='',900)}
-function switchTo(target){if(lock||current===target)return; lock=true; burst(target); if(target==='music'){calPanel.classList.add('leave-left'); calPanel.classList.remove('active'); musPanel.classList.add('active'); toMusic.style.display='none'; toCalendar.classList.add('show'); current='music';}else{musPanel.classList.add('leave-right'); musPanel.classList.remove('active'); calPanel.classList.add('active'); toCalendar.classList.remove('show'); toMusic.style.display='block'; current='calendar';} setTimeout(()=>{calPanel.classList.remove('leave-left','leave-right'); musPanel.classList.remove('leave-left','leave-right'); lock=false;},900)}
-toMusic.addEventListener('click',()=>switchTo('music')); toCalendar.addEventListener('click',()=>switchTo('calendar'));
-function showAuth(){document.body.classList.add('locked'); authMask.style.display='flex'}
-function enterApp(code){document.body.classList.remove('locked'); authMask.style.display='none'; localStorage.setItem(AUTH_KEY,'1'); if(code) localStorage.setItem(AUTH_VALUE_KEY, code)}
-async function loadAuthKeys(){
-  try{
-    const res = await fetch(AUTH_KEYS_URL + '?t=' + Date.now());
-    if(!res.ok) throw new Error('load auth_keys.txt failed');
-    const text = await res.text();
-    return text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  }catch(e){
-    return [];
+function burst(target){
+  flash.classList.remove('run'); void flash.offsetWidth; flash.classList.add('run');
+  particles.innerHTML='';
+  const colors=['#6fc7ff','#b66cff','#fff','#73ffd2','#ffd36e'];
+  const ox=target==='music'?46:338, oy=target==='music'?20:28;
+  for(let i=0;i<20;i++){
+    const p=document.createElement('i'); p.className='p';
+    const a=Math.PI*2*i/20+Math.random()*.5, d=42+Math.random()*135;
+    p.style.setProperty('--x',ox+'px'); p.style.setProperty('--y',oy+'px');
+    p.style.setProperty('--dx',(Math.cos(a)*d*(target==='music'?1:-1))+'px');
+    p.style.setProperty('--dy',(Math.sin(a)*d)+'px'); p.style.setProperty('--s',(2.5+Math.random()*4.5)+'px');
+    p.style.setProperty('--c',colors[i%colors.length]); p.style.animationDelay=(Math.random()*.08)+'s'; particles.appendChild(p);
   }
+  setTimeout(()=>particles.textContent = '',900);
 }
-function normalize(v){return String(v||'').trim();}
-async function verifyCode(inputCode){
-  const keys = await loadAuthKeys();
-  const code = normalize(inputCode);
-  return {ok: keys.includes(code)};
-}
-authBtn.onclick=async()=>{
-  const code = normalize(authInput.value);
-  if(!code){authTip.textContent='请输入激活码';return;}
-  authBtn.disabled = true;
-  authTip.textContent = '验证中...';
-  const ret = await verifyCode(code);
-  authBtn.disabled = false;
-  if(ret.ok){
-    authTip.textContent='激活成功';
-    enterApp(code);
+function switchTo(target){
+  if(lock||current===target)return; lock=true; burst(target);
+  if(target==='music'){
+    calPanel.classList.add('leave-left'); calPanel.classList.remove('active'); musPanel.classList.add('active');
+    toMusic.style.display='none'; toCalendar.classList.add('show'); current='music';
   }else{
-    authTip.textContent='激活码不在白名单';
+    musPanel.classList.add('leave-right'); musPanel.classList.remove('active'); calPanel.classList.add('active');
+    toCalendar.classList.remove('show'); toMusic.style.display='block'; current='calendar';
   }
-};
-(async function initAuth(){
-  if(localStorage.getItem(AUTH_KEY)==='1'){
-    enterApp(localStorage.getItem(AUTH_VALUE_KEY)||'');
-    return;
-  }
-  showAuth();
-})();
+  setTimeout(()=>{calPanel.classList.remove('leave-left','leave-right'); musPanel.classList.remove('leave-left','leave-right'); lock=false;},900);
+}
+toMusic.addEventListener('click',()=>switchTo('music'));
+toCalendar.addEventListener('click',()=>switchTo('calendar'));
+
+// 整合版公告功能 - 调用子iframe的公告
+window.addEventListener('load', function() {
+    // 延迟一点确保 iframe 已加载
+    setTimeout(function() {
+        try {
+            const calWin = document.getElementById('calendarFrame').contentWindow;
+            if (calWin && calWin.checkNoticePopup) {
+                calWin.checkNoticePopup();
+            }
+        } catch(e) {}
+    }, 500);
+});
 </script>
 </body>
 </html>
