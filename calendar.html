@@ -484,19 +484,147 @@ html,body {
     </div>
 </div>
 
+<style>
+/* 公告弹窗模态框样式 */
+#noticeModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+#noticeModal.light-theme .notice-content {
+    background: #fff;
+    color: #1a1a1a;
+}
+#noticeModal.light-theme .notice-text {
+    color: #333;
+}
+#noticeModal.light-theme .notice-image-wrapper {
+    background: #f8f9fa;
+}
+#noticeModal.dark-theme .notice-content {
+    background: #1c1c1e;
+    color: #e5e5e5;
+}
+#noticeModal.dark-theme .notice-text {
+    color: #e5e5e5;
+}
+#noticeModal.dark-theme .notice-image-wrapper {
+    background: #2c2c2e;
+}
+#noticeModal.dark-theme #noticeCloseBtn {
+    background: rgba(255,255,255,0.2);
+}
+#noticeModal.single-column .notice-content {
+    flex-direction: column;
+    width: 85%;
+    max-width: 360px;
+    max-height: 55vh;
+    aspect-ratio: 9/16;
+}
+#noticeModal.single-column .notice-text-wrapper {
+    width: 100%;
+}
+#noticeModal.single-column .notice-image-wrapper {
+    display: none;
+}
+#noticeModal .notice-content {
+    display: flex;
+    flex-direction: row;
+    width: 90%;
+    max-width: 760px;
+    max-height: 72vh;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+    overflow: hidden;
+    position: relative;
+}
+#noticeModal .notice-text-wrapper {
+    width: 50%;
+    padding: 16px;
+    border-right: 1px solid rgba(0,0,0,0.06);
+    overflow-y: auto;
+    max-height: 60vh;
+}
+#noticeModal .notice-title {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #007AFF;
+}
+#noticeModal .notice-text {
+    font-size: 13px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+#noticeModal .notice-image-wrapper {
+    width: 50%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+}
+#noticeModal .notice-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 14px;
+    cursor: pointer;
+    display: block;
+}
+#noticeModal .notice-close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.2);
+    color: #fff;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+#noticeModal .notice-close-btn:hover {
+    background: rgba(0,0,0,0.4);
+}
+@media (prefers-color-scheme: dark) {
+    #noticeModal .notice-text-wrapper {
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+}
+</style>
+
 <!-- 公告弹窗模态框 -->
-<div class="modal" id="noticeModal">
-    <div class="modal-content" style="width: 90%; max-width: 760px; display: flex; flex-direction: row; max-height: 72vh; padding: 0; position: relative;">
-        <div style="width: 50%; padding: 16px; border-right: 1px solid rgba(0,0,0,0.06);">
-            <h3 id="noticeTitle" style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #007AFF;">公告标题</h3>
-            <div id="noticeText" style="font-size: 13px; line-height: 1.65; color: #333; overflow-y: auto; max-height: 60vh; padding-right: 4px; white-space: pre-wrap;"></div>
+<div id="noticeModal">
+    <div class="notice-content">
+        <div class="notice-text-wrapper">
+            <h3 id="noticeTitle" class="notice-title">公告标题</h3>
+            <div id="noticeText" class="notice-text"></div>
         </div>
-        <div style="width: 50%; background: #f8f9fa; display: flex; align-items: center; justify-content: center; padding: 12px; position: relative;">
-            <img id="noticeImage" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 14px; cursor: pointer; display: block;" class="only-image">
+        <div class="notice-image-wrapper">
+            <img id="noticeImage" src="" class="notice-image" alt="公告图片">
         </div>
-        <button id="noticeCloseBtn" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(0,0,0,0.2); color: #fff; font-size: 18px; line-height: 28px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;">
-            &times;
-        </button>
+        <button id="noticeCloseBtn" class="notice-close-btn">&times;</button>
     </div>
 </div>
 
@@ -880,14 +1008,30 @@ function showNoticeModal(noticeData) {
     
     if (titleEl) titleEl.innerText = noticeData.title || "公告";
     if (textEl) textEl.innerText = noticeData.content || "";
-    if (imgEl) {
-        imgEl.classList.remove("only-image");
-        if (noticeData.image) {
-            imgEl.src = noticeData.image;
-        } else {
-            imgEl.src = "";
-            imgEl.classList.add("only-image");
-        }
+    
+    // 判断是否有图片
+    const hasImage = noticeData.image && noticeData.image.trim() !== "";
+    
+    if (hasImage) {
+        // 文字+图片：左右分栏
+        imgEl.src = noticeData.image;
+        modal.classList.remove("single-column");
+        modal.classList.add(hasImage ? "has-image" : "only-text");
+        imgEl.style.display = "block";
+    } else {
+        // 单文字：单列显示
+        imgEl.src = "";
+        imgEl.style.display = "none";
+        modal.classList.add("single-column");
+    }
+    
+    // 设置深色模式
+    if (isDark()) {
+        modal.classList.remove("light-theme");
+        modal.classList.add("dark-theme");
+    } else {
+        modal.classList.remove("dark-theme");
+        modal.classList.add("light-theme");
     }
     
     modal.style.display = "flex";
