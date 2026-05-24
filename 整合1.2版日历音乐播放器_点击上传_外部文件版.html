@@ -73,6 +73,19 @@ function switchTo(target){
 }
 toMusic.addEventListener('click',()=>switchTo('music'));
 toCalendar.addEventListener('click',()=>switchTo('calendar'));
+
+// 整合版公告功能 - 调用子iframe的公告
+window.addEventListener('load', function() {
+    // 延迟一点确保 iframe 已加载
+    setTimeout(function() {
+        try {
+            const calWin = document.getElementById('calendarFrame').contentWindow;
+            if (calWin && calWin.checkNoticePopup) {
+                calWin.checkNoticePopup();
+            }
+        } catch(e) {}
+    }, 500);
+});
 </script>
 </body>
 </html>

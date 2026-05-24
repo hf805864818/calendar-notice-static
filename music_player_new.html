@@ -618,6 +618,22 @@
     </div>
 </div>
 
+<!-- 公告弹窗模态框 -->
+<div id="noticeModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;justify-content:center;align-items:center;z-index:2000;">
+    <div style="background:#fff;width:90%;max-width:760px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2);display:flex;flex-direction:row;max-height:72vh;overflow:hidden;position:relative;">
+        <div style="width:50%;padding:16px;overflow-y:auto;max-height:60vh;border-right:1px solid rgba(0,0,0,0.06);">
+            <h3 id="noticeTitle" style="margin:0 0 6px 0;font-size:15px;font-weight:600;color:#007AFF;">公告标题</h3>
+            <div id="noticeText" style="font-size:13px;line-height:1.65;color:#333;white-space:pre-wrap;"></div>
+        </div>
+        <div style="width:50%;background:#f8f9fa;display:flex;align-items:center;justify-content:center;padding:12px;">
+            <img id="noticeImage" src="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:14px;cursor:pointer;display:block;" class="only-image">
+        </div>
+        <div id="noticeCloseBtn" style="position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.25);color:#fff;font-size:18px;line-height:24px;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;">
+            &times;
+        </div>
+    </div>
+</div>
+
 <script>
 const dom = {
     songName: document.getElementById('songName'),
@@ -1645,6 +1661,140 @@ function buildTagPlaylists(p,tag){
         prefix+tag+'榜'
     ];
 }
+// ===== 公告弹窗功能 =====
+const noticeUrl = "https://hf805864818.github.io/calendar-notice-static/notice.json";
+const noticeVersionKey = "music_notice_seen_version";
+const firstInstallKey = "music_first_install";
+const defaultWelcomeVersion = "music-welcome-1";
+
+function isFirstInstall() {
+    if (!localStorage.getItem(firstInstallKey)) {
+        localStorage.setItem(firstInstallKey, "true");
+        return true;
+    }
+    return false;
+}
+
+async function fetchNotice() {
+    try {
+        const res = await fetch(noticeUrl);
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        return data;
+    } catch (e) {
+        console.warn("获取公告失败:", e);
+        return null;
+    }
+}
+
+async function checkNoticePopup() {
+    const isInstall = isFirstInstall();
+    const remoteNotice = await fetchNotice();
+    
+    if (!remoteNotice) {
+        if (isInstall) {
+            showNoticeModal({
+                title: "欢迎使用音乐播放器",
+                content: "感谢您使用这款音乐播放器！\n\n功能特色：\n• 多平台音乐搜索\n• 自定义封面\n• 远程公告推送",
+                image: ""
+            });
+            localStorage.setItem(noticeVersionKey, defaultWelcomeVersion);
+        }
+        return;
+    }
+    
+    const seenVersion = localStorage.getItem(noticeVersionKey) || "";
+    const remoteVersion = remoteNotice.version || "notice-" + Date.now();
+    
+    // 只有版本号不同时才弹出（比对版本号）
+    if (seenVersion !== remoteVersion) {
+        showNoticeModal(remoteNotice);
+        localStorage.setItem(noticeVersionKey, remoteVersion);
+    }
+}
+
+function showNoticeModal(noticeData) {
+    const modal = document.getElementById("noticeModal");
+    if (!modal) return;
+    
+    const titleEl = document.getElementById("noticeTitle");
+    const textEl = document.getElementById("noticeText");
+    const imgEl = document.getElementById("noticeImage");
+    
+    if (titleEl) titleEl.innerText = noticeData.title || "公告";
+    if (textEl) textEl.innerText = noticeData.content || "";
+    if (imgEl) {
+        imgEl.classList.remove("only-image");
+        if (noticeData.image) {
+            imgEl.src = noticeData.image;
+        } else {
+            imgEl.src = "";
+            imgEl.classList.add("only-image");
+        }
+    }
+    
+    modal.style.display = "flex";
+}
+
+async function saveImageToAlbum(url) {
+    try {
+        if ('photoLibrary' in navigator) {
+            const permission = await navigator.photoLibrary.requestPermission({ read: true, write: true });
+            if (permission === "granted" || permission === "limited") {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                await navigator.photoLibrary.saveImage(blob);
+                alert("图片已保存到相册！");
+                return true;
+            }
+        }
+        
+        const win = window.open(url, '_blank');
+        if (win) {
+            win.document.write('<!DOCTYPE html><html><body style="margin:0;background:#000"><img src="' + url + '" style="max-width:100%;height:auto;"></body></html>');
+            win.document.close();
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error("保存图片失败:", e);
+        return false;
+    }
+}
+
+// 页面加载完成后检查并弹出公告
+window.addEventListener('load', async function() {
+    await checkNoticePopup();
+    
+    // 音乐播放器公告弹窗图片长按保存
+    const noticeImage = document.getElementById("noticeImage");
+    if (noticeImage) {
+        let longPressTimer;
+        noticeImage.addEventListener("touchstart", function(e) {
+            longPressTimer = setTimeout(function(){
+                const imgSrc = noticeImage.src;
+                if(imgSrc) saveImageToAlbum(imgSrc);
+                e.preventDefault();
+            }, 800);
+        });
+        noticeImage.addEventListener("touchend", function(e) {
+            clearTimeout(longPressTimer);
+            e.preventDefault();
+        });
+        noticeImage.addEventListener("click", function(e) {
+            clearTimeout(longPressTimer);
+            e.preventDefault();
+        });
+    }
+    
+    // 公告弹窗关闭按钮（右上角 x）
+    const noticeCloseBtn = document.getElementById("noticeCloseBtn");
+    if (noticeCloseBtn) {
+        noticeCloseBtn.addEventListener("click", function(){
+            document.getElementById("noticeModal").style.display = "none";
+        });
+    }
+});
 </script>
 </body>
 </html>
