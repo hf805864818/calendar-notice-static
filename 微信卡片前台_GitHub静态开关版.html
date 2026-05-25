@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>微信卡片激活入口</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111822;
+      --line: #243042;
+      --text: #e8eef7;
+      --muted: #98a7bd;
+      --ok: #29c36a;
+      --err: #ff6b6b;
+      --warn: #f5c451;
+      --btn: #2f7cff;
+      --btn2: #2b3444;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    /* 不再使用 iframe，平台禁止 iframe。
+       这里保留一个简单背景，激活成功后直接跳转到真实页面。 */
+    #fakeBg {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(47,124,255,.22), transparent 32%),
+        radial-gradient(circle at 80% 90%, rgba(41,195,106,.14), transparent 34%),
+        linear-gradient(180deg, #0b0f14 0%, #090c11 100%);
+    }
+
+    #authModal {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: rgba(0,0,0,.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    #authCard {
+      width: min(92vw, 430px);
+      background: linear-gradient(180deg, #111822, #0f141d);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 16px 60px rgba(0,0,0,.45);
+    }
+
+    #title {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    #desc {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    #codeInput {
+      width: 100%;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid #334055;
+      background: #0c1118;
+      color: var(--text);
+      padding: 0 12px;
+      font-size: 15px;
+      outline: none;
+      letter-spacing: .3px;
+    }
+
+    #codeInput:focus { border-color: #4d8dff; }
+
+    #msg {
+      min-height: 20px;
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--err);
+      word-break: break-word;
+    }
+
+    #actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      height: 42px;
+      border: 0;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn:disabled { opacity: .65; }
+
+    #btnRetry { background: var(--btn2); }
+    #btnSubmit { background: var(--btn); font-weight: 700; }
+
+    #deviceText {
+      margin-top: 10px;
+      font-size: 10px;
+      line-height: 1.4;
+      color: #607088;
+      text-align: center;
+      user-select: all;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div id="fakeBg"></div>
+
+  <div id="authModal">
+    <div id="authCard">
+      <div id="title">请输入激活码</div>
+      <div id="desc">
+        本设备需先激活后使用。<br />
+        激活码格式示例：<code>WK-XXXX-XXXX-XXXX</code>
+      </div>
+      <input id="codeInput" value="WK-RBKB-4FWN-35LE" placeholder="输入激活码" autocomplete="off" />
+      <div id="msg">正在检查状态...</div>
+      <div id="actions">
+        <button id="btnRetry" class="btn" type="button">重新检查</button>
+        <button id="btnSubmit" class="btn" type="button">激活并进入</button>
+      </div>
+      <div id="deviceText"></div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 配置 ======
+    const WORKER_URL = "https://httphfysxn--g6rs66hk9kxyz.3764.workers.dev";
+    const APP_URL = "https://hf805864818.github.io/calendar-notice-static/%E6%95%B4%E5%90%881.2%E7%89%88%E6%97%A5%E5%8E%86%E9%9F%B3%E4%B9%90%E6%92%AD%E6%94%BE%E5%99%A8_%E7%82%B9%E5%87%BB%E4%B8%8A%E4%BC%A0_%E5%A4%96%E9%83%A8%E6%96%87%E4%BB%B6%E7%89%88.html";
+    const FREE_MODE_URL = "https://hf805864818.github.io/calendar-notice-static/free_mode.json";
+    const LS_DEVICE_ID = "wxcard_device_id_v1";
+    const LS_ACT = "wxcard_activation_v1";
+
+    // ====== 工具 ======
+    function nowSec() {
+      return Math.floor(Date.now() / 1000);
+    }
+
+    function getDeviceId() {
+      let id = localStorage.getItem(LS_DEVICE_ID);
+      if (!id) {
+        const ua = (navigator.userAgent || "ua").replace(/\W/g, "").slice(0, 10);
+        const r = Math.random().toString(36).slice(2, 10);
+        id = "ios-" + ua + "-" + Date.now().toString(36) + "-" + r;
+        localStorage.setItem(LS_DEVICE_ID, id);
+      }
+      return id;
+    }
+
+    const deviceId = getDeviceId();
+    document.getElementById("deviceText").textContent = "设备ID：" + deviceId;
+
+    function setMsg(text, type) {
+      const el = document.getElementById("msg");
+      el.textContent = text || "";
+      if (type === "ok") el.style.color = "#29c36a";
+      else if (type === "warn") el.style.color = "#f5c451";
+      else el.style.color = "#ff6b6b";
+    }
+
+    function saveAct(code) {
+      localStorage.setItem(LS_ACT, JSON.stringify({
+        code: code,
+        device_id: deviceId,
+        at: Date.now()
+      }));
+    }
+
+    function getAct() {
+      try {
+        return JSON.parse(localStorage.getItem(LS_ACT) || "null");
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function mapErr(e) {
+      switch (e) {
+        case "code_not_found": return "激活码不存在，请检查后重试";
+        case "code_disabled": return "该激活码已停用";
+        case "device_limit_reached": return "该激活码绑定设备已达上限";
+        case "bad_code_format": return "激活码格式不正确";
+        case "bad_sign": return "签名错误";
+        case "missing_params": return "参数不完整";
+        case "missing_device_id": return "设备ID缺失";
+        case "bad_json": return "请求格式错误";
+        case "not_found": return "接口不存在，请检查 Worker 代码是否部署正确";
+        case "server_error": return "后端错误，请检查 AUTH_KV 绑定和 Worker 代码";
+        default: return e ? ("验证失败：" + e) : "验证失败，请稍后重试";
+      }
+    }
+
+    function enterRealPage() {
+      // 重要：平台不允许 iframe，所以这里不嵌入页面，直接跳转。
+      window.location.replace(APP_URL);
+    }
+
+    async function getFreeModeConfig() {
+      const controller = new AbortController();
+      const timer = setTimeout(function () {
+        controller.abort();
+      }, 5000);
+
+      try {
+        const res = await fetch(FREE_MODE_URL + "?t=" + Date.now(), {
+          method: "GET",
+          signal: controller.signal,
+          cache: "no-store"
+        });
+        if (!res.ok) return { free_mode: false };
+        const json = await res.json();
+        return { free_mode: json && json.free_mode === true };
+      } catch (e) {
+        return { free_mode: false };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function postJson(path, data, timeoutMs) {
+      const controller = new AbortController();
+      const timer = setTimeout(function () {
+        controller.abort();
+      }, timeoutMs || 9000);
+
+      try {
+        const res = await fetch(WORKER_URL + path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          signal: controller.signal,
+          cache: "no-store"
+        });
+
+        const text = await res.text();
+        let json = {};
+        try {
+          json = text ? JSON.parse(text) : {};
+        } catch (e) {
+          json = { ok: false, error: text || "bad_response" };
+        }
+
+        if (!res.ok) {
+          throw new Error(json.error || json.message || ("HTTP " + res.status));
+        }
+
+        return json;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function apiVerify(code) {
+      return postJson("/api/verify", {
+        code: code,
+        device_id: deviceId,
+        ts: nowSec(),
+        sign: ""
+      }, 10000);
+    }
+
+    async function apiStatus() {
+      return postJson("/api/status", {
+        device_id: deviceId,
+        ts: nowSec()
+      }, 7000);
+    }
+
+    const input = document.getElementById("codeInput");
+    const btnSubmit = document.getElementById("btnSubmit");
+    const btnRetry = document.getElementById("btnRetry");
+
+    async function checkStatus(showText) {
+      // 先读取 GitHub 静态开关。开了就直接进入；关了才走 Worker 一机一码。
+      if (showText) setMsg("正在检查状态...", "ok");
+
+      const freeCfg = await getFreeModeConfig();
+      if (freeCfg.free_mode === true) {
+        setMsg("免激活模式已开启，正在进入...", "ok");
+        setTimeout(enterRealPage, 300);
+        return;
+      }
+
+      const local = getAct();
+      if (!local || !local.code) {
+        setMsg("请输入激活码。", "warn");
+        return;
+      }
+
+      try {
+        const st = await apiStatus();
+
+        if (st && st.ok && st.active === true) {
+          saveAct(st.code || local.code);
+          setMsg("状态正常，正在进入...", "ok");
+          setTimeout(enterRealPage, 300);
+        } else {
+          setMsg("当前设备未激活，请输入激活码。", "warn");
+        }
+      } catch (e) {
+        if (showText) {
+          if (e && e.name === "AbortError") {
+            setMsg("检查超时：Worker 后端没有返回。", "warn");
+          } else {
+            setMsg("检查失败，请重新验证。", "warn");
+          }
+        } else {
+          setMsg("请输入激活码。", "warn");
+        }
+      }
+    }
+
+    btnSubmit.onclick = async function () {
+      const code = (input.value || "").trim().toUpperCase();
+      if (!code) {
+        setMsg("请先输入激活码");
+        return;
+      }
+
+      btnSubmit.disabled = true;
+      btnRetry.disabled = true;
+      btnSubmit.textContent = "验证中...";
+      setMsg("正在验证中...", "ok");
+
+      try {
+        const ret = await apiVerify(code);
+        if (ret && ret.ok) {
+          saveAct(code);
+          setMsg("激活成功，正在进入...", "ok");
+          setTimeout(enterRealPage, 300);
+        } else {
+          setMsg(mapErr(ret && ret.error));
+        }
+      } catch (e) {
+        if (e && e.name === "AbortError") {
+          setMsg("验证超时：Worker 后端没有返回，请确认 worker.js 已保存并部署。");
+        } else {
+          setMsg(e && e.message ? mapErr(e.message) : "网络异常，请稍后重试");
+        }
+      } finally {
+        btnSubmit.disabled = false;
+        btnRetry.disabled = false;
+        btnSubmit.textContent = "激活并进入";
+      }
+    };
+
+    btnRetry.onclick = function () {
+      checkStatus(true);
+    };
+
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") btnSubmit.click();
+    });
+
+    // 进入页面先静默检查一次本地激活状态
+    checkStatus(false);
+  </script>
+</body>
+</html>
