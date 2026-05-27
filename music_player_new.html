@@ -1802,21 +1802,32 @@ async function setPlaylist(id){
     setStatus('正在加载歌单：'+id);
     let list=[];
     try{
-        // 优先从本地加载（兼容之前本地保存的歌单）
+        // 从本地加载（兼容之前本地保存的歌单）
         list=await TM.loadPlaylist(id,'netease');
-        // 如果本地为空，尝试从API获取
-        if(!Array.isArray(list) || list.length===0){
-            list=await getPlaylistById(id,'netease');
-            // 如果网易云失败，尝试其他平台
-            if(!Array.isArray(list) || list.length===0){
-                list=await getPlaylistById(id,'tencent');
-            }
-            if(!Array.isArray(list) || list.length===0){
-                list=await getPlaylistById(id,'kuwo');
-            }
-        }
     }catch(e){
         list=[];
+    }
+
+    // 如果本地为空，优先从API获取（按优先级：网易云 -> QQ -> 酷我）
+    if(!Array.isArray(list) || list.length===0){
+        setStatus('正在从网获取：'+id);
+        list=await getPlaylistById(id,'netease');
+    }
+    if(!Array.isArray(list) || list.length===0){
+        setStatus('正在从QQ获取：'+id);
+        list=await getPlaylistById(id,'tencent');
+    }
+    if(!Array.isArray(list) || list.length===0){
+        setStatus('正在从酷我获取：'+id);
+        list=await getPlaylistById(id,'kuwo');
+    }
+    if(!Array.isArray(list) || list.length===0){
+        setStatus('正在从酷狗获取：'+id);
+        list=await getPlaylistById(id,'kugou');
+    }
+    if(!Array.isArray(list) || list.length===0){
+        setStatus('正在从咪咕获取：'+id);
+        list=await getPlaylistById(id,'migu');
     }
 
     if(!Array.isArray(list) || list.length===0){
