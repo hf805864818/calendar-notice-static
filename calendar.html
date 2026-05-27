@@ -176,9 +176,23 @@ html,body {
     margin-bottom:6px;
 }
 .main-date { font-size:28px; font-weight:500; }
-.range-date { font-size:12px; color:#666; }
+.range-date {
+    font-size:10px;
+    color:#666;
+    text-align:right;
+    line-height:1.25;
+    max-width:150px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:1px;
+    white-space:nowrap;
+}
+#lunarText { color:#666; font-weight:500; }
+#festivalText { color:#007AFF; font-size:9px; }
 @media (prefers-color-scheme: dark) {
-    .range-date,.weekday { color: #aaa; }
+    .range-date,.weekday,#lunarText { color: #aaa; }
+    #festivalText { color:#0A84FF; }
 }
 
 .week-row {
@@ -219,6 +233,7 @@ html,body {
 }
 .weekday { font-size:10px; color:#777; margin-bottom:2px; }
 .daynum { font-size:16px; }
+
 
 .task-detail {
     background:#f5f5f7;
@@ -320,6 +335,27 @@ html,body {
     color:#999;
     cursor:pointer;
 }
+.task-item.sort-mode {
+    animation: taskShake 0.18s infinite alternate;
+    cursor: grabbing;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+.task-item.dragging {
+    opacity: 0.82;
+    transform: scale(1.02);
+    outline:1px dashed #007AFF;
+    background:#eef6ff !important;
+    z-index:20;
+}
+@keyframes taskShake {
+    0% { transform: rotate(-0.8deg) translateX(-1px); }
+    100% { transform: rotate(0.8deg) translateX(1px); }
+}
+@media (prefers-color-scheme: dark) {
+    .task-item.dragging { outline-color:#0A84FF; background:#26384a !important; }
+}
 .weekly-card.card-shadow .task-item {
     background: #fff;
     box-shadow:0 2px 4px rgba(0,0,0,0.06),0 3px 8px rgba(0,0,0,0.04);
@@ -345,17 +381,18 @@ html,body {
     position:fixed;
     top:0;left:0;
     width:100%;height:100%;
-    background:rgba(0,0,0,0.4);
+    background:#000000;
+    background:rgba(0,0,0,0.6);
     justify-content:center;
     align-items:center;
     z-index:1000;
 }
 .modal-content {
-    background:#fff;
+    background:#ffffff;
     width:360px;
     border-radius:16px;
     padding:16px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
 }
 .modal-content h3 {
     margin-bottom:12px;
@@ -369,13 +406,16 @@ html,body {
 }
 .modal-content input {
     width:100%;
-    padding:8px;
-    border:none;
+    padding:10px;
+    border:1px solid #e5e5e5;
     border-radius:8px;
-    font-size:12px;
-    background:#f5f5f7;
-    box-shadow:inset 0 2px 5px rgba(0,0,0,0.06);
-    outline: none;
+    font-size:14px;
+    font-weight:500;
+    background:#ffffff;
+    color:#000000;
+    box-shadow:none;
+    outline: 2px solid #007AFF;
+    outline-offset: -2px;
 }
 .modal-buttons {
     display:flex;
@@ -391,13 +431,17 @@ html,body {
     cursor:pointer;
     font-size:12px;
 }
-.modal-buttons .cancel { background:#f5f5f7; }
-.modal-buttons .confirm { background:#007AFF; color:#fff; }
+.modal-buttons .cancel { background:#e5e5e5; color:#000000; font-weight:500; }
+.modal-buttons .confirm { background:#007AFF; color:#ffffff; font-weight:500; box-shadow:0 2px 8px rgba(0,122,255,0.3); }
 
 @media (prefers-color-scheme: dark) {
-    .modal-content { background:#1c1c1e; color:#e5e5e5; }
-    .modal-content input { background:#2c2c2e; color:#fff; box-shadow:inset 0 2px 5px rgba(0,0,0,0.25); }
-    .modal-buttons .cancel { background:#2c2c2e; color:#fff; }
+    .modal { background:#000000; background:rgba(0,0,0,0.7); }
+    .modal-content { background:#1c1c1e; color:#e5e5e5; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .modal-content h3 { color:#ffffff; font-size:16px; font-weight:600; }
+    .modal-content input { background:#ffffff; color:#000000; border:1px solid #444; box-shadow:none; outline: 2px solid #0a84ff; outline-offset: -2px; font-size:14px; font-weight:500; }
+    .modal-buttons .cancel { background:#ffffff; color:#000000; font-weight:500; }
+    .modal-buttons .confirm { background:#0a84ff; color:#ffffff; font-weight:500; box-shadow:0 2px 8px rgba(10,132,255,0.4); }
+    .modal-buttons .confirm { background:#0a84ff; }
 }
 </style>
 </head>
@@ -448,7 +492,7 @@ html,body {
 
     <div class="year-month">
         <div class="main-date" id="yearMonth"></div>
-        <div class="range-date" id="weekRange"></div>
+        <div class="range-date" id="weekRange"><span id="lunarText"></span><span id="festivalText"></span></div>
     </div>
     <div class="week-row" id="weekRow"></div>
 
@@ -647,7 +691,17 @@ var hitokotoKey = "hitokoto_cache";
 
 var weekArr = ["周日","周一","周二","周三","周四","周五","周六"];
 
+var lunarInfo = [0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5d0,0x14573,0x052d0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04afb,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];
+var lunarMonthName = ["正月","二月","三月","四月","五月","六月","七月","八月","九月","十月","冬月","腊月"];
+var lunarDayName = ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十","廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
+var solarFestivals = {"1-1":"元旦","2-14":"情人节","3-8":"妇女节","3-12":"植树节","4-1":"愚人节","5-1":"劳动节","5-4":"青年节","5-20":"520","6-1":"儿童节","7-1":"建党节","8-1":"建军节","9-10":"教师节","10-1":"国庆节","10-31":"万圣节","12-24":"平安夜","12-25":"圣诞节"};
+var lunarFestivals = {"1-1":"春节","1-15":"元宵节","2-2":"龙抬头","5-5":"端午节","7-7":"七夕节","7-15":"中元节","8-15":"中秋节","9-9":"重阳节","12-8":"腊八节","12-23":"小年"};
+
 let needRefreshHitokoto = false;
+var sortingTaskIndex = -1;
+var longPressTimer = null;
+var dragTaskIndex = -1;
+var isTaskDragging = false;
 
 if(localStorage.getItem(effectKey)) effectNow = localStorage.getItem(effectKey);
 if(localStorage.getItem(saveName)) taskData = JSON.parse(localStorage.getItem(saveName));
@@ -660,6 +714,69 @@ function saveColor(){localStorage.setItem(colorKey, colorNow);}
 function saveHitokoto(txt){localStorage.setItem(hitokotoKey, txt);}
 // 读取一言缓存
 function getCacheHitokoto(){return localStorage.getItem(hitokotoKey) || "认真生活，温柔前行";}
+
+function lYearDays(y){var sum=348;for(var i=0x8000;i>0x8;i>>=1){sum+=(lunarInfo[y-1900]&i)?1:0;}return sum+leapDays(y);}
+function leapMonth(y){return lunarInfo[y-1900]&0xf;}
+function leapDays(y){return leapMonth(y)?((lunarInfo[y-1900]&0x10000)?30:29):0;}
+function monthDays(y,m){return (lunarInfo[y-1900]&(0x10000>>m))?30:29;}
+function solarToLunar(date){
+    var baseDate = new Date(1900,0,31);
+    var offset = Math.floor((new Date(date.getFullYear(),date.getMonth(),date.getDate()) - baseDate)/86400000);
+    var year,month,day,isLeap=false,temp=0;
+    for(year=1900;year<2050 && offset>0;year++){temp=lYearDays(year);offset-=temp;}
+    if(offset<0){offset+=temp;year--;}
+    var leap = leapMonth(year);
+    for(month=1;month<13 && offset>0;month++){
+        if(leap>0 && month===(leap+1) && !isLeap){--month;isLeap=true;temp=leapDays(year);}else{temp=monthDays(year,month);}
+        if(isLeap && month===(leap+1)) isLeap=false;
+        offset-=temp;
+    }
+    if(offset===0 && leap>0 && month===leap+1){if(isLeap){isLeap=false;}else{isLeap=true;--month;}}
+    if(offset<0){offset+=temp;--month;}
+    day = offset + 1;
+    return {year:year,month:month,day:day,isLeap:isLeap,monthText:(isLeap?"闰":"")+lunarMonthName[month-1],dayText:lunarDayName[day-1]};
+}
+function getQingMingDay(y){
+    var day = Math.floor(y*0.2422 + 4.81) - Math.floor(y/4);
+    return day < 4 ? 4 : day;
+}
+function getFestivalName(date){
+    var sm = date.getMonth()+1, sd = date.getDate();
+    var solarKey = sm+"-"+sd;
+    if(sm===4 && sd===getQingMingDay(date.getFullYear())) return "清明节";
+    if(solarFestivals[solarKey]) return solarFestivals[solarKey];
+    var lunar = solarToLunar(date);
+    var lunarKey = lunar.month+"-"+lunar.day;
+    if(lunar.month===12 && lunar.day===monthDays(lunar.year,12)) return "除夕";
+    return lunarFestivals[lunarKey] || "";
+}
+function daysBetween(a,b){
+    var da = new Date(a.getFullYear(),a.getMonth(),a.getDate());
+    var db = new Date(b.getFullYear(),b.getMonth(),b.getDate());
+    return Math.round((db-da)/86400000);
+}
+function getNearestFestival(date){
+    var todayName = getFestivalName(date);
+    if(todayName) return {name:todayName,days:0};
+    for(var i=1;i<=370;i++){
+        var d = new Date(date);
+        d.setDate(date.getDate()+i);
+        var name = getFestivalName(d);
+        if(name) return {name:name,days:i};
+    }
+    return null;
+}
+function renderLunarFestival(){
+    var lunarEl = document.getElementById("lunarText");
+    var festivalEl = document.getElementById("festivalText");
+    if(!lunarEl || !festivalEl) return;
+    var today = new Date(year,month-1,day);
+    var lunar = solarToLunar(today);
+    var fest = getNearestFestival(today);
+    var festText = fest ? (fest.days===0 ? fest.name : fest.name+" 还剩"+fest.days+"天") : "";
+    lunarEl.textContent = "农历"+lunar.monthText+lunar.dayText;
+    festivalEl.textContent = festText;
+}
 
 function isDark(){
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -709,8 +826,10 @@ function renderWeek(){
 
     document.getElementById("yearMonth").innerText = start.getFullYear()+" 年 "+(start.getMonth()+1)+" 月";
     var sDate = (start.getMonth()+1)+"/"+start.getDate();
-    var eDate = (start.getMonth()+1)+"/"+(start.getDate()+6);
-    document.getElementById("weekRange").innerText = sDate+" - "+eDate;
+    var end = new Date(start);
+    end.setDate(start.getDate()+6);
+    var eDate = (end.getMonth()+1)+"/"+end.getDate();
+    renderLunarFestival();
 
     var arr = ["一","二","三","四","五","六","日"];
     var box = document.getElementById("weekRow");
@@ -726,6 +845,9 @@ function renderWeek(){
 
         dom.addEventListener("click", async function(){
             selectDate = new Date(this.dataset.date);
+            sortingTaskIndex = -1;
+    dragTaskIndex = -1;
+    isTaskDragging = false;
             document.querySelectorAll(".day-card").forEach(el=>el.classList.remove("active"));
             this.classList.add("active");
 
@@ -748,6 +870,7 @@ function renderWeek(){
         dom.appendChild(daynumEl);
         box.appendChild(dom);
     }
+    renderLunarFestival();
 }
 
 async function renderTask(){
@@ -782,9 +905,20 @@ async function renderTask(){
     }
 
     let fontSize = arr.length === 1 ? "16px" : "12px";
+    if(sortingTaskIndex >= arr.length) sortingTaskIndex = -1;
     for(var i=0;i<arr.length;i++){
         var item = document.createElement("div");
-        item.className = "task-item";
+        item.className = "task-item" + (sortingTaskIndex >= 0 ? " sort-mode" : "") + (dragTaskIndex===i ? " dragging" : "");
+        item.dataset.index = i;
+        item.addEventListener("touchstart", (function(idx){ return function(e){ startTaskLongPress(idx, e); }; })(i), {passive:false});
+        item.addEventListener("touchmove", handleTaskDragMove, {passive:false});
+        item.addEventListener("touchend", endTaskDrag);
+        item.addEventListener("touchcancel", endTaskDrag);
+        item.addEventListener("mousedown", (function(idx){ return function(e){ startTaskLongPress(idx, e); }; })(i));
+        item.addEventListener("mousemove", handleTaskDragMove);
+        item.addEventListener("mouseup", endTaskDrag);
+        item.addEventListener("mouseleave", function(){ if(!isTaskDragging) clearTaskLongPress(); });
+
         var info = document.createElement("div");
         info.className = "info";
         var taskText = document.createElement("div");
@@ -800,8 +934,12 @@ async function renderTask(){
         var opt = document.createElement("div");
         opt.className = "task-opt";
         var btn = document.createElement("button");
-        btn.textContent = "删除";
-        btn.addEventListener("click", (function(idx){ return function(){ delTask(idx); }; })(i));
+        btn.textContent = sortingTaskIndex >= 0 ? "排序" : "删除";
+        btn.addEventListener("click", (function(idx){ return function(e){
+            e.stopPropagation();
+            if(sortingTaskIndex >= 0){ return; }
+            delTask(idx);
+        }; })(i));
         opt.appendChild(btn);
         item.appendChild(info);
         item.appendChild(opt);
@@ -809,9 +947,82 @@ async function renderTask(){
     }
 }
 
+function getSelectKey(){
+    return selectDate.getFullYear()+"-"+(selectDate.getMonth()+1)+"-"+selectDate.getDate();
+}
+function getPointY(e){
+    if(e.touches && e.touches.length) return e.touches[0].clientY;
+    if(e.changedTouches && e.changedTouches.length) return e.changedTouches[0].clientY;
+    return e.clientY;
+}
+function startTaskLongPress(idx,e){
+    clearTaskLongPress();
+    longPressTimer = setTimeout(function(){
+        sortingTaskIndex = idx;
+        dragTaskIndex = idx;
+        isTaskDragging = true;
+        if(navigator.vibrate) navigator.vibrate(18);
+        renderTask();
+    }, 450);
+}
+function clearTaskLongPress(){
+    if(longPressTimer){
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+}
+function handleTaskDragMove(e){
+    if(!isTaskDragging){
+        clearTaskLongPress();
+        return;
+    }
+    if(e && e.preventDefault) e.preventDefault();
+    var y = getPointY(e);
+    var items = Array.from(document.querySelectorAll("#taskList .task-item"));
+    if(!items.length) return;
+    var targetIdx = dragTaskIndex;
+    for(var i=0;i<items.length;i++){
+        var rect = items[i].getBoundingClientRect();
+        if(y >= rect.top && y <= rect.bottom){
+            targetIdx = parseInt(items[i].dataset.index,10);
+            break;
+        }
+    }
+    if(targetIdx !== dragTaskIndex && targetIdx >= 0){
+        reorderTask(dragTaskIndex,targetIdx,true);
+    }
+}
+function reorderTask(fromIdx,toIdx,keepDragging){
+    var k = getSelectKey();
+    var arr = taskData[k] || [];
+    if(fromIdx < 0 || toIdx < 0 || fromIdx >= arr.length || toIdx >= arr.length || fromIdx === toIdx) return;
+    var item = arr.splice(fromIdx,1)[0];
+    arr.splice(toIdx,0,item);
+    sortingTaskIndex = toIdx;
+    dragTaskIndex = toIdx;
+    saveTask();
+    renderTask();
+    if(keepDragging) isTaskDragging = true;
+}
+function endTaskDrag(){
+    clearTaskLongPress();
+    if(isTaskDragging){
+        saveTask();
+        isTaskDragging = false;
+        dragTaskIndex = -1;
+        sortingTaskIndex = -1;
+    dragTaskIndex = -1;
+    isTaskDragging = false;
+        renderTask();
+    }
+}
+
 window.delTask = function(idx){
-    var k = selectDate.getFullYear()+"-"+(selectDate.getMonth()+1)+"-"+selectDate.getDate();
+    var k = getSelectKey();
     taskData[k].splice(idx,1);
+    sortingTaskIndex = -1;
+    dragTaskIndex = -1;
+    isTaskDragging = false;
 
     if(taskData[k].length === 0){
         needRefreshHitokoto = true;
@@ -839,6 +1050,9 @@ function addNewTaskFromModal(){
     var k = selectDate.getFullYear()+"-"+(selectDate.getMonth()+1)+"-"+selectDate.getDate();
     if(!taskData[k]) taskData[k] = [];
     taskData[k].push({content,startTime:start,endTime:end});
+    sortingTaskIndex = -1;
+    dragTaskIndex = -1;
+    isTaskDragging = false;
     saveTask();
     renderTask();
     closeModal();
@@ -858,6 +1072,9 @@ function bindEvent(){
     document.getElementById("goToday").addEventListener("click", function(){
         currentDate = new Date(year,month-1,day);
         selectDate  = new Date(year,month-1,day);
+        sortingTaskIndex = -1;
+    dragTaskIndex = -1;
+    isTaskDragging = false;
         needRefreshHitokoto = true;
         renderWeek();
         renderTask();

@@ -569,8 +569,23 @@
         <div style="display:flex;gap:6px;margin-top:8px">
             <div class="btn" onclick="closeModal(inputModal)">取消</div>
             <div class="btn" onclick="clearPlaylistHistory()">清空历史</div>
-            <div class="btn" onclick="clearCustomCovers()">清空图片</div>
+            <div class="btn" onclick="openCustomApiModal()">自定义接口</div>
             <div class="btn" onclick="setPlaylist()">确定</div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="customApiModal">
+    <div class="modalBox">
+        <div style="display:flex;justify-content:space-between">
+            <div>自定义解析接口</div>
+            <div onclick="closeModal(customApiModal)">关闭</div>
+        </div>
+        <div class="sourceStatus">每行一个接口，支持占位符：{id} {level} {source} {name} {artist}</div>
+        <textarea id="customApiInput" class="apiInput" style="height:110px;resize:none" placeholder="例如：https://example.com/api?id={id}&level={level}"></textarea>
+        <div style="display:flex;gap:6px;margin-top:8px">
+            <div class="btn" onclick="closeModal(customApiModal)">取消</div>
+            <div class="btn" onclick="saveCustomApis()">保存</div>
         </div>
     </div>
 </div>
@@ -803,6 +818,8 @@ const dom = {
     customCoverBox: document.getElementById('customCoverBox'),
     customCoverFile: document.getElementById('customCoverFile'),
     apiTextDisplay: document.getElementById('apiTextDisplay'),
+    customApiModal: document.getElementById('customApiModal'),
+    customApiInput: document.getElementById('customApiInput'),
     searchModal: document.getElementById('searchModal'),
     searchInput: document.getElementById('searchInput'),
     qualitySelect: document.getElementById('qualitySelect'),
@@ -876,6 +893,17 @@ const AGG_APIS = {
         kw: 'http://music.nxinxz.com/kw.php?id={id}&level={level}&type=mp3',
         kg: 'https://music.nxinxz.com/kgqq/kg.php?id={id}&level={level}&type=mp3',
         mg: 'http://music.nxinxz.com/mg.php?id={id}&level={level}&type=mp3'
+    },
+    // 从用户提供的 cqapi/kw.js、kg.js、qq.js 反解出的可直接调用模板
+    haitangPlugin: {
+        kw: 'http://musicapi.haitangw.net/music/kw.php?id={id}&level={htLevel}',
+        kg: 'https://music-api2.cenguigui.cn/?kg&id={id}&type=song&level={htLevel}',
+        tx: 'http://musicapi.haitangw.net/music/qq_song_kw.php?id={mid}&type=json&level={htLevel}'
+    },
+    // 咪咕音乐API（基于 xiaomi.js 反解）
+    xiaomi: {
+        search: 'https://m.music.migu.cn/v3/search',
+        lyric: 'https://m.music.migu.cn/v3/search'
     }
 };
 
@@ -885,10 +913,13 @@ const QUALITY_ORDER = ['master','hires','flac24bit','24bit','flac','320k','128k'
 const MAIN_BR = { '128k':'128', '192k':'192', '320k':'320', 'flac':'740', 'flac24bit':'999', '24bit':'999', 'hires':'999', 'master':'999' };
 const QQ_BR = { '128k':7, '320k':5, 'flac':4, 'hires':3, 'master':1, '24bit':1, 'flac24bit':1 };
 const KW_BR = { 'flac':1, '320k':5, '128k':7, '24bit':1, 'flac24bit':1, 'hires':1, 'master':1 };
+const HAITANG_LEVEL = { '128k':'standard', '320k':'exhigh', 'flac':'lossless', 'hires':'hires', 'master':'hires', '24bit':'hires', 'flac24bit':'hires' };
+function htLevel(q){ return HAITANG_LEVEL[q] || 'exhigh'; }
 
 let preferredQuality = localStorage.preferredQuality || 'auto';
 let resolving = false;
 let failoverLock = false;
+let customApis = [];
 
 let statusTimer=null;
 function showTempStatus(t, ms=1400){
@@ -1066,6 +1097,68 @@ async function searchOne(url, sourceHint) {
     try { return normalizeList(await fetchJson(url), sourceHint); } catch(e) { return []; }
 }
 
+// 咪咕音乐搜索（基于 xiaomi.js 反解）
+async function searchMigu(keyword) {
+    const params = new URLSearchParams({
+        keyword: keyword,
+        type: '2', // 2=音乐搜索
+        pgc: '1',
+        rows: '20'
+    });
+
+    const headers = {
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Connection': 'keep-alive',
+        'Content-Type': 'application/json;charset=UTF-8',
+        'Host': 'm.music.migu.cn',
+        'Referer': `https://m.music.migu.cn/v3/search?keyword=${encodeURIComponent(keyword)}`,
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+
+    try {
+        const response = await fetch(`https://m.music.migu.cn/v3/search?${params.toString()}`, {
+            method: 'GET',
+            headers: headers,
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            return [];
+        }
+
+        const data = await response.json();
+        
+        // 咪咕搜索结果标准化
+        if (data && data.musics && Array.isArray(data.musics)) {
+            return data.musics.map(item => ({
+                id: item.id,
+                name: item.songName || item.title,
+                artist: item.singer || item.singerName || item.artist,
+                album: item.album || item.albumName,
+                pic: item.artwork || item.albumPic || item.img || '',
+                url: item.flac || item['320kmp3'] || item['128kmp3'] || item.mp3 || '',
+                lrc: item.lrc || item.lyricLrc || '',
+                copyrightId: item.copyrightId || '',
+                singerId: item.singerId || '',
+                source: 'mg',
+                sourceName: '咪咕',
+                raw: item // 保留原始数据用于解析
+            }));
+        }
+
+        return [];
+    } catch (error) {
+        console.error('咪咕搜索失败:', error);
+        return [];
+    }
+}
+
 async function searchMusic() {
     const kw = dom.searchInput.value.trim();
     if (!kw) return;
@@ -1078,6 +1171,8 @@ async function searchMusic() {
     // 汽水 VIP 接口已失效，禁用搜索，避免 404 拖慢
     // tasks.push(searchOne(withParams(AGG_APIS.qsVip, { act:'search', keywords:kw, page:1, pagesize:30, type:'music' }), 'qsvip'));
     // tasks.push(searchOne(withParams(AGG_APIS.qsVipBak, { act:'search', keywords:kw, page:1, pagesize:30, type:'music' }), 'qsvip'));
+    // 咪咕音乐搜索（基于 xiaomi.js 反解）
+    tasks.push(searchMigu(kw));
     const results = (await Promise.allSettled(tasks)).flatMap(r => r.status === 'fulfilled' ? r.value : []);
     const seen = new Set();
     playlist = results.filter(s => {
@@ -1097,8 +1192,45 @@ function openSearch() {
     if (dom.qualitySelect) dom.qualitySelect.value = preferredQuality;
 }
 
+function applyCustomApiTemplate(tpl, s, id, q, source){
+    return tpl
+        .replaceAll('{id}', encodeURIComponent(id||''))
+        .replaceAll('{level}', encodeURIComponent(q||''))
+        .replaceAll('{quality}', encodeURIComponent(q||''))
+        .replaceAll('{source}', encodeURIComponent(source||''))
+        .replaceAll('{name}', encodeURIComponent(s.name||''))
+        .replaceAll('{artist}', encodeURIComponent(s.artist||''));
+}
+function loadCustomApis(){
+    try{customApis=JSON.parse(localStorage.getItem('customResolveApis')||'[]')||[]}catch(e){customApis=[]}
+    customApis=customApis.filter(Boolean);
+}
+function openCustomApiModal(){
+    loadCustomApis();
+    if(dom.customApiInput)dom.customApiInput.value=customApis.join('\n');
+    if(dom.customApiModal)dom.customApiModal.style.display='flex';
+}
+function saveCustomApis(){
+    const lines=(dom.customApiInput?.value||'').split('\n').map(x=>x.trim()).filter(x=>x&&/^https?:\/\//i.test(x));
+    customApis=[...new Set(lines)];
+    localStorage.setItem('customResolveApis',JSON.stringify(customApis));
+    closeModal(dom.customApiModal);
+    showTempStatus('已保存自定义接口：'+customApis.length+'条');
+}
 async function resolveSongUrl(s) {
     if (s.url) return s.url;
+    
+    // 咪咕音乐直接从raw数据中提取URL
+    if (s.source === 'mg' && s.raw) {
+        const formats = ['flac', '320kmp3', '128kmp3', 'mp3'];
+        for (const format of formats) {
+            if (s.raw[format] && typeof s.raw[format] === 'string' && s.raw[format].startsWith('http')) {
+                setStatus('咪咕播放链接：' + format);
+                return s.raw[format];
+            }
+        }
+    }
+    
     const id = safeSongId(s.raw || s) || s.id;
     const source = ['wy','tx','kw','kg','mg'].includes(s.source) ? s.source : 'wy';
     const qualities = qualityChain(preferredQuality);
@@ -1113,6 +1245,15 @@ async function resolveSongUrl(s) {
         if(AGG_APIS.changqingV12[source])attempts.push({name:'长青SVIP v1.2',url:AGG_APIS.changqingV12[source].replace('{id}',encodeURIComponent(id)).replace('{level}',q)});
         if(AGG_APIS.changqing[source])attempts.push({name:'长青SVIP',url:AGG_APIS.changqing[source].replace('{id}',encodeURIComponent(id)).replace('{level}',q)});
         if(AGG_APIS.nianxin[source])attempts.push({name:'念心SVIP',url:AGG_APIS.nianxin[source].replace('{id}',encodeURIComponent(id)).replace('{level}',q)});
+        if(AGG_APIS.haitangPlugin[source]){
+            const mid = s.songmid || s.mid || s.raw?.songmid || s.raw?.mid || id;
+            attempts.push({name:'海棠插件反解',url:AGG_APIS.haitangPlugin[source]
+                .replace('{id}',encodeURIComponent(id))
+                .replace('{mid}',encodeURIComponent(mid))
+                .replace('{level}',encodeURIComponent(q))
+                .replace('{htLevel}',encodeURIComponent(htLevel(q)))});
+        }
+        customApis.forEach((tpl,idx)=>attempts.push({name:'自定义接口'+(idx+1),url:applyCustomApiTemplate(tpl,s,id,q,source)}));
     }
     for(const a of attempts){
         try{
@@ -1157,6 +1298,7 @@ let isDragging=false;
 let loopFlashTimer=null;
 
 (async ()=>{
+    loadCustomApis();
     let m=await loadData('loopMode');
     if(m!==null)loopMode=Number(m);
     if(loopMode===0)loopMode=1;
@@ -1224,12 +1366,29 @@ function getRandomIndex(){
 function prevSong(){
     if(!playlist.length)return;
     currentIndex = loopMode===3 ? getRandomIndex() : (currentIndex-1+playlist.length)%playlist.length;
-    loadSong(currentIndex,true).catch(()=>autoFailover());
+    loadSong(currentIndex,true).catch(()=>safePlayNextOnFail());
 }
 function nextSong(){
     if(!playlist.length)return;
     currentIndex = loopMode===3 ? getRandomIndex() : (currentIndex+1)%playlist.length;
-    loadSong(currentIndex,true).catch(()=>autoFailover());
+    loadSong(currentIndex,true).catch(()=>safePlayNextOnFail());
+}
+async function safePlayNextOnFail(){
+    if(!playlist.length)return;
+    if(failoverLock)return;
+    failoverLock=true;
+    const start=currentIndex;
+    for(let step=1; step<=playlist.length; step++){
+        const idx = loopMode===3 ? getRandomIndex() : ((start+step)%playlist.length);
+        currentIndex=idx;
+        try{
+            await loadSong(currentIndex,true);
+            failoverLock=false;
+            return;
+        }catch(e){}
+    }
+    failoverLock=false;
+    setStatus('全部歌曲解析失败');
 }
 function handleSongEnd(){
     if(loopMode===2){audio.currentTime=0;audio.play()}
@@ -1275,7 +1434,7 @@ audio.ontimeupdate=()=>{
 
 audio.onplay=audio.onpause=updatePlayIcon;
 audio.onended=handleSongEnd;
-audio.onerror=autoFailover;
+audio.onerror=()=>safePlayNextOnFail();
 audio.onloadedmetadata=updateTimeDisplay;
 
 function renderSingleLyric(line){
@@ -1374,6 +1533,15 @@ async function loadLyric(u, song){
     lyrics=[];currentLyricIndex=-1;currentWords=[];
     try{
         let txt = u || '';
+        
+        // 咪咕音乐歌词处理（从raw数据中提取）
+        if (song?.source === 'mg' && song?.raw) {
+            const miguLyric = song.raw.lrc || song.raw.lyricLrc || '';
+            if (miguLyric && !/^https?:\/\//i.test(miguLyric.trim())) {
+                txt = miguLyric; // 直接使用歌词文本
+            }
+        }
+        
         // 有些接口直接返回歌词文本，有些返回歌词 URL
         if (/^https?:\/\//i.test(txt.trim())) txt = await fetch(txt).then(r=>r.text());
         if (!parseLyricText(txt).length && song) {
@@ -1475,7 +1643,7 @@ function renderList(){
         d.innerHTML=`<div class="list-info"><div class="list-title">${i+1}. ${escapeHtml(s.name||'未知')}${i===currentIndex?'<span class="list-badge">正在播放</span>':''}</div><div class="list-meta">${escapeHtml(s.artist||'未知歌手')} · ${escapeHtml(s.sourceName||s.source||'')}</div></div><img class="list-cover" data-idx="${i}" src="${cover}" onerror="this.src='${DEFAULT_COVER}'">`;
         d.onclick=async ()=>{
             currentIndex=i;
-            try{await loadSong(i,true);closeModal(dom.listModal)}catch(e){setStatus('播放失败：'+(e.message||e));autoFailover()}
+            try{await loadSong(i,true);closeModal(dom.listModal)}catch(e){setStatus('解析失败，自动切换下一首...');safePlayNextOnFail();closeModal(dom.listModal)}
         };
         dom.listBox.appendChild(d);
     });
@@ -1498,14 +1666,38 @@ function renderPlaylistHistory(){
     dom.historyBox.innerHTML=h.length?h.map(x=>`<div class="history-item" onclick="setPlaylist('${x}')">${x}</div>`).join(''):'<div style="text-align:center;color:#777;font-size:12px">暂无历史</div>';
 }
 async function setPlaylist(id){
-    id=id||dom.playlistInput.value.trim();
-    if(!id)return;
-    currentPlaylistID=id;savePlaylistHistory(id);closeModal(dom.inputModal);
+    id=(id||dom.playlistInput.value||'').trim();
+    if(!id){
+        showTempStatus('请输入歌单ID');
+        return;
+    }
+    if(!/^\d{5,}$/.test(id)){
+        showTempStatus('歌单ID格式不正确');
+        return;
+    }
+
+    setStatus('正在加载歌单：'+id);
+    let list=[];
     try{
-        playlist=await TM.loadPlaylist(id,'netease');
-    }catch(e){playlist=[]}
-    playlist=playlist.map(s=>({...s,source:s.source||'wy',sourceName:s.sourceName||'网易云',pic:pickImageUrl(s)||pickImageUrl(s.raw)||s.pic||'',lrc:pickLyricValue(s)||s.lrc||''}));
-    currentIndex=0;renderList();await loadSong(0);
+        list=await TM.loadPlaylist(id,'netease');
+    }catch(e){
+        list=[];
+    }
+
+    if(!Array.isArray(list) || list.length===0){
+        showTempStatus('歌单加载失败或为空，请检查ID');
+        return;
+    }
+
+    currentPlaylistID=id;
+    saveData('playlist.txt',id);
+    savePlaylistHistory(id);
+    playlist=list.map(s=>({...s,source:s.source||'wy',sourceName:s.sourceName||'网易云',pic:pickImageUrl(s)||pickImageUrl(s.raw)||s.pic||'',lrc:pickLyricValue(s)||s.lrc||''}));
+    currentIndex=0;
+    closeModal(dom.inputModal);
+    renderList();
+    await loadSong(0,false);
+    showTempStatus('歌单加载成功：'+playlist.length+'首');
 }
 function clearPlaylistHistory(){localStorage.removeItem('playlistHistory');renderPlaylistHistory()}
 
@@ -1755,8 +1947,9 @@ async function playSquareSong(i){
         await loadSong(i,true);
         closeModal(dom.mediaModal);
     }catch(e){
-        setSquareStatus('播放失败，正在尝试下一首...');
-        autoFailover();
+        setSquareStatus('当前歌曲解析失败，自动切换下一首...');
+        await safePlayNextOnFail();
+        closeModal(dom.mediaModal);
     }
 }
 function escapeHtml(s){return String(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
