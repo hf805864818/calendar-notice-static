@@ -2028,6 +2028,14 @@ function bindCustomCoverEvents(){
         if(Math.abs(dx)>50&&Math.abs(dy)<100){dx>0?prevCustomCover():nextCustomCover();startCustomCoverAuto()}
     });
 }
+function pauseMusicCardAnimation(){ stopCustomCoverAuto(); }
+function resumeMusicCardAnimation(){ startCustomCoverAuto(); }
+window.addEventListener('message', function(e){
+    const d=e.data;
+    if(!d || d.type!=='music-card-animation') return;
+    if(d.action==='pause') pauseMusicCardAnimation();
+    if(d.action==='resume') resumeMusicCardAnimation();
+});
 loadCustomCovers();
 bindCustomCoverEvents();
 
