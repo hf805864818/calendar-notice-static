@@ -1266,6 +1266,50 @@ async function searchMusic() {
     openPlaylist();
 }
 
+// ✅ 新增：从聚合API获取歌单
+async function getPlaylistById(id, platform = 'netease') {
+    try {
+        const params = new URLSearchParams({
+            types: 'playlist',
+            source: platform,
+            id: id,
+            count: 100,
+            pages: 1
+        });
+        const url = withParams(AGG_APIS.main, params);
+        const data = await fetchJson(url, 10000);
+        if (!data || !data.data) return [];
+        
+        // 从不同可能的字段提取歌曲列表
+        let list = data.data.tracks || data.data.songs || data.data.list || [];
+        if (!Array.isArray(list)) list = data.data ? [data.data] : [];
+        
+        return list.map(x => {
+            const name = x.name || x.songname || x.songName || x.title || x.song || '';
+            const artist = x.artist || x.singer || x.author || x.singername || x.artistName || (Array.isArray(x.artists) ? x.artists.map(a=>a.name).join('/') : '') || (Array.isArray(x.ar) ? x.ar.map(a=>a.name).join('/') : '') || '';
+            const source = x.source || x.platform || platform;
+            const pic = pickImageUrl(x) || pickImageUrl(x.al) || pickImageUrl(x.album) || '';
+            return {
+                name, artist,
+                pic: pic,
+                pic_id: safePicId(x) || safePicId(x.al) || safePicId(x.album) || x.pic_id || '',
+                lrc: x.lrc || x.lyric || '',
+                url: pickUrl(x),
+                source,
+                sourceName: SRC_NAME[source] || source,
+                raw: x,
+                id: x.id || x.songid || x.songId || x.mid || x.songmid || x.hash || '',
+                songmid: x.songmid || x.mid || '',
+                hash: x.hash || '',
+                album_id: x.album_id || x.albumId || x.album?.id || x.al?.id || ''
+            };
+        }).filter(s => s.name || s.id || s.url);
+    } catch (e) {
+        console.warn('歌单获取失败:', e);
+        return [];
+    }
+}
+
 function openSearch() {
     dom.searchModal.style.display = 'flex';
     if (dom.qualitySelect) dom.qualitySelect.value = preferredQuality;
@@ -1758,7 +1802,19 @@ async function setPlaylist(id){
     setStatus('正在加载歌单：'+id);
     let list=[];
     try{
+        // 优先从本地加载（兼容之前本地保存的歌单）
         list=await TM.loadPlaylist(id,'netease');
+        // 如果本地为空，尝试从API获取
+        if(!Array.isArray(list) || list.length===0){
+            list=await getPlaylistById(id,'netease');
+            // 如果网易云失败，尝试其他平台
+            if(!Array.isArray(list) || list.length===0){
+                list=await getPlaylistById(id,'tencent');
+            }
+            if(!Array.isArray(list) || list.length===0){
+                list=await getPlaylistById(id,'kuwo');
+            }
+        }
     }catch(e){
         list=[];
     }
