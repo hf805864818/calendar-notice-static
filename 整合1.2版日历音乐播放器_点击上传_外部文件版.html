@@ -1,8 +1,8 @@
-<!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
 <title>日历音乐双卡片整合版 - 点击上传_外部文件版</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -29,12 +29,12 @@ html,body{width:100%;height:330px;background:transparent;font-family:-apple-syst
 @keyframes fly{0%{opacity:0;transform:translate3d(0,0,0) scale(.2)}22%{opacity:1}100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) scale(1.2)}}
 @keyframes pop{0%{opacity:0;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}
 </style>
-</head>
+<meta name="viewport" content="width=390, initial-scale=1.0, user-scalable=yes"></head>
 <body>
 <div class="dual-wrap">
   <div class="flash" id="flash"></div><div class="particles" id="particles"></div>
   <button class="weekly-hotspot" id="toMusic" aria-label="切换到音乐播放器"></button>
-  <button class="back-btn" id="toCalendar" aria-label="返回日历"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="back-btn" id="toCalendar" aria-label="返回日历"><svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
   <div class="stage">
     <section class="panel active" id="calPanel"><iframe id="calendarFrame" class="card-iframe" src="calendar.html" scrolling="no"></iframe></section>
     <section class="panel" id="musPanel"><iframe id="musicFrame" class="card-iframe" src="music_player_new.html" scrolling="no" allow="autoplay"></iframe></section>
@@ -86,5 +86,5 @@ window.addEventListener('load', function() {
     }, 500);
 });
 </script>
-</body>
-</html>
+
+</body></html>
