@@ -1268,69 +1268,82 @@ async function searchMusic() {
 
 // ✅ 新增：从聚合API获取歌单
 async function getPlaylistById(id, platform = 'netease') {
-    try {
-        // 注意：withParams 只接受普通对象，不能传 URLSearchParams
-        const url = withParams(AGG_APIS.main, {
-            types: 'playlist',
-            source: platform,
-            id: id,
-            count: 100,
-            pages: 1
-        });
-        const data = await fetchJson(url, 12000);
-        console.log('[歌单ID搜索]', platform, id, data);
+    // 稳定歌单接口：Meting 系列，支持网易/QQ/酷我/酷狗等歌单ID尝试
+    const normalizeServer = p => {
+        if(p==='wy')return 'netease';
+        if(p==='tx')return 'tencent';
+        if(p==='kw')return 'kuwo';
+        if(p==='kg')return 'kugou';
+        if(p==='mg')return 'migu';
+        return p || 'netease';
+    };
+    const server = normalizeServer(platform);
+    const shortMap = {netease:'wy', tencent:'tx', kuwo:'kw', kugou:'kg', migu:'mg'};
+    const short = shortMap[server] || server;
+    const displayName = SRC_NAME[short] || server;
 
-        if (!data) return [];
+    const urls = [
+        `https://api.injahow.cn/meting/?server=${encodeURIComponent(server)}&type=playlist&id=${encodeURIComponent(id)}`,
+        `https://api.i-meto.com/meting/api?server=${encodeURIComponent(server)}&type=playlist&id=${encodeURIComponent(id)}`
+    ];
 
-        // 兼容多种接口返回结构
-        let root = data.data || data.result || data;
-        let list = [];
-        if (Array.isArray(root)) list = root;
-        else if (Array.isArray(root.tracks)) list = root.tracks;
-        else if (Array.isArray(root.songs)) list = root.songs;
-        else if (Array.isArray(root.list)) list = root.list;
-        else if (Array.isArray(root.musicList)) list = root.musicList;
-        else if (Array.isArray(root.songlist)) list = root.songlist;
-        else if (Array.isArray(root.playlist)) list = root.playlist;
-        else if (root.playlist && Array.isArray(root.playlist.tracks)) list = root.playlist.tracks;
-        else if (root.data && Array.isArray(root.data)) list = root.data;
-        else if (root.data && Array.isArray(root.data.tracks)) list = root.data.tracks;
+    for(const url of urls){
+        try{
+            const data = await fetchJson(url, 15000);
+            console.log('[歌单ID搜索]', server, url, data);
+            if(!data) continue;
+            if(data.error || data.code===404 || data.code===400) continue;
 
-        if (!Array.isArray(list) || !list.length) return [];
+            let list=[];
+            const root = data.data || data.result || data;
+            if(Array.isArray(root)) list=root;
+            else if(Array.isArray(root.tracks)) list=root.tracks;
+            else if(Array.isArray(root.songs)) list=root.songs;
+            else if(Array.isArray(root.list)) list=root.list;
+            else if(Array.isArray(root.songlist)) list=root.songlist;
+            else if(root.playlist && Array.isArray(root.playlist.tracks)) list=root.playlist.tracks;
+            else if(root.data && Array.isArray(root.data)) list=root.data;
 
-        const platformShort = platform === 'netease' ? 'wy' : platform === 'tencent' ? 'tx' : platform === 'kuwo' ? 'kw' : platform === 'kugou' ? 'kg' : platform === 'migu' ? 'mg' : platform;
-        const platformName = SRC_NAME[platformShort] || platform;
+            if(!Array.isArray(list) || !list.length) continue;
 
-        return list.map(x => {
-            const raw = x.raw || x;
-            const name = x.name || x.songname || x.songName || x.title || x.song || raw.name || raw.songname || '';
-            const artist = x.artist || x.singer || x.author || x.singername || x.artistName ||
-                (Array.isArray(x.artists) ? x.artists.map(a=>a.name||a).join('/') : '') ||
-                (Array.isArray(x.ar) ? x.ar.map(a=>a.name||a).join('/') : '') ||
-                (Array.isArray(raw.artists) ? raw.artists.map(a=>a.name||a).join('/') : '') ||
-                (Array.isArray(raw.ar) ? raw.ar.map(a=>a.name||a).join('/') : '') || '';
-            const pic = pickImageUrl(x) || pickImageUrl(raw) || pickImageUrl(x.al) || pickImageUrl(x.album) || '';
-            const sid = safeSongId(x) || safeSongId(raw) || x.id || x.songid || x.songId || x.mid || x.songmid || x.hash || '';
-            return {
-                name,
-                artist,
-                pic,
-                pic_id: safePicId(x) || safePicId(raw) || safePicId(x.al) || safePicId(x.album) || x.pic_id || '',
-                lrc: pickLyricValue(x) || pickLyricValue(raw) || x.lrc || x.lyric || '',
-                url: pickUrl(x) || pickUrl(raw),
-                source: platformShort,
-                sourceName: platformName,
-                raw,
-                id: sid,
-                songmid: x.songmid || x.mid || raw.songmid || raw.mid || '',
-                hash: x.hash || raw.hash || '',
-                album_id: x.album_id || x.albumId || x.album?.id || x.al?.id || raw.album_id || raw.albumId || ''
-            };
-        }).filter(s => s.name || s.id || s.url);
-    } catch (e) {
-        console.warn('歌单获取失败:', platform, id, e);
-        return [];
+            const songs = list.map(x=>{
+                const raw=x.raw||x;
+                const name=x.name||x.title||x.songname||x.songName||raw.name||raw.title||raw.songname||'';
+                const artist=x.artist||x.author||x.singer||x.singername||x.artistName||raw.artist||raw.author||raw.singer||'';
+                const url=pickUrl(x)||pickUrl(raw)||'';
+                const pic=pickImageUrl(x)||pickImageUrl(raw)||x.pic||raw.pic||x.cover||raw.cover||'';
+                const lrc=pickLyricValue(x)||pickLyricValue(raw)||x.lrc||raw.lrc||x.lyric||raw.lyric||'';
+                const sid=safeSongId(x)||safeSongId(raw)||extractIdFromMetingUrl(url)||extractIdFromMetingUrl(lrc)||extractIdFromMetingUrl(pic)||'';
+                return {
+                    name,
+                    artist,
+                    url,
+                    pic,
+                    lrc,
+                    source: short,
+                    sourceName: displayName,
+                    raw,
+                    id: sid,
+                    songmid: x.songmid||x.mid||raw.songmid||raw.mid||'',
+                    hash: x.hash||raw.hash||'',
+                    album_id: x.album_id||x.albumId||raw.album_id||raw.albumId||''
+                };
+            }).filter(s=>s.name || s.url || s.id);
+
+            if(songs.length) return songs;
+        }catch(e){
+            console.warn('歌单接口失败:', server, url, e);
+        }
     }
+    return [];
+}
+
+function extractIdFromMetingUrl(u){
+    try{
+        if(!u || typeof u!=='string')return '';
+        const m=u.match(/[?&]id=([^&]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }catch(e){return ''}
 }
 
 function openSearch() {
@@ -1833,7 +1846,7 @@ async function setPlaylist(id){
 
     // 如果本地为空，优先从API获取（按优先级：网易云 -> QQ -> 酷我）
     if(!Array.isArray(list) || list.length===0){
-        setStatus('正在从网获取：'+id);
+        setStatus('正在从网易云获取：'+id);
         list=await getPlaylistById(id,'netease');
     }
     if(!Array.isArray(list) || list.length===0){
@@ -1861,7 +1874,7 @@ async function setPlaylist(id){
     currentPlaylistID=id;
     saveData('playlist.txt',id);
     savePlaylistHistory(id);
-    playlist=list.map(s=>({...s,source:s.source||'wy',sourceName:s.sourceName||'网易云',pic:pickImageUrl(s)||pickImageUrl(s.raw)||s.pic||'',lrc:pickLyricValue(s)||s.lrc||''}));
+    playlist=list.map(s=>({...s,source:s.source||'wy',sourceName:s.sourceName||SRC_NAME[s.source]||'网易云',pic:pickImageUrl(s)||pickImageUrl(s.raw)||s.pic||'',lrc:pickLyricValue(s)||s.lrc||''}));
     currentIndex=0;
     closeModal(dom.inputModal);
     renderList();
