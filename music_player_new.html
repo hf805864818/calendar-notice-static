@@ -389,6 +389,9 @@
         .search-row { display:flex; gap:6px; margin:8px 0; }
         .qualitySelect { width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-input); background:var(--bg-input); color:var(--color-input); margin-top:8px; }
         .sourceStatus { font-size:12px; color:var(--color-secondary); margin:8px 0; line-height:1.5; word-break:break-all; }
+        .list-item-box { position:relative; overflow:hidden; }
+        .list-content { transition:transform .2s ease; }
+        .list-favorite-btn { position:absolute; right:0; top:0; bottom:0; width:60px; display:none; align-items:center; justify-content:center; background:#ff5252; color:#fff; font-size:20px; z-index:2; }
         .list-item { padding:8px 6px; border-bottom:1px solid var(--bg-line); cursor:pointer; border-radius:8px; display:flex; align-items:center; gap:8px; position:relative; }
         .list-item:hover { background:var(--bg-history-hover); }
         .list-item.playing { background:linear-gradient(90deg, rgba(39,174,96,0.28), rgba(39,174,96,0.08)); box-shadow: inset 3px 0 0 #27ae60, 0 2px 8px rgba(39,174,96,0.18); }
@@ -522,6 +525,10 @@
                 </div>
             </div>
             <div class="controlRow">
+                <div class="controlBtn" id="favoriteBtn">
+                    <svg id="icon-favorite" viewBox="0 0 24 24" style="fill:#888"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    <svg id="icon-favorite-active" viewBox="0 0 24 24" style="display:none;fill:#ff5252"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </div>
                 <div class="controlBtn" id="prevBtn" onclick="prevSong()">
                     <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                 </div>
@@ -555,6 +562,16 @@
             <div onclick="closeModal(listModal)">关闭</div>
         </div>
         <div id="listBox"></div>
+    </div>
+</div>
+
+<div class="modal" id="favoritesModal">
+    <div class="modalBox">
+        <div style="display:flex;justify-content:space-between">
+            <div>收藏喜欢</div>
+            <div onclick="closeModal(dom.favoritesModal)">关闭</div>
+        </div>
+        <div id="favoritesBox"></div>
     </div>
 </div>
 
@@ -798,6 +815,8 @@ const dom = {
     nextBtn: document.getElementById('nextBtn'),
     listModal: document.getElementById('listModal'),
     listBox: document.getElementById('listBox'),
+    favoritesModal: document.getElementById('favoritesModal'),
+    favoritesBox: document.getElementById('favoritesBox'),
     inputModal: document.getElementById('inputModal'),
     playlistInput: document.getElementById('playlistInput'),
     historyBox: document.getElementById('historyBox'),
@@ -817,6 +836,7 @@ const dom = {
     customCoverDots: document.getElementById('customCoverDots'),
     customCoverBox: document.getElementById('customCoverBox'),
     customCoverFile: document.getElementById('customCoverFile'),
+    favoriteBtn: document.getElementById('favoriteBtn'),
     apiTextDisplay: document.getElementById('apiTextDisplay'),
     customApiModal: document.getElementById('customApiModal'),
     customApiInput: document.getElementById('customApiInput'),
@@ -1738,6 +1758,7 @@ async function init(){
 
 // ✅ 加载歌曲时强制更新封面和歌词（核心修复）
 async function loadSong(i,autoPlay=false){
+    updateFavoriteButton();
     let s=playlist[i];if(!s)return;
     resolving=true;
     try{
@@ -1785,7 +1806,7 @@ function getListCoverSync(s){
     return pickImageUrl(s)||pickImageUrl(s?.raw)||s?.pic||DEFAULT_COVER;
 }
 async function hydrateListCovers(){
-    const imgs=dom.listBox.querySelectorAll('.list-cover[data-idx]');
+    const imgs=Array.from(dom.listBox.querySelectorAll('.list-cover[data-idx]')).slice(0,50);
     imgs.forEach(async img=>{
         const s=playlist[Number(img.dataset.idx)];
         if(!s)return;
@@ -1796,20 +1817,46 @@ async function hydrateListCovers(){
 function renderList(){
     dom.listBox.innerHTML='';
     playlist.forEach((s,i)=>{
+        let itemBox=document.createElement('div');
+        itemBox.className='list-item-box';
+        itemBox.dataset.idx=i;
+        
+        let favoriteBtn=document.createElement('div');
+        favoriteBtn.className='list-favorite-btn';
+        favoriteBtn.textContent='❤';
+        favoriteBtn.onclick=function(e){
+            e.stopPropagation();
+            closeModal(dom.listModal);
+            addToFavorites(playlist[i]);
+            openFavorites();
+        };
+        
         let d=document.createElement('div');
         d.className='list-item'+(i===currentIndex?' playing':'');
         const cover=getListCoverSync(s);
-        d.innerHTML=`<div class="list-info"><div class="list-title">${i+1}. ${escapeHtml(s.name||'未知')}${i===currentIndex?'<span class="list-badge">正在播放</span>':''}</div><div class="list-meta">${escapeHtml(s.artist||'未知歌手')} · ${escapeHtml(s.sourceName||s.source||'')}</div></div><img class="list-cover" data-idx="${i}" src="${cover}" onerror="this.src='${DEFAULT_COVER}'">`;
+        d.innerHTML=`<div class="list-info"><div class="list-title">${i+1}. ${escapeHtml(s.name||'未知')}${i===currentIndex?'<span class="list-badge">正在播放</span>':''}</div><div class="list-meta">${escapeHtml(s.artist||'未知歌手')} · ${escapeHtml(s.sourceName||s.source||'')}</div></div><img class="list-cover" loading="lazy" decoding="async" data-idx="${i}" src="${cover}" onerror="this.src='${DEFAULT_COVER}'">`;
         d.onclick=async ()=>{
             currentIndex=i;
             try{await loadSong(i,true);closeModal(dom.listModal)}catch(e){setStatus('解析失败，自动切换下一首...');safePlayNextOnFail();closeModal(dom.listModal)}
         };
-        dom.listBox.appendChild(d);
+        
+        let content=document.createElement('div');
+        content.className='list-content';
+        content.appendChild(d);
+        
+        itemBox.appendChild(favoriteBtn);
+        itemBox.appendChild(content);
+        dom.listBox.appendChild(itemBox);
     });
+    
+    bindListSwipeEvents();
     hydrateListCovers();
 }
 
-function openPlaylist(){dom.listModal.style.display='flex'}
+function openPlaylist(){
+    dom.listModal.style.display='flex';
+    renderList();
+}
 function openInput(){dom.inputModal.style.display='flex';renderPlaylistHistory()}
 function closeModal(el){el.style.display='none'}
 function openMediaModal(){dom.mediaModal.style.display='flex'}
@@ -1909,6 +1956,162 @@ function fetchTextApi(){
 }
 
 
+// ===== 收藏喜欢功能 =====
+const FAVORITES_KEY='favorites_v1';
+let favorites=[];
+
+function loadFavorites(){
+    try{favorites=JSON.parse(localStorage.getItem(FAVORITES_KEY)||'[]')||[]}catch(e){favorites=[]}
+}
+
+function saveFavorites(){
+    try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(favorites))}catch(e){alert('收藏保存失败，可能存储空间不足')}
+}
+
+function addToFavorites(song){
+    if(!song)return;
+    const idx=favorites.findIndex(s=>s.name===song.name&&s.artist===song.artist&&s.id===song.id);
+    if(idx!==-1){
+        showTempStatus('已在收藏列表');
+        return;
+    }
+    favorites.unshift({...song});
+    saveFavorites();
+    updateFavoriteButton();
+    showTempStatus('已加入收藏');
+}
+
+function removeFromFavorites(song){
+    const idx=favorites.findIndex(s=>s.name===song.name&&s.artist===song.artist&&s.id===song.id);
+    if(idx!==-1){
+        favorites.splice(idx,1);
+        saveFavorites();
+        showTempStatus('已取消收藏');
+    }
+}
+
+function openFavorites(){
+    dom.favoritesModal.style.display='flex';
+    renderFavorites();
+}
+
+function renderFavorites(){
+    dom.favoritesBox.innerHTML='';
+    if(!favorites.length){
+        dom.favoritesBox.innerHTML='<div class="squareHint">暂无收藏，在播放列表向左滑动即可收藏喜欢的歌曲</div>';
+        return;
+    }
+    favorites.forEach((s,i)=>{
+        const d=document.createElement('div');
+        d.className='list-item';
+        const cover=getListCoverSync(s);
+        d.innerHTML=`<div class="list-info"><div class="list-title">${i+1}. ${escapeHtml(s.name||'未知')}</div><div class="list-meta">${escapeHtml(s.artist||'未知歌手')} · ${escapeHtml(s.sourceName||s.source||'')}</div></div><img class="list-cover" loading="lazy" decoding="async" src="${cover}" onerror="this.src='${DEFAULT_COVER}'">`;
+        d.onclick=async ()=>{
+            const idx=playlist.findIndex(x=>x.name===s.name&&x.artist===s.artist&&x.id===s.id);
+            if(idx!==-1){
+                currentIndex=idx;
+                closeModal(dom.favoritesModal);
+                try{await loadSong(idx,true)}catch(e){showTempStatus('播放失败')}
+            }else{
+                playlist=[s];
+                currentIndex=0;
+                closeModal(dom.favoritesModal);
+                try{await loadSong(0,true)}catch(e){showTempStatus('播放失败')}
+            }
+        };
+        dom.favoritesBox.appendChild(d);
+    });
+}
+
+function toggleFavorite(){
+    const currentSong=playlist[currentIndex];
+    if(!currentSong)return;
+    const idx=favorites.findIndex(s=>s.name===currentSong.name&&s.artist===currentSong.artist&&s.id===currentSong.id);
+    if(idx!==-1){
+        removeFromFavorites(currentSong);
+    }else{
+        addToFavorites(currentSong);
+    }
+    updateFavoriteButton();
+}
+
+function updateFavoriteButton(){
+    if(!dom.favoriteBtn)return;
+    const currentSong=playlist[currentIndex];
+    if(!currentSong)return;
+    const idx=favorites.findIndex(s=>s.name===currentSong.name&&s.artist===currentSong.artist&&s.id===currentSong.id);
+    const iconFavorite=dom.favoriteBtn.querySelector('#icon-favorite');
+    const iconFavoriteActive=dom.favoriteBtn.querySelector('#icon-favorite-active');
+    if(idx!==-1){
+        iconFavorite.style.display='none';
+        iconFavoriteActive.style.display='block';
+    }else{
+        iconFavorite.style.display='block';
+        iconFavoriteActive.style.display='none';
+    }
+}
+
+function bindFavoriteButtonEvents(){
+    if(!dom.favoriteBtn)return;
+    let longPressTimer=null;
+    let isLongPress=false;
+    let touchHandled=false;
+    
+    dom.favoriteBtn.addEventListener('touchstart',e=>{
+        isLongPress=false;
+        touchHandled=true;
+        longPressTimer=setTimeout(()=>{
+            isLongPress=true;
+            openFavorites();
+        },600);
+    },{passive:true});
+    
+    dom.favoriteBtn.addEventListener('touchend',e=>{
+        clearTimeout(longPressTimer);
+        if(!isLongPress){
+            toggleFavorite();
+        }
+        setTimeout(()=>{touchHandled=false;isLongPress=false;},350);
+    });
+    
+    dom.favoriteBtn.addEventListener('click',e=>{
+        if(touchHandled)return;
+        toggleFavorite();
+    });
+}
+
+// 收藏列表滑动事件
+function bindListSwipeEvents(){
+    const boxes=dom.listBox.querySelectorAll('.list-item-box');
+    boxes.forEach(box=>{
+        let startX=0,startY=0;
+        box.addEventListener('touchstart',e=>{
+            startX=e.touches[0].clientX;
+            startY=e.touches[0].clientY;
+        },{passive:true});
+        box.addEventListener('touchend',e=>{
+            const endX=e.changedTouches[0].clientX;
+            const endY=e.changedTouches[0].clientY;
+            const diffX=endX-startX;
+            const diffY=endY-startY;
+            if(Math.abs(diffX)>50&&Math.abs(diffX)>Math.abs(diffY)&&Math.abs(diffY)<100){
+                const content=box.querySelector('.list-content');
+                const favoriteBtn=box.querySelector('.list-favorite-btn');
+                if(diffX<0){
+                    content.style.transform='translateX(-60px)';
+                    favoriteBtn.style.display='flex';
+                }else{
+                    content.style.transform='translateX(0)';
+                    favoriteBtn.style.display='none';
+                }
+            }
+        },{passive:true});
+    });
+}
+
+// 初始化收藏
+loadFavorites();
+
 // ===== 自定义大封面图功能：不改变原播放器UI和原功能 =====
 const CUSTOM_COVER_KEY='customAlbumCovers_v1';
 let customAlbumCovers=[];
@@ -1949,7 +2152,7 @@ function compressCustomCoverDataUrl(dataUrl){
             try{
                 const w=img.naturalWidth||img.width;
                 const h=img.naturalHeight||img.height;
-                const maxSide=720;
+                const maxSide=800;
                 const scale=Math.min(1,maxSide/Math.max(w,h));
                 if(!w||!h||scale>=1){resolve(dataUrl);return}
                 const canvas=document.createElement('canvas');
@@ -1957,7 +2160,7 @@ function compressCustomCoverDataUrl(dataUrl){
                 canvas.height=Math.max(1,Math.round(h*scale));
                 const ctx=canvas.getContext('2d');
                 ctx.drawImage(img,0,0,canvas.width,canvas.height);
-                resolve(canvas.toDataURL('image/jpeg',0.75));
+                resolve(canvas.toDataURL('image/jpeg',0.8));
             }catch(e){resolve(dataUrl)}
         };
         img.onerror=function(){resolve(dataUrl)};
@@ -1976,7 +2179,6 @@ function renderCustomCovers(){console.log('[Cover] renderCustomCovers: '+customA
     }
     customAlbumCovers.forEach((src,i)=>{
         const img=document.createElement('img');
-        img.decoding='async';
         img.className='custom-cover-img'+(i===customCoverIndex?' active':'');
         img.src=src;
         dom.customCoverLayer.appendChild(img);
@@ -2063,8 +2265,11 @@ window.addEventListener('message', function(e){
     if(d.action==='pause') pauseMusicCardAnimation();
     if(d.action==='resume') resumeMusicCardAnimation();
 });
+loadFavorites();
 loadCustomCovers();
 bindCustomCoverEvents();
+bindFavoriteButtonEvents();
+updateFavoriteButton();
 
 
 // ===== 歌单广场功能 =====
