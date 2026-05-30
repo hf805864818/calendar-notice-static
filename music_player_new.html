@@ -1986,6 +1986,7 @@ function removeFromFavorites(song){
     if(idx!==-1){
         favorites.splice(idx,1);
         saveFavorites();
+        updateFavoriteButton();
         showTempStatus('已取消收藏');
     }
 }
@@ -2032,7 +2033,6 @@ function toggleFavorite(){
     }else{
         addToFavorites(currentSong);
     }
-    updateFavoriteButton();
 }
 
 function updateFavoriteButton(){
