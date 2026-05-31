@@ -406,7 +406,7 @@
                                     </div>
                                     <div class="relative">
                                         <div id="sourceTabs" class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide" style="scroll-behavior: smooth;">
-                                            <button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer whitespace-nowrap active" data-source="360">360资源平台</button>
+                                            <button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer whitespace-nowrap active" data-source="default">默认平台</button>
                                         </div>
                                     </div>
                                     <div id="searchResultsContainer" class="max-h-[7rem] overflow-y-auto space-y-1"></div>
@@ -2446,12 +2446,17 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         const SAVED_API_URLS = [
-            'https://360zyzz.com/api.php/provide/vod/'
+            'http://154.219.117.232:9981/jacloudapi.php/provide/vod/',
+            'https://www.caiji.cyou/api.php/provide/vod/'
         ];
-
+        
         // 搜索接口URL -> 平台名称映射，从订阅JSON的 name/title/key 字段自动提取
         const SEARCH_INTERFACE_NAME_MAP = {};
         const SEARCH_INTERFACE_DETAIL_MAP = {};
+
+        // 手动添加固定接口的平台名称映射
+        SEARCH_INTERFACE_NAME_MAP['http://154.219.117.232:9981/jacloudapi.php/provide/vod/?ac=list'] = '789官源';
+        SEARCH_INTERFACE_NAME_MAP['https://www.caiji.cyou/api.php/provide/vod/?ac=list'] = '建安官源';
 
         // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
         const PRIORITY_SEARCH_KEYWORDS = ['zhanyuan', '站源', 'zy', 'zanyuan', '战源', '资源', '资源站', '资源源']; // 扩展关键词，包括可能的变体
@@ -2593,13 +2598,14 @@ btn.addEventListener('mousedown', startLongPress);
 
             // 已经有 ac 参数但缺少关键词，补 wd=
             if (/[?&]ac=/i.test(u)) {
+                // 如果是 ?ac=list，保持 list 参数
                 return `${u}${u.includes('?') ? '&' : '?'}wd=`;
             }
 
-            // 常见苹果CMS基础API，补成 videolist 搜索接口
-            // 例如 http://xxx/api.php/provide/vod => http://xxx/api.php/provide/vod/?ac=videolist&wd=
+            // 常见苹果CMS基础API，补成 list 搜索接口
+            // 例如 http://xxx/api.php/provide/vod => http://xxx/api.php/provide/vod/?ac=list&wd=
             const clean = u.replace(/\/+$/, '');
-            return `${clean}/?ac=videolist&wd=`;
+            return `${clean}/?ac=list&wd=`;
         }
 
         // 构建搜索URL（兼容 wd/key/keyword/search/query）
@@ -2822,11 +2828,8 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function search(keyword, searchInterfaces, onPartialResult = null) {
-            // 智能验证前8个接口可用性
-            const bestInterfaces = await getBestSearchInterfaces(searchInterfaces);
-            
-            const orderedInterfaces = sortSearchInterfacesByPriority(bestInterfaces);
-            const taskResults = await runWithConcurrency(orderedInterfaces, SEARCH_CONCURRENCY, async (interfaceUrl) => {
+            // 简化的搜索函数，不再智能验证，由主流程控制
+            const taskResults = await runWithConcurrency(searchInterfaces, SEARCH_CONCURRENCY, async (interfaceUrl) => {
                 const interfaceName = extractInterfaceName(interfaceUrl);
                 if (!interfaceName) return null;
 
@@ -3043,7 +3046,7 @@ btn.addEventListener('mousedown', startLongPress);
             }
         }
 
-        // 轮训搜索所有源（智能搜索）
+        // 轮训搜索所有源（智能搜索） - 新版优化流程
         async function searchAllSources() {
             const keyword = document.getElementById('searchInput').value.trim();
             if (!keyword) {
@@ -3061,9 +3064,24 @@ btn.addEventListener('mousedown', startLongPress);
                 tabs.innerHTML = '<button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] whitespace-nowrap active">搜索中...</button>';
             }
 
+            // 收集所有结果
+            const allResults = [];
+            const seenPlatforms = new Set();
+            let isFirstDisplay = true;
+
+            // 显示结果的函数
+            const displayResultsBatch = () => {
+                if (allResults.length > 0) {
+                    if (isFirstDisplay) {
+                        container.innerHTML = '';
+                        isFirstDisplay = false;
+                    }
+                    displaySmartSearchResults(allResults);
+                }
+            };
+
             try {
-                // 1. 发现所有360资源平台的搜索接口
-                console.log('步骤1: 发现搜索接口');
+                console.log('步骤1: 获取所有接口');
                 const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
                 console.log(`发现 ${searchInterfaces.length} 个搜索接口`);
 
@@ -3072,21 +3090,119 @@ btn.addEventListener('mousedown', startLongPress);
                     return;
                 }
 
-                // 2. 执行搜索：搜到哪个平台就先显示哪个平台，其他平台后台继续
-                console.log('步骤2: 执行搜索');
-                const realtimeResults = [];
-                const seenRealtime = new Set();
-                const results = await search(keyword, searchInterfaces, (partial) => {
-                    const key = partial.interfaceUrl || partial.interfaceName;
-                    if (seenRealtime.has(key)) return;
-                    seenRealtime.add(key);
-                    realtimeResults.push(partial);
-                    renderSearchResultsRealtime(realtimeResults, true);
+                // 提取zhanyuan接口（优先级最高）
+                const zhanyuanInterfaces = searchInterfaces.filter(url => {
+                    const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
+                    const urlText = url.toLowerCase();
+                    return urlText.includes('zhanyuan') || urlText.includes('zanyuan') || urlText.includes('站源') || name.toLowerCase().includes('zhanyuan') || name.toLowerCase().includes('站源');
                 });
-                console.log(`搜索完成，找到 ${results.length} 个有效结果`);
+                console.log(`发现 ${zhanyuanInterfaces.length} 个zhanyuan接口`);
 
-                // 3. 显示最终结果
-                displaySmartSearchResults(results);
+                // 提取前8个zhanyuan接口
+                const topZhanyuanInterfaces = zhanyuanInterfaces.slice(0, 8);
+                
+                // 提取固定平台接口
+                const fixedPlatformInterfaces = searchInterfaces.slice(0, Math.min(2, searchInterfaces.length));
+                
+                // 其他接口（排除前两个和zhanyuan）
+                const otherInterfaces = searchInterfaces.slice(2).filter(url => !zhanyuanInterfaces.includes(url));
+
+                // 同时执行三个搜索流程
+                const promises = [
+                    // 流程1: 立即搜索2个固定平台
+                    (async () => {
+                        console.log('流程1: 搜索2个固定平台');
+                        const fixedResults = [];
+                        const tasks = fixedPlatformInterfaces.map(async (interfaceUrl) => {
+                            try {
+                                const result = await searchSingleInterface(interfaceUrl, keyword);
+                                if (result) {
+                                    fixedResults.push(result);
+                                    const key = result.interfaceUrl || result.interfaceName;
+                                    if (!seenPlatforms.has(key)) {
+                                        seenPlatforms.add(key);
+                                        allResults.push(result);
+                                        displayResultsBatch();
+                                    }
+                                }
+                            } catch (error) {
+                                console.warn(`固定平台搜索失败: ${interfaceUrl}`, error);
+                            }
+                        });
+                        await Promise.allSettled(tasks);
+                        console.log(`流程1完成，找到 ${fixedResults.length} 个固定平台结果`);
+                    })(),
+
+                    // 流程2: 同时搜索前8个zhanyuan接口
+                    (async () => {
+                        console.log(`流程2: 搜索${topZhanyuanInterfaces.length}个zhanyuan接口`);
+                        const zhanyuanResults = [];
+                        const tasks = topZhanyuanInterfaces.map(async (interfaceUrl) => {
+                            try {
+                                const result = await searchSingleInterface(interfaceUrl, keyword);
+                                if (result) {
+                                    zhanyuanResults.push(result);
+                                    const key = result.interfaceUrl || result.interfaceName;
+                                    if (!seenPlatforms.has(key)) {
+                                        seenPlatforms.add(key);
+                                        allResults.push(result);
+                                        displayResultsBatch();
+                                    }
+                                }
+                            } catch (error) {
+                                console.warn(`zhanyuan接口搜索失败: ${interfaceUrl}`, error);
+                            }
+                        });
+                        await Promise.allSettled(tasks);
+                        console.log(`流程2完成，找到 ${zhanyuanResults.length} 个zhanyuan结果`);
+                    })(),
+
+                    // 流程3: 分批搜索其他接口
+                    (async () => {
+                        console.log(`流程3: 分批搜索${otherInterfaces.length}个其他接口`);
+                        // 每批8个接口
+                        const batchSize = 8;
+                        for (let i = 0; i < otherInterfaces.length; i += batchSize) {
+                            const batch = otherInterfaces.slice(i, i + batchSize);
+                            const batchResults = [];
+                            const tasks = batch.map(async (interfaceUrl) => {
+                                try {
+                                    const result = await searchSingleInterface(interfaceUrl, keyword);
+                                    if (result) {
+                                        batchResults.push(result);
+                                        const key = result.interfaceUrl || result.interfaceName;
+                                        if (!seenPlatforms.has(key)) {
+                                            seenPlatforms.add(key);
+                                            allResults.push(result);
+                                            displayResultsBatch();
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.warn(`其他接口搜索失败: ${interfaceUrl}`, error);
+                                }
+                            });
+                            await Promise.allSettled(tasks);
+                            console.log(`第${Math.floor(i/batchSize)+1}批完成，找到 ${batchResults.length} 个结果`);
+                            
+                            // 如果前几批已经找到足够结果，可以提前结束
+                            if (allResults.length >= 8 && i > batchSize * 2) {
+                                console.log('已找到足够结果，提前结束流程3');
+                                break;
+                            }
+                        }
+                        console.log('流程3全部完成');
+                    })()
+                ];
+
+                // 等待所有流程完成或超时
+                await Promise.race([
+                    Promise.allSettled(promises),
+                    new Promise(resolve => setTimeout(resolve, 15000)) // 15秒超时
+                ]);
+
+                // 显示最终结果
+                console.log(`全部搜索完成，总共找到 ${allResults.length} 个平台的结果`);
+                displaySmartSearchResults(allResults);
 
             } catch (error) {
                 console.error('智能搜索失败:', error);
@@ -3094,6 +3210,41 @@ btn.addEventListener('mousedown', startLongPress);
             } finally {
                 loadingEl.classList.add('hidden');
             }
+        }
+
+        // 单个接口搜索函数
+        async function searchSingleInterface(interfaceUrl, keyword) {
+            const interfaceName = extractInterfaceName(interfaceUrl);
+            if (!interfaceName) return null;
+
+            // 拼接关键词发起搜索
+            const searchUrl = buildSearchUrl(interfaceUrl, keyword);
+
+            try {
+                const responseText = await fetchForSearch(searchUrl);
+                const data = parseResponseData(responseText);
+
+                if (data.length > 0) {
+                    const detailUrl = SEARCH_INTERFACE_DETAIL_MAP[interfaceUrl] || '';
+                    if (detailUrl) {
+                        data.forEach(item => {
+                            if (item && typeof item === 'object') {
+                                item._detailurl = detailUrl;
+                                item._sourceInterfaceUrl = interfaceUrl;
+                            }
+                        });
+                    }
+                    return {
+                        interfaceName: interfaceName,
+                        interfaceUrl: interfaceUrl,
+                        detailUrl: detailUrl,
+                        data: data
+                    };
+                }
+            } catch (error) {
+                console.error(`单个接口搜索失败: ${interfaceName}`, error);
+            }
+            return null;
         }
 
         // 加载视频详情（支持智能搜索）
