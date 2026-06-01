@@ -1818,8 +1818,11 @@ btn.addEventListener('mousedown', startLongPress);
                 console.log('点击列表资源，原始地址:', originalUrl);
 
                 // 判断是否为播放页面URL（非直接视频流）
-                const isPlayPage = originalUrl.match(/\/play\/[a-zA-Z0-9]+$/i) ||
-                                  originalUrl.includes('/share/');
+                const isPlayPage = (originalUrl.match(/\/play\/[a-zA-Z0-9]+$/i) ||
+                                   originalUrl.includes('/share/')) &&
+                                   !originalUrl.includes('.m3u8') &&
+                                   !originalUrl.includes('.mp4') &&
+                                   !originalUrl.includes('.ts');
 
                 if (isPlayPage) {
                     // 对于播放页面，尝试使用iframe或者跳转
@@ -1883,10 +1886,8 @@ btn.addEventListener('mousedown', startLongPress);
                 loadingIndicator.classList.remove('hidden');
 
                 // 异步解析视频地址
-                                // m3u8/mp4直链通过代理播放
-                const needsProxy = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.flv');
-                const proxyPlayUrl = needsProxy ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
-                console.log('播放URL(代理后):', proxyPlayUrl);
+                                // 直接使用原始URL播放
+                const proxyPlayUrl = originalUrl;
                 parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
                         // 检查是否已被新的请求替换
