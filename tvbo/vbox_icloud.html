@@ -470,29 +470,13 @@
                             </div>
                         </div>
 
-                        <!-- 网盘文件浏览器 -->
+                        <!-- 网盘管理 -->
                         <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer" title="网盘" id="driveBrowserBtn" onclick="toggleDriveBrowser()" style="display:none">
+                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer" title="网盘" onclick="toggleDrivePanel()">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z"/>
+                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
                                 </svg>
                             </button>
-                            <div id="driveBrowserPanel" class="settings-panel hidden" style="width: 320px; max-height: 420px; right: 0; left: auto; transform: none;">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h3 class="text-white text-sm font-semibold" id="driveBrowserTitle">网盘文件</h3>
-                                    <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleDriveBrowser()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor"><use href="#icon-close"/></svg>
-                                    </button>
-                                </div>
-                                <div class="drive-breadcrumb" id="driveBreadcrumb"></div>
-                                <div id="driveFileList" class="max-h-[16rem] overflow-y-auto space-y-0.5">
-                                    <div class="text-white/40 text-xs text-center py-4">请先设置Token或解析分享链接</div>
-                                </div>
-                                <div class="mt-2 pt-2 border-t border-white/10 flex justify-between">
-                                    <span class="text-white/40 text-[10px]" id="driveStatus"></span>
-                                    <button class="glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer" onclick="refreshDriveFiles()">刷新</button>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="relative">
@@ -625,20 +609,13 @@
                                                     <option value="baidu" class="bg-gray-800">百度网盘</option>
                                                     <option value="uc" class="bg-gray-800">UC网盘</option>
                                                     <option value="123pan" class="bg-gray-800">123云盘</option>
-                                                    <option value="139pan" class="bg-gray-800">139云盘</option>
-                                                </select>
-                                                <button class="glass-btn px-2 py-1 rounded-lg text-emerald-400 text-xs cursor-pointer whitespace-nowrap" onclick="openDriveBrowser()">浏览文件</button>
-                                            </div>
-                                            <div class="flex gap-1.5">
-                                                <input type="text" id="driveShareInput" placeholder="粘贴网盘分享链接" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
-                                                <button class="glass-btn px-2 py-1 rounded-lg text-blue-400 text-xs cursor-pointer whitespace-nowrap" onclick="resolveShareUrl()">解析</button>
-                                            </div>
-                                            <div class="flex gap-1.5">
-                                                <input type="text" id="driveTokenInput" placeholder="手动输入AccessToken" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
-                                                <button class="glass-btn px-2 py-1 rounded-lg text-yellow-400 text-xs cursor-pointer whitespace-nowrap" onclick="setDriveToken()">设Token</button>
-                                            </div>
-                                            <div id="driveTokenList" class="drive-token-manager"></div>
-                                        </div>
+                                    <div class="pt-2 border-t border-white/10">
+                                        <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-emerald-400 text-xs cursor-pointer flex items-center justify-center gap-2 hover:bg-emerald-500/20" onclick="toggleDrivePanel()">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+                                            </svg>
+                                            网盘管理
+                                        </button>
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
                                         <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-red-400 text-xs cursor-pointer hover:bg-red-500/20 flex items-center justify-center gap-2" onclick="clearAllResources()">
@@ -4243,23 +4220,15 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function openDriveBrowser() {
-            driveState.type = document.getElementById('driveTypeSelect').value;
-            driveState.token = getTokenForType(driveState.type);
             if (!driveState.token) {
-                showAlert('请先设置 ' + DRIVE_CONFIGS[driveState.type].name + ' 的Token', '提示');
+                showAlert('请先保存Token', '提示');
                 return;
             }
-            // 显示驱动浏览器按钮并打开面板
-            const btn = document.getElementById('driveBrowserBtn');
-            btn.style.display = 'block';
-            const panel = document.getElementById('driveBrowserPanel');
-            panel.classList.remove('hidden');
-            document.getElementById('driveBrowserTitle').textContent = DRIVE_CONFIGS[driveState.type].name;
-            renderBreadcrumb();
-            await loadDriveFiles('root');
+            toggleDrivePanel();
         }
 
-        function toggleDriveBrowser() { document.getElementById('driveBrowserPanel').classList.toggle('hidden'); }
+        // 旧浏览函数保留但不再被UI调用（由面板新函数替代）
+        function toggleDriveBrowser() { toggleDrivePanel(); }
 
         function renderBreadcrumb() {
             const bc = document.getElementById('driveBreadcrumb');
