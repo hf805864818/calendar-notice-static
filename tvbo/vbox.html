@@ -466,6 +466,15 @@
                                         </div>
                                     </div>
                                     <div>
+                                        <label class="text-white/70 text-xs mb-1.5 block">固定资源（789官源/建安官源）</label>
+                                        <div class="flex items-center gap-2">
+                                            <button class="glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs cursor-pointer" onclick="toggleFixedSources()">
+                                                <span id="fixedSourcesLabel">已开启</span>
+                                            </button>
+                                            <span class="text-white/40 text-[10px]">关闭后只搜索订阅源接口</span>
+                                        </div>
+                                    </div>
+                                    <div>
                                         <label class="text-white/70 text-xs mb-1.5 block">视频地址</label>
                                         <div class="flex gap-1.5">
                                             <input type="text" id="videoUrlInput" placeholder="输入视频URL" class="flex-1 glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
@@ -2569,6 +2578,24 @@ btn.addEventListener('mousedown', startLongPress);
             }
         }
 
+        // 固定源开关
+        function toggleFixedSources() {
+            const current = localStorage.getItem('useFixedSources');
+            const newVal = current === 'false' ? 'true' : 'false';
+            localStorage.setItem('useFixedSources', newVal);
+            const label = document.getElementById('fixedSourcesLabel');
+            if (label) label.textContent = newVal === 'false' ? '已关闭' : '已开启';
+        }
+
+        // 初始化固定源开关UI
+        document.addEventListener('DOMContentLoaded', function() {
+            const label = document.getElementById('fixedSourcesLabel');
+            if (label) {
+                const val = localStorage.getItem('useFixedSources');
+                label.textContent = val === 'false' ? '已关闭' : '已开启';
+            }
+        });
+
         // 检查是否为搜索接口（支持 wd/key/keyword/search/query 多种关键词参数）
         function isSearchInterface(url) {
             if (!url) return false;
@@ -2719,7 +2746,13 @@ btn.addEventListener('mousedown', startLongPress);
                     // 订阅地址本身也可能就是基础API
                     addCandidate(url);
 
-                    const content = await fetchWithProxy(url);
+                    let content;
+                    try {
+                        content = await fetchDirect(url, 5000);
+                    } catch (e) {
+                        console.warn('订阅地址直连失败，尝试双代理获取:', url, e.message);
+                        content = await fetchWithProxy(url);
+                    }
 
                     // A. 从纯文本中抓所有URL
                     const allUrls = content.match(/https?:\/\/[^\s"'<>\\]+/g) || [];
@@ -3121,9 +3154,13 @@ btn.addEventListener('mousedown', startLongPress);
 
                 // 提取前8个zhanyuan接口
                 const topZhanyuanInterfaces = zhanyuanInterfaces.slice(0, 8);
+                console.log('zhanyuan接口详情:', topZhanyuanInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
                 
-                // 提取固定平台接口
-                const fixedPlatformInterfaces = searchInterfaces.slice(0, Math.min(2, searchInterfaces.length));
+                // 固定平台开关（从localStorage读取，默认开启）
+                const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
+                
+                // 提取固定平台接口（根据开关决定是否搜索）
+                const fixedPlatformInterfaces = useFixedSources ? searchInterfaces.slice(0, Math.min(2, searchInterfaces.length)) : [];
                 
                 // 其他接口（排除前两个和zhanyuan）
                 const otherInterfaces = searchInterfaces.slice(2).filter(url => !zhanyuanInterfaces.includes(url));
