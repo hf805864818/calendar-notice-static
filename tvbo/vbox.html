@@ -1883,7 +1883,11 @@ btn.addEventListener('mousedown', startLongPress);
                 loadingIndicator.classList.remove('hidden');
 
                 // 异步解析视频地址
-                parseVideoUrl(originalUrl, 3, currentAbortController)
+                                // m3u8/mp4直链通过代理播放
+                const needsProxy = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.flv');
+                const proxyPlayUrl = needsProxy ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
+                console.log('播放URL(代理后):', proxyPlayUrl);
+                parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
                         // 检查是否已被新的请求替换
                         if (currentLoadingUrl !== originalUrl) {
