@@ -2569,6 +2569,12 @@ btn.addEventListener('mousedown', startLongPress);
         function extractInterfaceName(url) {
             if (!url) return '接口';
             if (SEARCH_INTERFACE_NAME_MAP[url]) return SEARCH_INTERFACE_NAME_MAP[url];
+            // 遍历MAP找部分匹配
+            for (const k in SEARCH_INTERFACE_NAME_MAP) {
+                if (url && k && (url.includes(k) || k.includes(url))) {
+                    return SEARCH_INTERFACE_NAME_MAP[k];
+                }
+            }
             try {
                 const host = new URL(url).hostname.replace(/^www\./, '');
                 const shortHost = host.split('.')[0] || host;
@@ -2696,8 +2702,12 @@ btn.addEventListener('mousedown', startLongPress);
             const addCandidate = (candidate, sourceName = '', detailUrl = '') => {
                 const normalized = normalizeToSearchApi(candidate);
                 if (normalized) {
-                    if (sourceName && !SEARCH_INTERFACE_NAME_MAP[normalized]) {
+                    if (sourceName) {
                         SEARCH_INTERFACE_NAME_MAP[normalized] = String(sourceName).trim();
+                        // 同时用原始url做key
+                        if (candidate && candidate !== normalized) {
+                            SEARCH_INTERFACE_NAME_MAP[String(candidate).trim()] = String(sourceName).trim();
+                        }
                     }
                     if (detailUrl && !SEARCH_INTERFACE_DETAIL_MAP[normalized]) {
                         SEARCH_INTERFACE_DETAIL_MAP[normalized] = String(detailUrl).trim();
