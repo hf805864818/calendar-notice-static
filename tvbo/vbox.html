@@ -323,7 +323,7 @@
                     </div>
                 </div>
 
-                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80">
+                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5"
                     <source src="" type="video/mp4">
                 </video>
 
@@ -731,31 +731,26 @@
             video.currentTime = percent * video.duration;
         }
 
-        // 系统播放器全屏：仅在用户主动点击全屏按钮时调用
-        async function openSystemPlayer() {
-            const systemUrl = currentResolvedVideoUrl || currentPlayingUrl || video.currentSrc || video.src;
-            if (!systemUrl) {
-                await showAlert('当前没有可用于全屏播放的视频地址', '无法全屏播放');
-                return;
-            }
-
+        // 全屏：强制在视频窗口内全屏，不弹系统播放器
+        async function toggleFullscreen() {
+            const videoEl = document.getElementById('video');
+            if (!videoEl) return;
             try {
-                const a = document.createElement('a');
-                a.href = systemUrl;
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            } catch (error) {
-                console.error('调用系统播放器失败:', error);
-                window.open(systemUrl, '_blank');
+                if (document.fullscreenElement || document.webkitFullscreenElement) {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                } else {
+                    if (videoEl.requestFullscreen) await videoEl.requestFullscreen();
+                    else if (videoEl.webkitRequestFullscreen) await videoEl.webkitRequestFullscreen();
+                }
+            } catch (e) {
+                console.warn('全屏切换失败:', e);
+                // 兜底：用video自身全屏
+                try { videoEl.webkitEnterFullscreen(); } catch(e2) {}
             }
         }
 
-        function toggleFullscreen() {
-            openSystemPlayer();
-        }
+        function toggleSettings() {
 
         function toggleSettings() {
             const isHidden = settingsPanel.classList.contains('hidden');
@@ -3537,7 +3532,7 @@ btn.addEventListener('mousedown', startLongPress);
         // 将 XPath 字符串中 &&& 替换为 "（适配 zhanyuan 的转义写法）
         function fixXPath(expr) {
             if (!expr) return '';
-            return String(expr).replace(/&&&/g, '"').replace(/&apos;/g, "'").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+            return String(expr).replace(/&&&/g, '"').replace(/&apos;/g, \"'\").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
         }
 
         // 执行爬虫搜索：返回 [{title, url, desc, pic}]
