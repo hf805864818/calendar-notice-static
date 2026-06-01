@@ -2587,14 +2587,14 @@ btn.addEventListener('mousedown', startLongPress);
             if (label) label.textContent = newVal === 'false' ? '已关闭' : '已开启';
         }
 
-        // 初始化固定源开关UI
-        document.addEventListener('DOMContentLoaded', function() {
+        // 初始化固定源开关UI（放在addEventListener前）
+        (function initFixedSourcesUI() {
             const label = document.getElementById('fixedSourcesLabel');
             if (label) {
                 const val = localStorage.getItem('useFixedSources');
                 label.textContent = val === 'false' ? '已关闭' : '已开启';
             }
-        });
+        })();
 
         // 检查是否为搜索接口（支持 wd/key/keyword/search/query 多种关键词参数）
         function isSearchInterface(url) {
