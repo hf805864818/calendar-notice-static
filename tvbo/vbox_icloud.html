@@ -3449,7 +3449,12 @@ btn.addEventListener('mousedown', startLongPress);
                                         } else {
                                             searchUrl = apiDef.url + '?ac=videolist&wd=' + encodeURIComponent(keyword);
                                         }
-                                        const respText = await fetchFastWithProxy(searchUrl, 8000).catch(() => null);
+                                        // 先直连，不通再走代理
+                                        let respText = null;
+                                        try { respText = await fetchDirect(searchUrl, 5000); } catch(e) {}
+                                        if (!respText) {
+                                            try { respText = await fetchFastWithProxy(searchUrl, 8000); } catch(e) {}
+                                        }
                                         if (!respText || respText.length < 10) return [];
                                         let items = [];
                                         if (respText.trim().startsWith('{')) {
