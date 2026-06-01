@@ -3532,7 +3532,7 @@ btn.addEventListener('mousedown', startLongPress);
         // 将 XPath 字符串中 &&& 替换为 "（适配 zhanyuan 的转义写法）
         function fixXPath(expr) {
             if (!expr) return '';
-            return String(expr).replace(/&&&/g, '"').replace(/&apos;/g, \"'\").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+            return String(expr).replace(/&&&/g, '"').replace(/&apos;/g, "'").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
         }
 
         // 执行爬虫搜索：返回 [{title, url, desc, pic}]
