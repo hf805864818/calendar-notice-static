@@ -3433,14 +3433,14 @@ btn.addEventListener('mousedown', startLongPress);
                 }
 
                 // 流程4.5: 16个网盘聚合源搜索（8个并发一批，结果合并到"☁️ 网盘资源"Tab）
-                if (cloudPanApis.length > 0) {
+                if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘聚合搜索', cloudPanApis.length, '个源，8并发');
+                            console.log('流程4.5: 网盘聚合搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，8并发');
                             const allItems = [];
                             const mergedKey = 'clouddrive-aggr:pan';
-                            for (let i = 0; i < cloudPanApis.length; i += 8) {
-                                const batch = cloudPanApis.slice(i, i + 8);
+                            for (let i = 0; i < CLOUD_DRIVE_SEARCH_API.length; i += 8) {
+                                const batch = CLOUD_DRIVE_SEARCH_API.slice(i, i + 8);
                                 const tasks = batch.map(async (apiDef) => {
                                     try {
                                         let searchUrl;
