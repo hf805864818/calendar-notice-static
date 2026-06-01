@@ -3261,19 +3261,39 @@ btn.addEventListener('mousedown', startLongPress);
                 tabs.innerHTML = '<button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] whitespace-nowrap active">搜索中...</button>';
             }
 
-            // 收集所有结果
+            // 收集所有结果（分开存储网盘和普通源）
             const allResults = [];
+            const cloudResults = [];
             const seenPlatforms = new Set();
             let isFirstDisplay = true;
 
-            // 显示结果的函数
+            // 判断是否为网盘聚合搜索源
+            function isCloudResult(result) {
+                const url = result && result.interfaceUrl || '';
+                return url.startsWith('clouddrive:') || url.startsWith('clouddrive-aggr:');
+            }
+
+            // 把网盘结果单独存储
+            const pushResult = (result) => {
+                const key = result.interfaceUrl || result.interfaceName || '';
+                if (seenPlatforms.has(key)) return false;
+                seenPlatforms.add(key);
+                if (isCloudResult(result)) {
+                    cloudResults.push(result);
+                } else {
+                    allResults.push(result);
+                }
+                return true;
+            };
+
+            // 显示结果的函数（网盘源单独Tab展示）
             const displayResultsBatch = () => {
-                if (allResults.length > 0) {
+                if (allResults.length > 0 || cloudResults.length > 0) {
                     if (isFirstDisplay) {
                         container.innerHTML = '';
                         isFirstDisplay = false;
                     }
-                    displaySmartSearchResults(allResults);
+                    displaySmartSearchResults(allResults, cloudResults);
                 }
             };
 
@@ -3438,13 +3458,7 @@ btn.addEventListener('mousedown', startLongPress);
                         (async () => {
                             console.log('流程4: 爬虫搜索', zhanyuanCrawlers.length, '个zhanyuan网页源');
                             const crawlerResults = await searchZhanyuanAll(keyword, zhanyuanCrawlers);
-                            crawlerResults.forEach(result => {
-                                const key = result.interfaceUrl || result.interfaceName;
-                                if (!seenPlatforms.has(key)) {
-                                    seenPlatforms.add(key);
-                                    allResults.push(result);
-                                }
-                            });
+                            crawlerResults.forEach(result => pushResult(result));
                             displayResultsBatch();
                             console.log('流程4完成，找到', crawlerResults.length, '个爬虫结果');
                         })()
@@ -3467,10 +3481,7 @@ btn.addEventListener('mousedown', startLongPress);
                                             interfaceName: DRIVE_CONFIGS[driveType]?.name || driveType,
                                             data: driveResults.data
                                         };
-                                        const key = result.interfaceUrl;
-                                        if (!seenPlatforms.has(key)) {
-                                            seenPlatforms.add(key);
-                                            allResults.push(result);
+                                        if (pushResult(result)) {
                                             displayResultsBatch();
                                             console.log(`网盘[${driveType}]搜索结果:`, driveResults.data.length, '个');
                                         }
@@ -3491,8 +3502,10 @@ btn.addEventListener('mousedown', startLongPress);
                 ]);
 
                 // 显示最终结果
-                console.log(`全部搜索完成，总共找到 ${allResults.length} 个平台的结果`);
-                displaySmartSearchResults(allResults);
+                const nonCloud = allResults.filter(r => !isCloudResult(r));
+                const cloudOnly = cloudResults.filter(r => isCloudResult(r));
+                console.log(`全部搜索完成，${nonCloud.length}个普通源 + ${cloudOnly.length}个网盘源`);
+                displaySmartSearchResults(nonCloud, cloudOnly);
 
             } catch (error) {
                 console.error('智能搜索失败:', error);
