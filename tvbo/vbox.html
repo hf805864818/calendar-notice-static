@@ -3075,7 +3075,7 @@ btn.addEventListener('mousedown', startLongPress);
                     resultBtn.onclick = () => {
                         const vodId = item.vod_id || item.id;
                         if (vodId) {
-                            loadVideoDetail(vodId, 'smart-' + platformName);
+                            loadVideoDetail(vodId, result.interfaceUrl);
                         }
                     };
                     panel.appendChild(resultBtn);
@@ -3155,7 +3155,24 @@ btn.addEventListener('mousedown', startLongPress);
 
                 // 提取前8个zhanyuan接口
                 const topZhanyuanInterfaces = zhanyuanInterfaces.slice(0, 8);
-                console.log('zhanyuan接口详情:', topZhanyuanInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
+                console.log('zhanyuan接口详情(API类):', topZhanyuanInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
+                
+                // 收集zhanyuan爬虫源（从订阅JSON的zhanyuan字段）
+                let zhanyuanCrawlers = [];
+                try {
+                    for (const u of [...SAVED_API_URLS, ...jsonApis]) {
+                        const content = await fetchDirect(u, 5000).catch(() => null);
+                        if (content) {
+                            const parsed = JSON.parse(content);
+                            if (parsed.zhanyuan && Array.isArray(parsed.zhanyuan)) {
+                                zhanyuanCrawlers = parsed.zhanyuan.filter(z => z.searchUrl);
+                                console.log('发现zhanyuan爬虫源:', zhanyuanCrawlers.length, '个');
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('获取zhanyuan爬虫源失败:', e.message);
+                }
                 
                 // 固定平台开关（从localStorage读取，默认开启）
                 const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
@@ -3253,6 +3270,25 @@ btn.addEventListener('mousedown', startLongPress);
                     })()
                 ];
 
+                // 流程4: 爬虫搜索zhanyuan网页源
+                if (zhanyuanCrawlers.length > 0) {
+                    promises.push(
+                        (async () => {
+                            console.log('流程4: 爬虫搜索', zhanyuanCrawlers.length, '个zhanyuan网页源');
+                            const crawlerResults = await searchZhanyuanAll(keyword, zhanyuanCrawlers);
+                            crawlerResults.forEach(result => {
+                                const key = result.interfaceUrl || result.interfaceName;
+                                if (!seenPlatforms.has(key)) {
+                                    seenPlatforms.add(key);
+                                    allResults.push(result);
+                                }
+                            });
+                            displayResultsBatch();
+                            console.log('流程4完成，找到', crawlerResults.length, '个爬虫结果');
+                        })()
+                    );
+                }
+
                 // 等待所有流程完成或超时
                 await Promise.race([
                     Promise.allSettled(promises),
@@ -3314,11 +3350,9 @@ btn.addEventListener('mousedown', startLongPress);
             loadingEl.classList.remove('hidden');
 
             try {
-                // 智能搜索模式
-                if (sourceKey && sourceKey.startsWith('smart-')) {
-                    // 从搜索结果缓存中获取详情
-                    const interfaceName = sourceKey.replace('smart-', '');
-                    // 需要重新搜索获取详情数据
+                // 直接按interfaceUrl精确匹配
+                if (sourceKey && sourceKey.startsWith('http')) {
+                    const interfaceUrl = sourceKey;
                     const keyword = document.getElementById('searchInput').value.trim();
                     if (!keyword) {
                         throw new Error('搜索关键词不能为空');
@@ -3328,14 +3362,52 @@ btn.addEventListener('mousedown', startLongPress);
                     const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
                     const results = await search(keyword, searchInterfaces);
 
-                    const result = results.find(r => r.interfaceName === interfaceName);
+                    // 爬虫源也并行搜索
+                    let zhanyuanCrawlers = [];
+                    try {
+                        for (const u of [...SAVED_API_URLS, ...jsonApis]) {
+                            const content = await fetchDirect(u, 5000).catch(() => null);
+                            if (content) {
+                                const parsed = JSON.parse(content);
+                                if (parsed.zhanyuan && Array.isArray(parsed.zhanyuan)) {
+                                    zhanyuanCrawlers = parsed.zhanyuan.filter(z => z.searchUrl);
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                    const crawlerResults = zhanyuanCrawlers.length > 0 ? await searchZhanyuanAll(keyword, zhanyuanCrawlers) : [];
+
+                    const result = results.find(r => r.interfaceUrl === interfaceUrl) || crawlerResults.find(r => r.interfaceUrl === interfaceUrl);
                     if (!result) {
                         throw new Error('未找到该平台的数据');
                     }
 
-                    const item = result.data.find(d => (d.vod_id === vodId || d.id === vodId));
+                    let item = result.data.find(d => (d.vod_id === vodId || d.id === vodId));
                     if (!item) {
                         throw new Error('未找到该视频的详情');
+                    }
+
+                    // 如果是爬虫源，走爬虫详情获取播放地址
+                    if (item._zhanyuanItem && item._detailPageUrl) {
+                        const episodes = await crawlZhanyuanDetail(item, item._zhanyuanItem);
+                        if (episodes.length > 0) {
+                            videoList = [];
+                            categorizedChannels = {};
+                            episodes.forEach(ep => {
+                                if (ep.url.startsWith('http')) {
+                                    videoList.push(ep.url);
+                                }
+                            });
+                            if (videoList.length > 0) {
+                                currentVideoIndex = 0;
+                                document.getElementById('searchPanel').classList.add('hidden');
+                                loadVideo(0);
+                                loadingEl.classList.add('hidden');
+                                await showAlert('已加载《' + (item.vod_name || '') + '》共' + videoList.length + '集', '加载完成');
+                                return;
+                            }
+                        }
+                        throw new Error('爬虫获取播放地址失败');
                     }
 
                     // 如果搜索接口只返回基础信息，则使用 detailurl + vod_id 获取详情
@@ -3424,6 +3496,184 @@ btn.addEventListener('mousedown', startLongPress);
             } finally {
                 loadingEl.classList.add('hidden');
             }
+        }
+
+        /* ================ zhanyuan网页爬虫引擎 ================ */
+        // 注入DOMParser兼容（某些浏览器无DOMParser）
+        const SAFE_DOMParser = typeof DOMParser !== 'undefined' ? DOMParser : class {
+            parseFromString(str, type) {
+                const doc = document.implementation.createHTMLDocument('');
+                doc.documentElement.innerHTML = str;
+                return doc;
+            }
+        };
+
+        // XPath提取函数
+        function xpathText(xpath, context) {
+            const nodes = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            const results = [];
+            for (let i = 0; i < nodes.snapshotLength; i++) {
+                const t = (nodes.snapshotItem(i).textContent || '').trim();
+                if (t) results.push(t);
+            }
+            return results;
+        }
+
+        function xpathAttr(xpath, context, attr = 'href') {
+            const nodes = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            const results = [];
+            for (let i = 0; i < nodes.snapshotLength; i++) {
+                const val = nodes.snapshotItem(i).getAttribute(attr) || '';
+                if (val) results.push(val);
+            }
+            return results;
+        }
+
+        // 将 XPath 字符串中 &&& 替换为 "（适配 zhanyuan 的转义写法）
+        function fixXPath(expr) {
+            if (!expr) return '';
+            return String(expr).replace(/&&&/g, '"').replace(/&apos;/g, \"'\").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+        }
+
+        // 执行爬虫搜索：返回 [{title, url, desc, pic}]
+        async function crawlZhanyuanSite(zhanyuanItem, keyword) {
+            const name = zhanyuanItem.name || '未知';
+            const searchUrl = zhanyuanItem.websearchurl || zhanyuanItem.searchUrl || '';
+            if (!searchUrl) return [];
+
+            try {
+                const fullUrl = searchUrl + encodeURIComponent(keyword);
+                const response = await fetch(fullUrl, {
+                    headers: {
+                        'User-Agent': zhanyuanItem.searchUA || 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36'
+                    }
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const html = await response.text();
+
+                // 尝试解析XML/RSS
+                const parser = new SAFE_DOMParser();
+                const doc = parser.parseFromString(html, 'text/xml');
+
+                // 如果是RSS格式（有 <rss> 或 <feed>）
+                const isRSS = doc.querySelector('rss') || doc.querySelector('feed') || doc.querySelector('item');
+                if (isRSS) {
+                    const items = doc.querySelectorAll('item, entry');
+                    return Array.from(items).map(item => ({
+                        title: (item.querySelector('title')?.textContent || '').trim(),
+                        url: (item.querySelector('link')?.textContent || item.querySelector('link')?.getAttribute('href') || '').trim(),
+                        desc: (item.querySelector('description, summary, author')?.textContent || '').trim(),
+                        pic: (item.querySelector('enclosure')?.getAttribute('url') || item.querySelector('image, thumbnail')?.getAttribute('url') || zhanyuanItem.searchpic || '')
+                    })).filter(r => r.title || r.url);
+                }
+
+                // 尝试解析HTML
+                const htmlDoc = parser.parseFromString(html, 'text/html');
+                const fix = (e) => fixXPath(e);
+
+                // 使用XPath提取搜索结果
+                const snameXP = fix(zhanyuanItem.searchname);
+                const sidXP = fix(zhanyuanItem.searchid);
+                const spicXP = fix(zhanyuanItem.searchpic);
+                const sstarXP = fix(zhanyuanItem.searchstarr);
+
+                const titles = snameXP ? xpathText(snameXP, htmlDoc) : [];
+                const urls = sidXP ? xpathAttr(sidXP, htmlDoc, 'href') : [];
+                const pics = spicXP ? xpathAttr(spicXP, htmlDoc, 'src') : [];
+                const descs = sstarXP ? xpathText(sstarXP, htmlDoc) : [];
+
+                const maxLen = Math.max(titles.length, urls.length, 1);
+                const results = [];
+                for (let i = 0; i < maxLen; i++) {
+                    const url = urls[i] || '';
+                    // 相对路径补全
+                    const absUrl = url.startsWith('http') ? url : (zhanyuanItem.searchUrl || '').replace(/\/+$/, '') + '/' + url.replace(/^\//, '');
+                    results.push({
+                        title: titles[i] || '',
+                        url: absUrl,
+                        desc: descs[i] || '',
+                        pic: pics[i] || zhanyuanItem.searchpic || ''
+                    });
+                }
+                return results.filter(r => r.title || r.url);
+            } catch (e) {
+                console.warn(`爬虫 ${name} 搜索失败:`, e.message);
+                return [];
+            }
+        }
+
+        // 爬虫获取详情页面的播放地址
+        async function crawlZhanyuanDetail(item, zhanyuanItem) {
+            const detailPageUrl = item.url || '';
+            if (!detailPageUrl || !detailPageUrl.startsWith('http')) return [];
+
+            try {
+                const response = await fetch(detailPageUrl, {
+                    headers: { 'User-Agent': zhanyuanItem.playUA || zhanyuanItem.searchUA || 'Mozilla/5.0' }
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const html = await response.text();
+                const parser = new SAFE_DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const fix = (e) => fixXPath(e);
+
+                // 提取播放列表
+                const dlXP = fix(zhanyuanItem.detaillist);
+                const xlXP = fix(zhanyuanItem.detailxl);
+                const jsXP = fix(zhanyuanItem.detailjs);
+                const jsurlXP = fix(zhanyuanItem.detailjsurl);
+
+                let episodes = [];
+
+                // 方案1：从detaillist里提取
+                if (dlXP) {
+                    const containers = document.evaluate(dlXP, doc, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+                    for (let ci = 0; ci < containers.snapshotLength; ci++) {
+                        const container = containers.snapshotItem(ci);
+                        const titles = jsXP ? xpathText(jsXP, container) : [];
+                        const urls = jsurlXP ? xpathAttr(jsurlXP, container, 'href') : [];
+                        const group = xlXP ? (xpathText(xlXP, container.parentElement || doc)[0] || '默认') : '默认';
+                        titles.forEach((t, i) => {
+                            const u = urls[i] || '';
+                            episodes.push({
+                                name: t,
+                                url: u.startsWith('http') ? u : (zhanyuanItem.searchUrl || '').replace(/\/+$/, '') + '/' + u.replace(/^\//, ''),
+                                group: group
+                            });
+                        });
+                    }
+                }
+
+                return episodes.filter(e => e.url);
+            } catch (e) {
+                console.warn('爬虫获取详情失败:', e.message);
+                return [];
+            }
+        }
+
+        // 总的zhanyuan搜索入口：并发爬取所有zhanyuan源
+        async function searchZhanyuanAll(keyword, zhanyuanList) {
+            const allResults = [];
+            const tasks = zhanyuanList.map(async (zyItem) => {
+                const items = await crawlZhanyuanSite(zyItem, keyword);
+                if (items.length > 0) {
+                    allResults.push({
+                        interfaceName: zyItem.name || '未知',
+                        interfaceUrl: zyItem.searchUrl || '',
+                        zhanyuanItem: zyItem,
+                        data: items.map(item => ({
+                            vod_id: item.url,
+                            vod_name: item.title,
+                            vod_remarks: item.desc,
+                            vod_pic: item.pic,
+                            _zhanyuanItem: zyItem,
+                            _detailPageUrl: item.url
+                        }))
+                    });
+                }
+            });
+            await Promise.allSettled(tasks);
+            return allResults;
         }
 
         // 搜索输入框回车触发搜索
