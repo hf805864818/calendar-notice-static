@@ -1433,29 +1433,25 @@ btn.addEventListener('mousedown', startLongPress);
             const videoExtensions = [
                 '.m3u8', '.m3u', '.mp4', '.flv', '.webm', '.mkv', '.avi', '.mov',
                 '.ts', '.mts', '.m2ts', '.f4v', '.wmv', '.rm', '.rmvb', '.asf',
-                '.divx', '.xvid', '.3gp', '.3g2', '.ogv', '.ogm', '.mov', '.qt',
-                '.mpg', '.mpeg', '.mpe', '.mp1', '.mp2', '.mpv', '.m4v', '.m4p'
+                '.divx', '.xvid', '.3gp', '.3g2', '.ogv', '.ogm', '.mpg', '.mpeg',
+                '.mpe', '.mp1', '.mp2', '.mpv', '.m4v', '.m4p'
             ];
 
             const hasVideoExtension = videoExtensions.some(ext => lowerUrl.includes(ext));
 
-            // 2. 检查是否为常见的视频流协议
             const isStreamProtocol = lowerUrl.startsWith('rtmp://') ||
                                     lowerUrl.startsWith('rtsp://') ||
                                     lowerUrl.startsWith('rtmps://') ||
                                     lowerUrl.startsWith('rtp://') ||
                                     lowerUrl.includes('live/') ||
                                     lowerUrl.includes('stream/') ||
-                                    lowerUrl.includes('/hls/') ||
-                                    lowerUrl.includes('/play/') && lowerUrl.includes('.m3u8');
+                                    lowerUrl.includes('/hls/');
 
-            // 3. 检查是否为常见的CDN视频地址特征
             const isCdnPattern = /https?:\/\/[a-z0-9\-]+(\.(?:cdn|stream|video|media|vod|edge|cache)[a-z0-9\-]*)*\.[a-z]{2,}(?::\d+)?\/.+\.(?:m3u8|mp4|flv|ts)/i.test(lowerUrl);
 
-            // 4. 检查是否包含视频流参数
             const hasVideoParams = lowerUrl.includes('m3u8') ||
                                   lowerUrl.includes('stream') ||
-                                  lowerUrl.includes('play') && (lowerUrl.includes('.mp4') || lowerUrl.includes('.flv'));
+                                  (lowerUrl.includes('play') && (lowerUrl.includes('.mp4') || lowerUrl.includes('.flv')));
 
             return hasVideoExtension || isStreamProtocol || isCdnPattern || hasVideoParams;
         }
@@ -1699,6 +1695,11 @@ btn.addEventListener('mousedown', startLongPress);
 
             // 3. 检查是否有可用的解析接口
             if (!customParsers || customParsers.length === 0) {
+                // 没有解析接口也能播放直链
+                if (url.startsWith('http') && (url.endsWith('.m3u8') || url.endsWith('.mp4') || url.endsWith('.flv') || url.includes('.m3u8?') || url.includes('.mp4?'))) {
+                    console.log('没有解析接口但地址是直链可播放:', url);
+                    return url;
+                }
                 console.warn('没有可用的解析接口，无法解析非直链地址');
                 throw new Error(`无法播放：当前地址需要解析，但未配置解析接口。请在设置中添加解析接口。\n\n地址: ${url}`);
             }
@@ -3300,14 +3301,30 @@ btn.addEventListener('mousedown', startLongPress);
                     }
 
                     // 如果搜索接口只返回基础信息，则使用 detailurl + vod_id 获取详情
-                    let playlist = item.vod_play_url;
+                    let playlist = item.vod_play_url || item.vod_url || item.play_url || item.video_url || '';
+
                     if (!playlist && item._detailurl && (item.vod_id || item.id)) {
                         const detailRequestUrl = item._detailurl + encodeURIComponent(item.vod_id || item.id);
-                        const detailText = await fetchWithProxy(detailRequestUrl);
+                        const detailText = await fetchWithProxy(detailRequestUrl, 5000);
                         const detailData = parseResponseData(detailText);
                         if (detailData && detailData.length > 0) {
                             Object.assign(item, detailData[0]);
-                            playlist = item.vod_play_url;
+                            playlist = item.vod_play_url || item.vod_url || item.play_url || item.video_url || '';
+                        }
+                    }
+
+                    // 如果是m3u8直链但没有vod_play_url，直接播放
+                    if (!playlist) {
+                        const vodUrls = [item.vod_url || item.play_url || item.video_url || ''].filter(Boolean);
+                        if (vodUrls.length > 0 && vodUrls[0].startsWith('http')) {
+                            videoList = [];
+                            categorizedChannels = {};
+                            videoList.push(vodUrls[0]);
+                            currentVideoIndex = 0;
+                            document.getElementById('searchPanel').classList.add('hidden');
+                            loadVideo(0);
+                            loadingEl.classList.add('hidden');
+                            return;
                         }
                     }
 
