@@ -2551,15 +2551,17 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function fetchForSearch(url) {
-            // 直连可能很慢或失败，优先走双代理
+            // 优先走代理
             if (useProxyEnabled) {
                 return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
             }
+            // 关闭代理时也先走代理再直连
             try {
-                return await fetchDirect(url, SEARCH_TIMEOUT_MS);
-            } catch (directError) {
-                console.log('接口直连失败，尝试代理:', directError.message);
                 return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
+            } catch (proxyError) {
+                console.log('代理失败，尝试直连:', proxyError.message);
+                const response = await fetchDirect(url, SEARCH_TIMEOUT_MS);
+                return response;
             }
         }
 
@@ -2747,10 +2749,10 @@ btn.addEventListener('mousedown', startLongPress);
 
                     let content;
                     try {
-                        content = await fetchDirect(url, 5000);
-                    } catch (e) {
-                        console.warn('订阅地址直连失败，尝试双代理获取:', url, e.message);
                         content = await fetchWithProxy(url);
+                    } catch (e) {
+                        console.warn('订阅地址代理失败，尝试直连:', url, e.message);
+                        content = await fetchDirect(url, 5000);
                     }
 
                     // A. 从纯文本中抓所有URL
@@ -3156,15 +3158,11 @@ btn.addEventListener('mousedown', startLongPress);
                 });
                 console.log(`发现 ${zhanyuanInterfaces.length} 个zhanyuan接口`);
 
-                // 提取前8个zhanyuan接口
-                const topZhanyuanInterfaces = zhanyuanInterfaces.slice(0, 8);
-                console.log('zhanyuan接口详情(API类):', topZhanyuanInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
-                
                 // 收集zhanyuan爬虫源（从订阅JSON的zhanyuan字段）
                 let zhanyuanCrawlers = [];
                 try {
                     for (const u of [...SAVED_API_URLS, ...jsonApis]) {
-                        const content = await fetchDirect(u, 5000).catch(() => null);
+                        const content = await fetchWithProxy(u).catch(() => null);
                         if (content) {
                             const parsed = JSON.parse(content);
                             if (parsed.zhanyuan && Array.isArray(parsed.zhanyuan)) {
@@ -3176,6 +3174,19 @@ btn.addEventListener('mousedown', startLongPress);
                 } catch (e) {
                     console.warn('获取zhanyuan爬虫源失败:', e.message);
                 }
+
+                // 提取前8个切片资源接口（不足8个用zhanyuan补）
+                const apiInterfaces = searchInterfaces.filter(url => {
+                    const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
+                    const urlText = url.toLowerCase();
+                    return url.includes('/api') || url.includes('/vod') || url.includes('.php') || name.includes('api');
+                });
+                const topSliceInterfaces = apiInterfaces.slice(0, 8);
+                if (topSliceInterfaces.length < 8) {
+                    const zyFill = zhanyuanInterfaces.filter(z => !topSliceInterfaces.includes(z)).slice(0, 8 - topSliceInterfaces.length);
+                    topSliceInterfaces.push(...zyFill);
+                }
+                console.log('流程2切片资源接口:', topSliceInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
                 
                 // 固定平台开关（从localStorage读取，默认开启）
                 const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
@@ -3214,13 +3225,13 @@ btn.addEventListener('mousedown', startLongPress);
 
                     // 流程2: 同时搜索前8个zhanyuan接口
                     (async () => {
-                        console.log(`流程2: 搜索${topZhanyuanInterfaces.length}个zhanyuan接口`);
-                        const zhanyuanResults = [];
-                        const tasks = topZhanyuanInterfaces.map(async (interfaceUrl) => {
+                        console.log(`流程2: 搜索${topSliceInterfaces.length}个切片资源接口`);
+                        const sliceResults = [];
+                        const tasks = topSliceInterfaces.map(async (interfaceUrl) => {
                             try {
                                 const result = await searchSingleInterface(interfaceUrl, keyword);
                                 if (result) {
-                                    zhanyuanResults.push(result);
+                                    sliceResults.push(result);
                                     const key = result.interfaceUrl || result.interfaceName;
                                     if (!seenPlatforms.has(key)) {
                                         seenPlatforms.add(key);
@@ -3233,7 +3244,7 @@ btn.addEventListener('mousedown', startLongPress);
                             }
                         });
                         await Promise.allSettled(tasks);
-                        console.log(`流程2完成，找到 ${zhanyuanResults.length} 个zhanyuan结果`);
+                        console.log(`流程2完成，找到 ${sliceResults.length} 个结果`);
                     })(),
 
                     // 流程3: 分批搜索其他接口
@@ -3547,15 +3558,19 @@ btn.addEventListener('mousedown', startLongPress);
         async function crawlZhanyuanSite(zhanyuanItem, keyword) {
             const name = zhanyuanItem.name || '未知';
             const searchUrl = zhanyuanItem.websearchurl || zhanyuanItem.searchUrl || '';
+            // 如果websearchurl为空，自动构造默认搜索URL
+            if (!searchUrl) {
+                // 尝试常见CMS搜索路径
+                if (zhanyuanItem.searchUrl) {
+                    searchUrl = zhanyuanItem.searchUrl.replace(/\/+$/, '') + '/vodsearch/-------------.html?wd=';
+                }
+            }
             if (!searchUrl) return [];
 
             try {
                 const fullUrl = searchUrl + encodeURIComponent(keyword);
-                const response = await fetch(fullUrl, {
-                    headers: {
-                        'User-Agent': zhanyuanItem.searchUA || 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36'
-                    }
-                });
+                const proxyUrl = PROXY_LIST[1] + encodeURIComponent(fullUrl) + '&token=' + PROXY_TOKEN;
+                const response = await fetchWithTimeout(proxyUrl, {}, 5000);
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 const html = await response.text();
 
