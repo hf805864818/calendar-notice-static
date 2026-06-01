@@ -2622,8 +2622,9 @@ btn.addEventListener('mousedown', startLongPress);
 
             // 已经有 ac 参数但缺少关键词，补 wd=
             if (/[?&]ac=/i.test(u)) {
-                // 如果是 ?ac=list，保持 list 参数
-                return `${u}${u.includes('?') ? '&' : '?'}wd=`;
+                // 强制改为 videolist 并加上 wd= (ac=detail 不返回数据)
+                const withVideoList = u.replace(/ac=[^&]*/i, 'ac=videolist');
+                return `${withVideoList}${withVideoList.includes('?') ? '&' : '?'}wd=`;
             }
 
             // 常见苹果CMS基础API，补成 list 搜索接口
@@ -3340,13 +3341,16 @@ btn.addEventListener('mousedown', startLongPress);
                     // 如果搜索接口只返回基础信息，则使用 detailurl + vod_id 获取详情
                     let playlist = item.vod_play_url || item.vod_url || item.play_url || item.video_url || '';
 
-                    if (!playlist && item._detailurl && (item.vod_id || item.id)) {
-                        const detailRequestUrl = item._detailurl + encodeURIComponent(item.vod_id || item.id);
-                        const detailText = await fetchWithProxy(detailRequestUrl, 5000);
-                        const detailData = parseResponseData(detailText);
-                        if (detailData && detailData.length > 0) {
-                            Object.assign(item, detailData[0]);
-                            playlist = item.vod_play_url || item.vod_url || item.play_url || item.video_url || '';
+                    if (!playlist && (item._detailurl || item._sourceInterfaceUrl) && (item.vod_id || item.id)) {
+                        const detailUrl = item._detailurl || (item._sourceInterfaceUrl ? item._sourceInterfaceUrl.replace(/\/[^\/]*\?.*$/, '/') + '?ac=detail&ids=' : '');
+                        if (detailUrl) {
+                            const detailRequestUrl = detailUrl + encodeURIComponent(item.vod_id || item.id);
+                            const detailText = await fetchWithProxy(detailRequestUrl, 5000);
+                            const detailData = parseResponseData(detailText);
+                            if (detailData && detailData.length > 0) {
+                                Object.assign(item, detailData[0]);
+                                playlist = item.vod_play_url || item.vod_url || item.play_url || item.video_url || '';
+                            }
                         }
                     }
 
