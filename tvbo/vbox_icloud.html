@@ -3449,12 +3449,8 @@ btn.addEventListener('mousedown', startLongPress);
                                         } else {
                                             searchUrl = apiDef.url + '?ac=videolist&wd=' + encodeURIComponent(keyword);
                                         }
-                                        // 先直连，不通再走代理
-                                        let respText = null;
-                                        try { respText = await fetchDirect(searchUrl, 5000); } catch(e) {}
-                                        if (!respText) {
-                                            try { respText = await fetchFastWithProxy(searchUrl, 8000); } catch(e) {}
-                                        }
+                                        // 用fetchDirect直连（不走代理，避免代理全部封了）
+                                        const respText = await fetchDirect(searchUrl, 8000).catch(() => null);
                                         if (!respText || respText.length < 10) return [];
                                         let items = [];
                                         if (respText.trim().startsWith('{')) {
