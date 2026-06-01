@@ -616,29 +616,12 @@
                                         <p class="text-white/40 text-[10px] mt-1">仅保存URL，不做解析处理</p>
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
-                                        <label class="text-white/70 text-xs mb-1.5 block">☁️ 网盘播放 (v1.0)</label>
-                                        <div class="space-y-2">
-                                            <div class="flex gap-1.5">
-                                                <select id="driveTypeSelect" class="glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none cursor-pointer flex-1" onchange="onDriveTypeChange()">
-                                                    <option value="alipan" class="bg-gray-800">阿里云盘</option>
-                                                    <option value="quark" class="bg-gray-800">夸克网盘</option>
-                                                    <option value="baidu" class="bg-gray-800">百度网盘</option>
-                                                    <option value="uc" class="bg-gray-800">UC网盘</option>
-                                                    <option value="123pan" class="bg-gray-800">123云盘</option>
-                                                    <option value="139pan" class="bg-gray-800">139云盘</option>
-                                                </select>
-                                                <button class="glass-btn px-2 py-1 rounded-lg text-emerald-400 text-xs cursor-pointer whitespace-nowrap" onclick="openDriveBrowser()">浏览文件</button>
-                                            </div>
-                                            <div class="flex gap-1.5">
-                                                <input type="text" id="driveShareInput" placeholder="粘贴网盘分享链接" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
-                                                <button class="glass-btn px-2 py-1 rounded-lg text-blue-400 text-xs cursor-pointer whitespace-nowrap" onclick="resolveShareUrl()">解析</button>
-                                            </div>
-                                            <div class="flex gap-1.5">
-                                                <input type="text" id="driveTokenInput" placeholder="手动输入AccessToken" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
-                                                <button class="glass-btn px-2 py-1 rounded-lg text-yellow-400 text-xs cursor-pointer whitespace-nowrap" onclick="setDriveToken()">设Token</button>
-                                            </div>
-                                            <div id="driveTokenList" class="drive-token-manager"></div>
-                                        </div>
+                                        <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-emerald-400 text-xs cursor-pointer flex items-center justify-center gap-2 hover:bg-emerald-500/20" onclick="toggleDrivePanel()">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+                                            </svg>
+                                            网盘管理
+                                        </button>
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
                                         <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-red-400 text-xs cursor-pointer hover:bg-red-500/20 flex items-center justify-center gap-2" onclick="clearAllResources()">
@@ -4506,10 +4489,220 @@ btn.addEventListener('mousedown', startLongPress);
             }
         }
 
-        // 初始化
+
+        // ===== 网盘弹窗面板函数 =====
+        function toggleDrivePanel() {
+            var overlay = document.getElementById("drivePanelOverlay");
+            if (!overlay) { console.error("overlay not found"); return; }
+            overlay.classList.toggle("hidden");
+            if (!overlay.classList.contains("hidden")) {
+                document.getElementById("driveTypeSelect2").value = driveState.type;
+                renderTokenListPanel();
+                document.getElementById("driveStatusPanel").textContent = driveState.token ? "已登录" : "未登录";
+            }
+        }
+        function onDrivePanelTypeChange() {
+            var sel = document.getElementById("driveTypeSelect2");
+            driveState.type = sel ? sel.value : "alipan";
+            driveState.currentPath = [{ id: "root", name: "根目录" }];
+            driveState.token = getTokenForType(driveState.type);
+            driveState.driveId = null; driveState.shareId = null; driveState.sharePwd = null;
+            document.getElementById("driveStatusPanel").textContent = driveState.token ? "已登录" : "未登录";
+            document.getElementById("driveFileListPanel").innerHTML = '<div class="text-white/40 text-xs text-center py-6">切换网盘后请点击"浏览"</div>';
+            document.getElementById("driveBreadcrumbPanel").innerHTML = "";
+            renderTokenListPanel();
+        }
+        function renderTokenListPanel() {
+            var c = document.getElementById("driveTokenListPanel"); if (!c) return;
+            var tokens = loadDriveTokens();
+            var entries = Object.entries(tokens).filter(function(p) { return p[1]; });
+            if (!entries.length) { c.innerHTML = '<div class="text-white/30 text-[10px] text-center py-2">暂无已保存的Token</div>'; return; }
+            c.innerHTML = entries.map(function(p) {
+                var t = p[0], tok = p[1], cfg = DRIVE_CONFIGS[t], n = cfg ? cfg.name : t;
+                return '<div class="flex items-center justify-between px-2 py-1.5 rounded-lg bg-white/5">' +
+                    '<span class="text-white/80 text-xs">' + n + ' <span class="text-white/40 text-[10px]">' + tok.substring(0,8) + '...</span></span>' +
+                    '<div class="flex gap-1"><button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-emerald-400 cursor-pointer" onclick="useDriveTokenPanel(\\'' + t + '\\')">使用</button>' +
+                    '<button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-red-400 cursor-pointer" onclick="removeTokenForType(\\'' + t + '\\');renderTokenListPanel()">x</button></div></div>';
+            }).join("");
+        }
+        function useDriveTokenPanel(type) {
+            document.getElementById("driveTypeSelect2").value = type;
+            onDrivePanelTypeChange();
+            driveState.token = getTokenForType(type);
+            openDriveBrowserFromPanel();
+        }
+        function setDriveTokenFromPanel() {
+            var input = document.getElementById("driveTokenInputPanel");
+            var token = input ? input.value.trim() : "";
+            if (!token) { showAlert("请输入Token", "提示"); return; }
+            var type = document.getElementById("driveTypeSelect2") ? document.getElementById("driveTypeSelect2").value : "alipan";
+            setTokenForType(type, token);
+            driveState.type = type; driveState.token = token;
+            document.getElementById("driveStatusPanel").textContent = "已登录";
+            input.value = ""; renderTokenListPanel();
+            showAlert("已保存 " + (DRIVE_CONFIGS[type] ? DRIVE_CONFIGS[type].name : type) + " Token", "成功");
+        }
+        function resolveShareUrlFromPanel() {
+            var input = document.getElementById("driveShareInputPanel");
+            var url = input ? input.value.trim() : "";
+            if (!url) { showAlert("请输入分享链接", "提示"); return; }
+            resolveShareUrlWithUrl(url);
+            input.value = "";
+        }
+        async function resolveShareUrlWithUrl(url) {
+            var keys = Object.keys(DRIVE_CONFIGS);
+            for (var i = 0; i < keys.length; i++) {
+                var t = keys[i], cfg = DRIVE_CONFIGS[t];
+                if (!cfg.shareRegex) continue;
+                var m = url.match(cfg.shareRegex);
+                if (m) {
+                    driveState.type = t;
+                    document.getElementById("driveTypeSelect2").value = t;
+                    driveState.token = getTokenForType(t);
+                    document.getElementById("driveStatusPanel").textContent = "解析中...";
+                    var p = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/) || [null,null];
+                    driveState.shareId = m[1]; driveState.sharePwd = p[1];
+                    driveState.currentPath = [{id:"root",name:"分享文件"}];
+                    await browseShareFiles(t, m[1], p[1], driveState.token || "");
+                    document.getElementById("driveStatusPanel").textContent = "分享模式";
+                    return;
+                }
+            }
+            showAlert("无法识别该分享链接格式", "错误");
+        }
+        async function openDriveBrowserFromPanel() {
+            driveState.token = getTokenForType(driveState.type);
+            if (!driveState.token) { showAlert("请先保存Token", "提示"); return; }
+            document.getElementById("driveStatusPanel").textContent = "加载中...";
+            renderBreadcrumbPanel();
+            await loadDriveFilesPanel("root");
+        }
+        function renderBreadcrumbPanel() {
+            var bc = document.getElementById("driveBreadcrumbPanel"); if (!bc) return;
+            bc.innerHTML = driveState.currentPath.map(function(p,i) {
+                var last = i === driveState.currentPath.length-1;
+                var sep = i>0 ? '<span style="color:rgba(255,255,255,0.3)">/</span>' : "";
+                return sep + '<span onclick="navigateDrivePathPanel(' + i + ')" style="color:' + (last?"rgba(255,255,255,0.9);font-weight:600":"rgba(255,255,255,0.4)") + ';font-size:11px;cursor:pointer">' + p.name + '</span>';
+            }).join("");
+        }
+        function navigateDrivePathPanel(index) {
+            driveState.currentPath = driveState.currentPath.slice(0, index+1);
+            renderBreadcrumbPanel();
+            loadDriveFilesPanel(driveState.currentPath[driveState.currentPath.length-1].id);
+        }
+        async function loadDriveFilesPanel(parentFileId) {
+            var container = document.getElementById("driveFileListPanel"); if (!container) return;
+            container.innerHTML = '<div class="text-white/40 text-xs text-center py-4">加载中...</div>';
+            var cfg = DRIVE_CONFIGS[driveState.type], token = driveState.token;
+            try {
+                var resp;
+                if (driveState.type === "alipan") {
+                    if (!driveState.driveId) {
+                        var r = await apiFetch("https://api.aliyundrive.com/adrive/v1/user/getDriveInfo", {headers:cfg.getAuthHeader(token)});
+                        driveState.driveId = JSON.parse(r).default_drive_id;
+                    }
+                    resp = await apiFetch(cfg.listUrl, {method:"POST", body:JSON.stringify(cfg.listBody(driveState.driveId,parentFileId)), headers:{"Content-Type":"application/json", ...cfg.getAuthHeader(token)}});
+                } else if (driveState.type === "quark") {
+                    resp = await apiFetch(cfg.listUrl+"?pr=ucpro&fr=pc&uc_param_str=&pdir_fid="+(parentFileId||"0")+"&_page=1&_size=100&_sort=file_type:asc,updated_at:desc", {headers:cfg.getAuthHeader(token)});
+                } else if (driveState.type === "baidu") {
+                    resp = await apiFetch(cfg.listUrl+"?dir="+encodeURIComponent(parentFileId||"/")+"&order=name&desc=0", {headers:cfg.getAuthHeader(token)});
+                } else { container.innerHTML='<div class="text-white/40 text-xs text-center py-4">该网盘暂不支持</div>'; return; }
+                var files = cfg.extractList(JSON.parse(resp));
+                renderDriveFilesPanel(files);
+                document.getElementById("driveStatusPanel").textContent = "已登录";
+            } catch(e) { container.innerHTML='<div class="text-red-400 text-xs text-center py-4">加载失败: '+e.message+'</div>'; document.getElementById("driveStatusPanel").textContent="加载失败"; }
+        }
+        function renderDriveFilesPanel(files) {
+            var c = document.getElementById("driveFileListPanel"); if (!c) return;
+            if (!files||!files.length) { c.innerHTML='<div class="text-white/40 text-xs text-center py-4">空目录</div>'; document.getElementById("driveFileCountPanel").textContent="0"; return; }
+            c.innerHTML = files.map(function(f) {
+                var icon="", cls="other";
+                if (f.isFolder) { icon="📁"; cls="folder"; }
+                else if (f.isVideo) { icon="🎬"; cls="video"; }
+                else icon="📄";
+                var sz = f.size ? (f.size>1073741824?(f.size/1073741824).toFixed(1)+"GB":f.size>1048576?(f.size/1048576).toFixed(1)+"MB":f.size>1024?Math.round(f.size/1024)+"KB":f.size+"B"):"";
+                var nm = (f.name||"").replace(/"/g,"&quot;");
+                return '<div class="drive-file-item '+cls+'" onclick="handleDriveFileClickPanel(\\'' + f.id + '\\',' + f.isFolder + ',' + f.isVideo + ',\\'' + nm.replace(/\\\\/g,"\\\\\\\\").replace(/\\'/g,"\\\\\\'") + '\\')">' +
+                    '<span class="drive-file-icon">'+icon+'</span><span class="drive-file-name">'+nm+'</span><span class="drive-file-size">'+sz+'</span></div>';
+            }).join("");
+            document.getElementById("driveFileCountPanel").textContent = files.length + "个文件";
+        }
+        async function handleDriveFileClickPanel(fileId, isFolder, isVideo, fileName) {
+            if (isFolder) { driveState.currentPath.push({id:fileId,name:fileName}); renderBreadcrumbPanel(); await loadDriveFilesPanel(fileId); }
+            else if (isVideo) { await resolveDrivePlay(driveState.type, driveState.token, driveState.driveId, fileId, fileName, false); toggleDrivePanel(); }
+            else { showAlert("该文件不是视频格式", "提示"); }
+        }
+        function refreshDriveFilesFromPanel() {
+            var t = driveState.currentPath[driveState.currentPath.length-1];
+            loadDriveFilesPanel(t ? t.id : "root");
+        }
         renderTokenList();
         onDriveTypeChange();
         console.log('☁️ 网盘播放模块已就绪, 支持: 阿里云盘/夸克/百度/UC/123/139');
     </script>
+
+    <!-- 网盘管理弹窗 -->
+    <div id="drivePanelOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);" onclick="if(event.target===this)toggleDrivePanel()">
+        <div class="rounded-2xl overflow-hidden" style="width: 92%; max-width: 420px; max-height: 85vh; background: rgba(15,15,25,0.96); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 24px 64px rgba(0,0,0,0.8);">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <h3 class="text-white text-sm font-semibold flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+                    网盘管理
+                </h3>
+                <button class="glass-btn p-1.5 rounded-lg text-white/60 hover:text-white cursor-pointer" onclick="toggleDrivePanel()">
+                    <svg class="w-4 h-4" fill="currentColor"><use href="#icon-close"/></svg>
+                </button>
+            </div>
+            <div class="p-4 space-y-4 overflow-y-auto" style="max-height: calc(85vh - 55px);">
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">选择网盘</label>
+                    <select id="driveTypeSelect2" class="w-full glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none cursor-pointer" onchange="onDrivePanelTypeChange()">
+                        <option value="alipan" class="bg-gray-800">☁️ 阿里云盘</option>
+                        <option value="quark" class="bg-gray-800">☁️ 夸克网盘</option>
+                        <option value="baidu" class="bg-gray-800">☁️ 百度网盘</option>
+                        <option value="uc" class="bg-gray-800">☁️ UC网盘</option>
+                        <option value="123pan" class="bg-gray-800">☁️ 123云盘</option>
+                        <option value="139pan" class="bg-gray-800">☁️ 139云盘</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">已保存的Token <span class="text-white/30">(点击使用)</span></label>
+                    <div id="driveTokenListPanel" class="space-y-1 max-h-[80px] overflow-y-auto"></div>
+                </div>
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">手动输入Token</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="driveTokenInputPanel" placeholder="粘贴 AccessToken 或 BDUSS" class="flex-1 glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none placeholder:text-white/40">
+                        <button class="glass-btn px-3 py-2 rounded-xl text-yellow-400 text-xs cursor-pointer whitespace-nowrap" onclick="setDriveTokenFromPanel()">保存</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">解析分享链接</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="driveShareInputPanel" placeholder="粘贴分享链接(自动识别网盘)" class="flex-1 glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none placeholder:text-white/40">
+                        <button class="glass-btn px-3 py-2 rounded-xl text-blue-400 text-xs cursor-pointer whitespace-nowrap" onclick="resolveShareUrlFromPanel()">解析</button>
+                    </div>
+                    <p class="text-white/30 text-[10px] mt-1">支持: alipan.com/s/xxx . pan.quark.cn/s/xxx . pan.baidu.com/s/xxx</p>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-white/60 text-[11px]">文件浏览</span>
+                        <div class="flex gap-2">
+                            <button class="glass-btn px-2 py-1 rounded-lg text-white/60 text-[10px] cursor-pointer" onclick="refreshDriveFilesFromPanel()">刷新</button>
+                            <button class="glass-btn px-2 py-1 rounded-lg text-emerald-400 text-[10px] cursor-pointer" onclick="openDriveBrowserFromPanel()">浏览</button>
+                        </div>
+                    </div>
+                    <div class="drive-breadcrumb" id="driveBreadcrumbPanel"></div>
+                    <div id="driveFileListPanel" class="max-h-[200px] overflow-y-auto space-y-0.5 rounded-xl bg-white/5 p-2">
+                        <div class="text-white/40 text-xs text-center py-6">请先保存Token后点击"浏览"</div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-white/40 text-[11px] pt-2 border-t border-white/10">
+                    <span id="driveStatusPanel">未登录</span>
+                    <span id="driveFileCountPanel"></span>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
