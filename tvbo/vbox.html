@@ -3102,15 +3102,12 @@ btn.addEventListener('mousedown', startLongPress);
                         }
                     }
                 };
-                panel.appendChild(resultBtn);
-            });
-
                 container.appendChild(panel);
             });
 
             const summary = document.createElement('div');
             summary.className = 'text-white/40 text-[10px] text-center py-1';
-            summary.textContent = `共 ${results.length} 个平台 / ${totalCount} 条结果，横向滑动上方平台名称切换`;
+            summary.textContent = `共 ${mergedCount} 部影片 / ${results.length} 个来源平台`;
             container.appendChild(summary);
         }
 
