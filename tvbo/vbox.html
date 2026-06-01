@@ -2372,7 +2372,7 @@ btn.addEventListener('mousedown', startLongPress);
         ];
         const PROXY_TOKEN = '199114';
         const TIMEOUT_MS = 10000;
-        const SEARCH_TIMEOUT_MS = 1500; // 从2200降到1500
+        const SEARCH_TIMEOUT_MS = 3000; // 从1500升到3000
         const DISCOVER_CACHE_TTL = 10 * 60 * 1000;
         const SEARCH_CONCURRENCY = 12; // 从10提高到12
         
@@ -2542,21 +2542,15 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function fetchForSearch(url) {
-            // 如果是优先接口（zhanyuan等），先尝试直连，因为可能更稳定
-            const isPriority = isPrioritySearchInterface(url);
-            
+            // 直连可能很慢或失败，优先走双代理
             if (useProxyEnabled) {
-                // 强制使用代理
                 return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
-            } else {
-                // 先尝试直连
-                try {
-                    return await fetchDirect(url, SEARCH_TIMEOUT_MS);
-                } catch (directError) {
-                    console.log('接口直连失败，尝试代理:', directError.message);
-                    // 直连失败，尝试快速代理
-                    return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
-                }
+            }
+            try {
+                return await fetchDirect(url, SEARCH_TIMEOUT_MS);
+            } catch (directError) {
+                console.log('接口直连失败，尝试代理:', directError.message);
+                return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
             }
         }
 
@@ -2632,6 +2626,30 @@ btn.addEventListener('mousedown', startLongPress);
             }
 
             return `${u}${u.includes('?') ? '&' : '?'}wd=${kw}`;
+        }
+
+        // 带代理的fetch（用于获取接口详情页和视频详情）
+        async function fetchWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
+            try {
+                const response = await fetchDirect(url, timeout);
+                return response;
+            } catch (directError) {
+                console.log('直连失败，走双代理:', directError.message);
+            }
+            const proxyCandidates = [PROXY_LIST[1], PROXY_LIST[2]].filter(Boolean);
+            let lastError = null;
+            for (const proxyBase of proxyCandidates) {
+                const proxiedUrl = proxyBase + encodeURIComponent(url) + `&token=${encodeURIComponent(PROXY_TOKEN)}`;
+                try {
+                    const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
+                    if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
+                    return await response.text();
+                } catch (error) {
+                    lastError = error;
+                    console.warn('fetchWithProxy代理失败:', proxyBase, error.message);
+                }
+            }
+            throw lastError || new Error('所有代理请求失败');
         }
 
         // 从订阅JSON/文本中发现搜索接口：支持 api/url/link/vod_api/player_api 等字段
