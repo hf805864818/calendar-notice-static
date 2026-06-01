@@ -2994,7 +2994,7 @@ btn.addEventListener('mousedown', startLongPress);
                 try {
                     const url = new URL(result.interfaceUrl);
                     // 用整个hostname显示（如 api.yutu.com 而非 api）
-                    const host = url.hostname.replace(/^www\./,"")lace(/^www\./, '');
+                    const host = url.hostname.replace(/^www\./,"");
                     const parts = host.split('.');
                     if (parts.length >= 2) {
                         const name = parts[parts.length - 2];
