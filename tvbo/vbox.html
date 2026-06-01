@@ -2367,10 +2367,10 @@ btn.addEventListener('mousedown', startLongPress);
         // 智能搜索系统
         const PROXY_LIST = [
             null,
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://api.codetabs.com/v1/proxy?quest='
+            'https://fragrant-snow-ea12.3764.workers.dev/?url=',
+            'https://vbox.ccwu.cc/?url='
         ];
+        const PROXY_TOKEN = '199114';
         const TIMEOUT_MS = 10000;
         const SEARCH_TIMEOUT_MS = 1500; // 从2200降到1500
         const DISCOVER_CACHE_TTL = 10 * 60 * 1000;
@@ -2523,20 +2523,22 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function fetchFastWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
-            // 只使用第一个非空代理（最可靠的那个）
-            const proxy = PROXY_LIST[1] || PROXY_LIST[2] || PROXY_LIST[0]; // 优先api.allorigins.win或corsproxy.io
-            const proxiedUrl = proxy ? proxy + encodeURIComponent(url) : url;
-            
-            try {
-                const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
-                if (!response.ok) {
-                    throw new Error(`HTTP错误: ${response.status}`);
+            const proxyCandidates = [PROXY_LIST[1], PROXY_LIST[2]].filter(Boolean);
+            let lastError = null;
+
+            for (const proxyBase of proxyCandidates) {
+                const proxiedUrl = proxyBase + encodeURIComponent(url) + `&token=${encodeURIComponent(PROXY_TOKEN)}`;
+                try {
+                    const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
+                    if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
+                    return await response.text();
+                } catch (error) {
+                    lastError = error;
+                    console.warn('代理失败:', proxyBase, error.message);
                 }
-                return await response.text();
-            } catch (error) {
-                console.warn('快速代理失败:', error.message);
-                throw error;
             }
+
+            throw lastError || new Error('所有代理请求失败');
         }
 
         async function fetchForSearch(url) {
