@@ -3638,9 +3638,50 @@ btn.addEventListener('mousedown', startLongPress);
                         throw new Error('未找到该视频的详情');
                     }
 
-                    // 如果是网盘源，走网盘播放
+                    // 如果是网盘聚合源结果（流程4.5搜出的），直接用vod_url播放
                     if (item._driveType && item._fileId) {
-                        const dt = item._driveType;
+                        const panName = item._driveType;
+                        // 检查是否是网盘聚合源结果（_driveType是网盘站名，如"玩偶云盘"）
+                        const isPanAggr = CLOUD_DRIVE_SEARCH_API.some(a => a.name === panName);
+                        if (isPanAggr) {
+                            // 网盘聚合源搜索结果，vod_url就是这个站点的播放地址，直接播放
+                            const playUrl = item.vod_url || item.play_url || item.video_url || '';
+                            if (playUrl) {
+                                videoList = [playUrl];
+                                currentVideoIndex = 0;
+                                document.getElementById('searchPanel').classList.add('hidden');
+                                loadingEl.classList.add('hidden');
+                                loadVideo(0);
+                                return;
+                            }
+                            // 如果没vod_url，尝试通过vod_id获取详情
+                            if (item.vod_id) {
+                                const detailUrl = item._sourceInterfaceUrl || SEARCH_INTERFACE_DETAIL_MAP[item._sourceInterfaceUrl] || '';
+                                if (detailUrl) {
+                                    try {
+                                        const detailText = await fetchForSearch(detailUrl + encodeURIComponent(item.vod_id));
+                                        const detailData = parseResponseData(detailText);
+                                        if (detailData && detailData.length > 0) {
+                                            const d = detailData[0];
+                                            const rUrl = d.vod_url || d.url || d.play_url || d.video_url || '';
+                                            if (rUrl) {
+                                                videoList = [rUrl];
+                                                currentVideoIndex = 0;
+                                                loadVideo(0);
+                                                document.getElementById('searchPanel').classList.add('hidden');
+                                                loadingEl.classList.add('hidden');
+                                                return;
+                                            }
+                                        }
+                                    } catch(e) {}
+                                }
+                            }
+                            showAlert('该网盘源的视频无法获取播放地址', '播放失败');
+                            loadingEl.classList.add('hidden');
+                            return;
+                        }
+
+                        // 以下是真正的网盘文件播放（阿里云盘/夸克/百度等，需要Token）
                         document.getElementById('searchPanel').classList.add('hidden');
                         loadingEl.classList.add('hidden');
                         // 设置网盘状态
