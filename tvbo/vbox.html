@@ -1886,8 +1886,9 @@ btn.addEventListener('mousedown', startLongPress);
                 loadingIndicator.classList.remove('hidden');
 
                 // 异步解析视频地址
-                                // 直接使用原始URL播放
-                const proxyPlayUrl = originalUrl;
+                                // m3u8/mp4通过代理域名播放（绕过外网限制）
+                const isDirectStream = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.ts') || originalUrl.includes('.flv');
+                const proxyPlayUrl = isDirectStream ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
                 parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
                         // 检查是否已被新的请求替换
@@ -2988,11 +2989,12 @@ btn.addEventListener('mousedown', startLongPress);
                     return s;
                 }
             }
-            // 如果所有候选都无效，尝试从接口URL获取最后一部分作为名称
+            // 如果所有候选都无效，从接口URL生成友好名称
             if (result && result.interfaceUrl) {
                 try {
                     const url = new URL(result.interfaceUrl);
-                    const host = url.hostname.replace(/^www\./, '');
+                    // 用整个hostname显示（如 api.yutu.com 而非 api）
+                    const host = url.hostname.replace(/^www\./,"")lace(/^www\./, '');
                     const parts = host.split('.');
                     if (parts.length >= 2) {
                         const name = parts[parts.length - 2];
@@ -3063,7 +3065,11 @@ btn.addEventListener('mousedown', startLongPress);
                 `;
                 panel.appendChild(title);
 
+                const shownVods = new Set();
                 result.data.forEach((item, itemIndex) => {
+                    const vodKey = item.vod_name || item.title || item.vod_id || '';
+                    if (shownVods.has(vodKey)) return;
+                    shownVods.add(vodKey);
                     const resultBtn = document.createElement('div');
                     resultBtn.className = 'px-2 py-1.5 cursor-pointer hover:bg-white/10 border-t border-white/5';
                     resultBtn.innerHTML = `
