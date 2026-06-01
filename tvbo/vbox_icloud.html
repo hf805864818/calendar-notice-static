@@ -192,6 +192,8 @@
         .source-tab {
             transition: all 0.2s ease;
             border: 1px solid transparent;
+            padding: 4px 14px !important;
+            font-size: 11px !important;
         }
         .source-tab.active {
             background: rgba(255, 255, 255, 0.2);
@@ -2558,21 +2560,26 @@ btn.addEventListener('mousedown', startLongPress);
         SEARCH_INTERFACE_NAME_MAP['http://154.219.117.232:9981/jacloudapi.php/provide/vod/?ac=list'] = '789官源';
         SEARCH_INTERFACE_NAME_MAP['https://www.caiji.cyou/api.php/provide/vod/?ac=list'] = '建安官源';
 
-        // ===== 网盘聚合搜索接口（来自iBox逆向分析，直接搜索网盘资源，返回可直接播放的直链） =====
-        // 这些接口聚合了阿里云盘/夸克/百度等网盘的资源，搜索结果返回的vod_url就是网盘直链/M3U8
+        // ===== 网盘聚合搜索接口 =====
+        // 这些是网盘资源站，采用苹果CMS标准接口格式，搜索结果返回vod_url可直接播放
         const CLOUD_DRIVE_SEARCH_API = [
-            // rrmj.plus — 最强大的网盘聚合搜索，返回网盘视频直链
-            { url: 'https://api.rrmj.plus/m-station/search/drama?keywords=', name: 'RRMJ网盘', detail: 'https://api.rrmj.plus/m-station/drama/page?' },
-            // xiawen.tv — 网盘资源聚合搜索
-            { url: 'https://api.xiawen.tv/api/v1/aggregate/search?key=', name: '瞎问网盘', detail: 'https://api.xiawen.tv/api/v1/series/detail/query?' },
-            // mddcloud.com.cn — MDD云盘搜索
-            { url: 'https://www.mddcloud.com.cn/oweApi/search/searchAllResultNew?key=', name: 'MDD网盘', detail: 'https://www.mddcloud.com.cn/' }
+            { url: 'http://wogg.xxooo.cf/api.php/provide/vod/at/xml/?ac=list&wd=', name: '玩偶云盘', type: 'cms' },
+            { url: 'http://feimao888.fun/api.php/provide/vod/at/xml/?ac=list&wd=', name: '蜡笔云盘', type: 'cms' },
+            { url: 'https://tv.yydsys.top/api.php/provide/vod/at/xml/?ac=list&wd=', name: '多多云盘', type: 'cms' },
+            { url: 'https://sd.sduc.site/api.php/provide/vod/at/xml/?ac=list&wd=', name: '闪电云盘', type: 'cms' },
+            { url: 'https://oog.nxog.eu.org/api.php/provide/vod/at/xml/?ac=list&wd=', name: '欧歌云盘', type: 'cms' },
+            { url: 'http://2xiaopan.fun/api.php/provide/vod/at/xml/?ac=list&wd=', name: '二小云盘', type: 'cms' },
+            { url: 'http://www.miqk.cc/api.php/provide/vod/at/xml/?ac=list&wd=', name: '至臻云盘', type: 'cms' },
+            { url: 'http://103.45.162.207:20720/api.php/provide/vod/at/xml/?ac=list&wd=', name: '虎斑云盘', type: 'cms' },
+            { url: 'http://xsayang.fun:12512/api.php/provide/vod/at/xml/?ac=list&wd=', name: '小斑云盘', type: 'cms' },
+            { url: 'https://www.91panta.cn/api.php/provide/vod/', name: '盘Ta云盘', type: 'cms_url' },
+            { url: 'https://www.leijing.xyz/api.php/provide/vod/', name: '雷鲸云盘', type: 'cms_url' },
+            { url: 'https://www.nanf.cc/api.php/provide/vod/', name: '南风云盘', type: 'cms_url' },
+            { url: 'https://pan.funletu.com/api.php/provide/vod/', name: '趣盘', type: 'cms_url' },
+            { url: 'https://4ktop.com/api.php/provide/vod/', name: '4KTop云盘', type: 'cms_url' },
+            { url: 'https://libvio.mov/api.php/provide/vod/', name: 'LibVio云盘', type: 'cms_url' },
+            { url: 'https://666.666291.xyz/api.php/provide/vod/', name: '木偶云盘', type: 'cms_url' }
         ];
-        // 注册到接口名称映射中
-        CLOUD_DRIVE_SEARCH_API.forEach(api => {
-            SEARCH_INTERFACE_NAME_MAP[api.url] = api.name;
-            if (api.detail) SEARCH_INTERFACE_DETAIL_MAP[api.url] = api.detail;
-        });
 
         // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
         const PRIORITY_SEARCH_KEYWORDS = ['zhanyuan', '站源', 'zy', 'zanyuan', '战源', '资源', '资源站', '资源源']; // 扩展关键词，包括可能的变体
@@ -3263,18 +3270,9 @@ btn.addEventListener('mousedown', startLongPress);
             try {
                 console.log('步骤1: 获取所有接口');
                 const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
-                // 网盘聚合搜索源：直接加入搜索结果（这些接口本身就是搜索格式，不依赖discover发现）
-                const cloudSearchUrls = CLOUD_DRIVE_SEARCH_API.map(a => a.url).filter(u => isSearchInterface(u));
-                cloudSearchUrls.forEach(url => {
-                    if (!searchInterfaces.includes(url)) {
-                        searchInterfaces.push(url);
-                        if (!SEARCH_INTERFACE_NAME_MAP[url]) {
-                            const apiDef = CLOUD_DRIVE_SEARCH_API.find(a => a.url === url);
-                            if (apiDef) SEARCH_INTERFACE_NAME_MAP[url] = apiDef.name;
-                        }
-                    }
-                });
-                console.log(`发现 ${searchInterfaces.length} 个搜索接口（含 ${cloudSearchUrls.length} 个网盘聚合源）`);
+                console.log(`发现 ${searchInterfaces.length} 个搜索接口`);
+
+                // 网盘聚合源单独在流程4.5中处理，不混入普通searchInterfaces
 
                 if (searchInterfaces.length === 0) {
                     container.innerHTML = '<div class="text-white/40 text-xs text-center py-2">未发现搜索接口</div>';
@@ -3434,6 +3432,76 @@ btn.addEventListener('mousedown', startLongPress);
                     );
                 }
 
+                // 流程4.5: 16个网盘聚合源搜索（8个并发一批，结果合并到"☁️ 网盘资源"Tab）
+                if (cloudPanApis.length > 0) {
+                    promises.push(
+                        (async () => {
+                            console.log('流程4.5: 网盘聚合搜索', cloudPanApis.length, '个源，8并发');
+                            const allItems = [];
+                            const mergedKey = 'clouddrive-aggr:pan';
+                            for (let i = 0; i < cloudPanApis.length; i += 8) {
+                                const batch = cloudPanApis.slice(i, i + 8);
+                                const tasks = batch.map(async (apiDef) => {
+                                    try {
+                                        let searchUrl;
+                                        if (apiDef.type === 'cms') {
+                                            searchUrl = apiDef.url + encodeURIComponent(keyword);
+                                        } else {
+                                            searchUrl = apiDef.url + '?ac=videolist&wd=' + encodeURIComponent(keyword);
+                                        }
+                                        const respText = await fetchFastWithProxy(searchUrl, 8000).catch(() => null);
+                                        if (!respText || respText.length < 10) return [];
+                                        let items = [];
+                                        if (respText.trim().startsWith('{')) {
+                                            const json = JSON.parse(respText);
+                                            const list = json.data || json.list || (Array.isArray(json) ? json : []);
+                                            const arr = Array.isArray(list) ? list : (list.list || []);
+                                            arr.forEach(d => {
+                                                if (d && typeof d === 'object' && (d.vod_name || d.name || d.title)) {
+                                                    items.push({
+                                                        vod_id: d.vod_id || d.id || '', vod_name: d.vod_name || d.name || d.title || '',
+                                                        vod_remarks: d.vod_remarks || d.remarks || d.type_name || (d.note || ''),
+                                                        vod_pic: d.vod_pic || d.pic || '', vod_url: d.vod_url || d.url || d.play_url || '',
+                                                        _driveType: apiDef.name, _fileId: d.vod_id || d.id || '', _isVideo: true
+                                                    });
+                                                }
+                                            });
+                                        } else if (respText.includes('<') && respText.includes('xml')) {
+                                            const itemsRaw = respText.match(/<video[^>]*>[\s\S]*?<\/video>/g) || [];
+                                            itemsRaw.forEach(vxml => {
+                                                const g = (tag) => { var m = vxml.match(new RegExp('<' + tag + '[^>]*>([^<]*)<')); return m ? m[1].trim() : ''; };
+                                                const name = g('name') || g('title');
+                                                if (name) items.push({
+                                                    vod_id: g('id'), vod_name: name, vod_remarks: g('note') || g('type') || '',
+                                                    vod_pic: g('pic') || g('img') || '', vod_url: g('url') || '',
+                                                    _driveType: apiDef.name, _fileId: g('id'), _isVideo: true
+                                                });
+                                            });
+                                        }
+                                        return items;
+                                    } catch(e) { return []; }
+                                });
+                                const batchResults = await Promise.allSettled(tasks);
+                                batchResults.forEach(r => { if (r.status === 'fulfilled') allItems.push(...r.value); });
+                                if (allItems.length > 0) {
+                                    // 有结果立即刷新展示
+                                    var idx = cloudResults.findIndex(r => r.interfaceUrl === mergedKey);
+                                    if (idx >= 0) cloudResults.splice(idx, 1);
+                                    if (pushResult({ interfaceUrl: mergedKey, interfaceName: '☁️ 网盘资源', data: [...allItems] })) displayResultsBatch();
+                                }
+                            }
+                            if (allItems.length > 0) {
+                                var idx = cloudResults.findIndex(r => r.interfaceUrl === mergedKey);
+                                if (idx >= 0) cloudResults.splice(idx, 1);
+                                if (pushResult({ interfaceUrl: mergedKey, interfaceName: '☁️ 网盘资源', data: [...allItems] })) displayResultsBatch();
+                                console.log('流程4.5完成，共', allItems.length, '个网盘资源结果');
+                            } else {
+                                console.log('流程4.5完成，无结果');
+                            }
+                        })()
+                    );
+                }
+
                 // 流程5: 网盘搜索（扫描所有已登录网盘中匹配关键词的文件）
                 const driveTokens = loadDriveTokens();
                 const activeDrives = Object.entries(driveTokens).filter(([,v]) => v);
@@ -3541,17 +3609,6 @@ btn.addEventListener('mousedown', startLongPress);
                     }
 
                     const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
-                    // 同样加入网盘聚合源
-                    const cloudSearchUrls2 = CLOUD_DRIVE_SEARCH_API.map(a => a.url).filter(u => isSearchInterface(u));
-                    cloudSearchUrls2.forEach(url => {
-                        if (!searchInterfaces.includes(url)) {
-                            searchInterfaces.push(url);
-                            if (!SEARCH_INTERFACE_NAME_MAP[url]) {
-                                const apiDef = CLOUD_DRIVE_SEARCH_API.find(a => a.url === url);
-                                if (apiDef) SEARCH_INTERFACE_NAME_MAP[url] = apiDef.name;
-                            }
-                        }
-                    });
                     const results = await search(keyword, searchInterfaces);
                     
                     let zhanyuanCrawlers = [];
@@ -4521,8 +4578,8 @@ btn.addEventListener('mousedown', startLongPress);
                 var t = p[0], tok = p[1], cfg = DRIVE_CONFIGS[t], n = cfg ? cfg.name : t;
                 return '<div class="flex items-center justify-between px-2 py-1.5 rounded-lg bg-white/5">' +
                     '<span class="text-white/80 text-xs">' + n + ' <span class="text-white/40 text-[10px]">' + tok.substring(0,8) + '...</span></span>' +
-                    '<div class="flex gap-1"><button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-emerald-400 cursor-pointer" onclick="useDriveTokenPanel(\\'' + t + '\\')">使用</button>' +
-                    '<button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-red-400 cursor-pointer" onclick="removeTokenForType(\\'' + t + '\\');renderTokenListPanel()">x</button></div></div>';
+                    '<div class="flex gap-1"><button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-emerald-400 cursor-pointer" onclick="useDriveTokenPanel(\x27'+t+'\x27)">使用</button>' +
+                    '<button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-red-400 cursor-pointer" onclick="removeTokenForType(\x27'+t+'\x27);renderTokenListPanel()">x</button></div></div>';
             }).join("");
         }
         function useDriveTokenPanel(type) {
@@ -4622,7 +4679,7 @@ btn.addEventListener('mousedown', startLongPress);
                 else icon="📄";
                 var sz = f.size ? (f.size>1073741824?(f.size/1073741824).toFixed(1)+"GB":f.size>1048576?(f.size/1048576).toFixed(1)+"MB":f.size>1024?Math.round(f.size/1024)+"KB":f.size+"B"):"";
                 var nm = (f.name||"").replace(/"/g,"&quot;");
-                return '<div class="drive-file-item '+cls+'" onclick="handleDriveFileClickPanel(\\'' + f.id + '\\',' + f.isFolder + ',' + f.isVideo + ',\\'' + nm.replace(/\\\\/g,"\\\\\\\\").replace(/\\'/g,"\\\\\\'") + '\\')">' +
+                return '<div class="drive-file-item '+cls+'" onclick="handleDriveFileClickPanel(\x27' + f.id + '\x27,' + f.isFolder + ',' + f.isVideo + ',\x27' + nm.replace(/\x27/g,'%27') + '\x27)">' +
                     '<span class="drive-file-icon">'+icon+'</span><span class="drive-file-name">'+nm+'</span><span class="drive-file-size">'+sz+'</span></div>';
             }).join("");
             document.getElementById("driveFileCountPanel").textContent = files.length + "个文件";
