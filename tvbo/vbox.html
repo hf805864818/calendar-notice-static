@@ -178,6 +178,7 @@
             transform: scale(0.95);
         }
 
+        .settings-panel { max-height: 80vh !important; overflow-y: auto !important; }
         /* 隐藏滚动条但保持滚动功能 */
         .scrollbar-hide {
             -ms-overflow-style: none;
@@ -191,6 +192,8 @@
         .source-tab {
             transition: all 0.2s ease;
             border: 1px solid transparent;
+            padding: 4px 14px !important;
+            font-size: 11px !important;
         }
         .source-tab.active {
             background: rgba(255, 255, 255, 0.2);
@@ -261,40 +264,98 @@
         #channelList::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.25);
         }
+        /* ===== 网盘面板样式 ===== */
+        .drive-panel {
+            position: absolute;
+            background: rgba(15, 15, 25, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+            z-index: 200;
+            width: 320px;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .drive-breadcrumb {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .drive-breadcrumb span {
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .drive-breadcrumb span:hover { color: rgba(255,255,255,0.9); }
+        .drive-breadcrumb span.sep { color: rgba(255,255,255,0.25); cursor: default; }
+        .drive-breadcrumb span.sep:hover { color: rgba(255,255,255,0.25); }
+        .drive-file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 12px;
+        }
+        .drive-file-item:hover { background: rgba(255,255,255,0.08); }
+        .drive-file-item.folder { color: #60a5fa; }
+        .drive-file-item.video { color: #34d399; }
+        .drive-file-item.other { color: rgba(255,255,255,0.5); }
+        .drive-file-icon { width: 16px; text-align: center; flex-shrink: 0; }
+        .drive-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .drive-file-size { color: rgba(255,255,255,0.35); font-size: 10px; flex-shrink: 0; }
+        .drive-token-manager { max-height: 200px; overflow-y: auto; }
+        .drive-token-item { 
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,0.04);
+            margin-bottom: 4px;
+        }
+        .drive-token-item .name { font-size: 11px; color: rgba(255,255,255,0.8); }
+        .drive-token-item .actions { display: flex; gap: 4px; }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
-    <svg class="hidden">
-        <symbol id="icon-play" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
+    <!-- SVG Icons - Direct inline SVG for better browser compatibility -->
+    <svg class="hidden" aria-hidden="true">
+      <defs>
+        <symbol id="icon-play" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M8 5v14l11-7z"/>
         </symbol>
-        <symbol id="icon-pause" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+        <symbol id="icon-pause" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
         </symbol>
-        <symbol id="icon-fullscreen" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        <symbol id="icon-fullscreen" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
         </symbol>
-        <symbol id="icon-fullscreen-exit" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+        <symbol id="icon-fullscreen-exit" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
         </symbol>
-        <symbol id="icon-settings" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        <symbol id="icon-settings" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
         </symbol>
-        <symbol id="icon-speed" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
+        <symbol id="icon-speed" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
         </symbol>
-        <symbol id="icon-chevron-up" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
+        <symbol id="icon-chevron-up" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
         </symbol>
-        <symbol id="icon-prev" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+        <symbol id="icon-prev" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
         </symbol>
-        <symbol id="icon-next" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+        <symbol id="icon-next" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
         </symbol>
-        <symbol id="icon-close" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        <symbol id="icon-close" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
         </symbol>
+      </defs>
     </svg>
 
     <div id="customModal" class="fixed inset-0 hidden items-center justify-center z-[9999] p-4" style="background: rgba(0,0,0,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
@@ -315,24 +376,24 @@
                 <div class="absolute inset-0 video-placeholder flex items-center justify-center">
                     <div class="text-center">
                         <div class="glass-btn rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:scale-110 transition-transform duration-200" onclick="togglePlay()">
-                            <svg class="w-10 h-10 text-white ml-1" fill="currentColor">
-                                <use href="#icon-play"/>
-                            </svg>
+                          <svg class="w-10 h-10 text-white ml-1" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
                         </div>
                         <p class="text-white/60 text-sm font-light">点击播放视频</p>
                     </div>
                 </div>
 
-                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5"
-                    <source src="" type="video/mp4">
+                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5">
+                  <source src="" type="video/mp4">
                 </video>
 
                 <div class="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div class="flex items-center justify-end">
                         <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer" title="全屏" onclick="toggleFullscreen()">
-                            <svg id="fullscreenIcon" class="w-4 h-4" fill="currentColor">
-                                <use href="#icon-fullscreen"/>
-                            </svg>
+                          <svg id="fullscreenIcon" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                          </svg>
                         </button>
                     </div>
                 </div>
@@ -357,65 +418,66 @@
 
         <div class="tv-base">
             <div class="control-bar py-2.5 px-4">
-                <div class="flex items-center gap-2">
-                    <button id="playPauseBtn" class="glass-btn p-3.5 rounded-xl text-white cursor-pointer flex-shrink-0" onclick="togglePlay()">
-                        <svg id="playPauseIcon" class="w-5 h-5" fill="currentColor">
-                            <use href="#icon-play"/>
-                        </svg>
+                <div class="flex items-center gap-1 flex-nowrap">
+                    <button id="playPauseBtn" class="glass-btn rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0 flex items-center justify-center" style="width: 3.2rem; height: 3.2rem;" onclick="togglePlay()">
+                      <svg id="playPauseIcon" style="width: 1.28rem; height: 1.28rem;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
                     </button>
 
-                    <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="上一个" onclick="playPrevious()">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <use href="#icon-prev"/>
-                        </svg>
+                    <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="上一个" onclick="playPrevious()">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                      </svg>
                     </button>
-                    <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="下一个" onclick="playNext()">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <use href="#icon-next"/>
-                        </svg>
+                    <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="下一个" onclick="playNext()">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                      </svg>
                     </button>
+
+                    <div class="relative">
+                        <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="搜索" id="searchBtn" onclick="toggleSearchPanel()">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/>
+                            </svg>
+                        </button>
+                        <div id="searchPanel" class="settings-panel hidden fixed" style="width: 16rem; max-height: 14rem; left: 50%; transform: translateX(-50%); bottom: 4.5rem;">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-white text-sm font-semibold">搜索</h3>
+                                    <div id="searchLoading" class="hidden flex items-center gap-1">
+                                        <div class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span class="text-white/60 text-[10px] whitespace-nowrap">搜索中...</span>
+                                    </div>
+                                </div>
+                                <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleSearchPanel()">
+                                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                  </svg>
+                                </button>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex gap-1.5 items-center">
+                                    <input type="text" id="searchInput" placeholder="输入名称" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
+                                    <button class="glass-btn px-2 py-1 rounded-lg text-white text-xs cursor-pointer whitespace-nowrap" onclick="searchAllSources()">搜索</button>
+                                </div>
+                                <div class="relative">
+                                    <div id="sourceTabs" class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide" style="scroll-behavior: smooth;">
+                                        <button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer whitespace-nowrap active" data-source="default">默认平台</button>
+                                    </div>
+                                </div>
+                                <div id="searchResultsContainer" class="max-h-[7rem] overflow-y-auto space-y-1"></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="flex-1"></div>
 
-                    <div class="flex items-center gap-2">
-                        <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer" title="搜索" onclick="toggleSearchPanel()">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/>
-                                </svg>
-                            </button>
-                            <div id="searchPanel" class="settings-panel hidden" style="width: 16rem; max-height: 14rem; left: 50%; transform: translateX(-50%); bottom: 100%; margin-bottom: 8px;">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <h3 class="text-white text-sm font-semibold">搜索</h3>
-                                        <div id="searchLoading" class="hidden flex items-center gap-1">
-                                            <div class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                            <span class="text-white/60 text-[10px] whitespace-nowrap">搜索中...</span>
-                                        </div>
-                                    </div>
-                                    <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleSearchPanel()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor">
-                                            <use href="#icon-close"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="space-y-2">
-                                    <div class="flex gap-1.5 items-center">
-                                        <input type="text" id="searchInput" placeholder="输入名称" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
-                                        <button class="glass-btn px-2 py-1 rounded-lg text-white text-xs cursor-pointer whitespace-nowrap" onclick="searchAllSources()">搜索</button>
-                                    </div>
-                                    <div class="relative">
-                                        <div id="sourceTabs" class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide" style="scroll-behavior: smooth;">
-                                            <button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer whitespace-nowrap active" data-source="default">默认平台</button>
-                                        </div>
-                                    </div>
-                                    <div id="searchResultsContainer" class="max-h-[7rem] overflow-y-auto space-y-1"></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-1 flex-nowrap">
 
                         <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer hidden" title="选集" id="episodeBtn" onclick="toggleEpisodeMenu()">
+                            <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0 hidden" title="选集" id="episodeBtn" onclick="toggleEpisodeMenu()">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M4 6h4v2H4zm0 5h4v2H4zm0 5h4v2H4zm6-10h10v2H10zm0 5h10v2H10zm0 5h10v2H10z"/>
                                 </svg>
@@ -424,9 +486,9 @@
                                 <div class="flex items-center justify-between mb-2">
                                     <h3 class="text-white text-sm font-semibold">选集</h3>
                                     <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleEpisodeMenu()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor">
-                                            <use href="#icon-close"/>
-                                        </svg>
+                                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                      </svg>
                                     </button>
                                 </div>
                                 <div id="simpleEpisodeList" class="space-y-1 max-h-[9rem] overflow-y-auto"></div>
@@ -438,18 +500,18 @@
                         </div>
 
                         <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer" title="设置" onclick="toggleSettings()">
-                                <svg class="w-4 h-4" fill="currentColor">
-                                    <use href="#icon-settings"/>
-                                </svg>
+                            <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="设置" onclick="toggleSettings()">
+                              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                              </svg>
                             </button>
                             <div id="settingsPanel" class="settings-panel hidden">
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="text-white text-sm font-semibold">设置</h3>
                                     <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleSettings()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor">
-                                            <use href="#icon-close"/>
-                                        </svg>
+                                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                      </svg>
                                     </button>
                                 </div>
                                 <div class="space-y-3">
@@ -466,7 +528,7 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="text-white/70 text-xs mb-1.5 block">固定资源（789官源/建安官源）</label>
+                                        <label class="text-white/70 text-xs mb-1.5 block">固定资源（采集/量子/无尽/百度/猫眼/非凡/金鹰/卧龙/魔都）</label>
                                         <div class="flex items-center gap-2">
                                             <button class="glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs cursor-pointer" onclick="toggleFixedSources()">
                                                 <span id="fixedSourcesLabel">已开启</span>
@@ -508,7 +570,7 @@
                                         <input type="checkbox" class="w-4 h-4 rounded" checked>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-white/70 text-xs">使用代理（降低速度）</span>
+                                        <span class="text-white/70 text-xs">使用代理（可能不稳定）</span>
                                         <input type="checkbox" id="proxySwitch" class="w-4 h-4 rounded" onchange="toggleProxy()">
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
@@ -535,6 +597,14 @@
                                         <p class="text-white/40 text-[10px] mt-1">仅保存URL，不做解析处理</p>
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
+                                        <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-emerald-400 text-xs cursor-pointer flex items-center justify-center gap-2 hover:bg-emerald-500/20" onclick="toggleDrivePanel()">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+                                            </svg>
+                                            网盘管理
+                                        </button>
+                                    </div>
+                                    <div class="pt-2 border-t border-white/10">
                                         <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-red-400 text-xs cursor-pointer hover:bg-red-500/20 flex items-center justify-center gap-2" onclick="clearAllResources()">
                                             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                                                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -549,11 +619,11 @@
                         <div class="h-6 w-px bg-white/30"></div>
 
                         <div class="relative">
-                            <button class="glass-btn px-2.5 py-2.5 rounded-xl text-white/80 hover:text-white cursor-pointer flex items-center gap-1.5" onclick="toggleSpeedMenu()">
-                                <svg class="w-3.5 h-3.5" fill="currentColor">
-                                    <use href="#icon-speed"/>
-                                </svg>
-                                <span class="text-xs font-medium" id="speedLabel">1x</span>
+                            <button class="glass-btn px-2.5 py-2.5 rounded-xl text-white/80 hover:text-white cursor-pointer flex items-center gap-1.5 whitespace-nowrap" onclick="toggleSpeedMenu()">
+                              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
+                              </svg>
+                              <span class="text-xs font-medium" id="speedLabel">1x</span>
                             </button>
                             <div id="speedMenu" class="speed-menu hidden">
                                 <button class="w-full px-3 py-1.5 text-left text-white/80 hover:text-white hover:bg-white/10 cursor-pointer text-xs rounded" onclick="setSpeed(0.5)">0.5x</button>
@@ -620,15 +690,15 @@
         }
 
         video.addEventListener('play', () => {
-            isPlaying = true;
-            playPauseIcon.innerHTML = '<use href="#icon-pause"/>';
-            // 视频开始播放时关闭选集弹窗
-            document.getElementById('episodeMenu').classList.add('hidden');
+          isPlaying = true;
+          playPauseIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+          // 视频开始播放时关闭选集弹窗
+          document.getElementById('episodeMenu').classList.add('hidden');
         });
 
         video.addEventListener('pause', () => {
-            isPlaying = false;
-            playPauseIcon.innerHTML = '<use href="#icon-play"/>';
+          isPlaying = false;
+          playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
         });
 
         video.addEventListener('timeupdate', () => {
@@ -682,11 +752,11 @@
         });
 
         video.addEventListener('ended', () => {
-            isPlaying = false;
-            playPauseIcon.innerHTML = '<use href="#icon-play"/>';
-            video.classList.add('hidden');
-            document.querySelector('.video-placeholder').classList.remove('hidden');
-            isVideoStarted = false;
+          isPlaying = false;
+          playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+          video.classList.add('hidden');
+          document.querySelector('.video-placeholder').classList.remove('hidden');
+          isVideoStarted = false;
 
             // 自动播放下一集
             const autoPlayNextCheckbox = document.querySelector('input[type="checkbox"]');
@@ -947,25 +1017,10 @@
                 document.querySelector('.video-placeholder').classList.remove('hidden');
                 isVideoStarted = false;
                 isPlaying = false;
-                playPauseIcon.innerHTML = '<use href="#icon-play"/>';
                 
                 // 重置UI
+                playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
                 updateEpisodeBtn();
-                renderCategorizedList();
-                
-                // 关闭设置弹窗
-                document.getElementById('settingsPanel').classList.add('hidden');
-                
-                // 延迟重置标记
-                setTimeout(() => {
-                    isClearingResources = false;
-                }, 1000);
-            }
-        }
-
-        // 页面加载时初始化
-        window.addEventListener('DOMContentLoaded', () => {
-            updateEpisodeBtn();
             renderEpisodeList();
             loadParsersFromStorage();
             loadJsonApisFromStorage();
@@ -974,7 +1029,8 @@
             if (videoList.length > 0) {
                 video.src = videoList[0];
             }
-        });
+            }
+        }
 
         function handleFileUpload(input) {
             const file = input.files[0];
@@ -1160,13 +1216,13 @@
                         }
                     });
                      
-                     categoryWrapper.addEventListener('mouseleave', () => {
-                        if (isSwiping) {
-                            isSwiping = false;
-                            categoryBtn.style.transition = 'transform 0.3s ease';
-                            categoryBtn.style.transform = 'translateX(0)';
-                            deleteLayer.style.opacity = 0;
-                        }
+                    categoryWrapper.addEventListener('mouseleave', () => {
+                      if (isSwiping) {
+                        isSwiping = false;
+                        categoryBtn.style.transition = 'transform 0.3s ease';
+                        categoryBtn.style.transform = 'translateX(0)';
+                        deleteLayer.style.opacity = 0;
+                      }
                     });
 
                     categoryBtn.onclick = () => {
@@ -1352,10 +1408,10 @@
                     btn.addEventListener('touchmove', cancelLongPress);
                     btn.addEventListener('touchcancel', cancelLongPress);
                     
-btn.addEventListener('mousedown', startLongPress);
+                    btn.addEventListener('mousedown', startLongPress);
                     btn.addEventListener('mouseup', (e) => {
-                        cancelLongPress();
-                        handleClick(e);
+                      cancelLongPress();
+                      handleClick(e);
                     });
                     btn.addEventListener('mouseleave', cancelLongPress);
                     btn.addEventListener('mousemove', cancelLongPress);
@@ -1407,14 +1463,13 @@ btn.addEventListener('mousedown', startLongPress);
             updateEpisodeBtn();
         }
 
-        
-            function updateEpisodeBtn() {
-            const episodeBtn = document.getElementById('episodeBtn');
-            if (videoList.length > 0) {
-                episodeBtn.classList.remove('hidden');
-            } else {
-                episodeBtn.classList.add('hidden');
-            }
+        function updateEpisodeBtn() {
+          const episodeBtn = document.getElementById('episodeBtn');
+          if (videoList.length > 0) {
+            episodeBtn.classList.remove('hidden');
+          } else {
+            episodeBtn.classList.add('hidden');
+          }
         }
 
         function renderEpisodeList() {
@@ -1886,9 +1941,9 @@ btn.addEventListener('mousedown', startLongPress);
                 loadingIndicator.classList.remove('hidden');
 
                 // 异步解析视频地址
-                                // m3u8/mp4通过代理域名播放（绕过外网限制）
+                // m3u8/mp4通过代理域名播放（仅在代理开启时）
                 const isDirectStream = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.ts') || originalUrl.includes('.flv');
-                const proxyPlayUrl = isDirectStream ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
+                const proxyPlayUrl = (useProxyEnabled && isDirectStream) ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
                 parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
                         // 检查是否已被新的请求替换
@@ -2134,7 +2189,7 @@ btn.addEventListener('mousedown', startLongPress);
                     settingsPanel.classList.add('hidden');
                     speedMenu.classList.add('hidden');
                     document.getElementById('episodeMenu').classList.add('hidden');
-                    document.getElementById('searchPanel').classList.add('hidden');
+                    closeSearchPanel();
                     break;
             }
         });
@@ -2294,8 +2349,16 @@ btn.addEventListener('mousedown', startLongPress);
                 document.getElementById('speedMenu').classList.add('hidden');
                 document.getElementById('episodeMenu').classList.add('hidden');
             } else {
-                searchPanel.classList.add('hidden');
+                closeSearchPanel();
             }
+        }
+        
+        // 统一关闭搜索面板并恢复搜索按钮
+        function closeSearchPanel() {
+            const searchPanel = document.getElementById('searchPanel');
+            const searchBtn = document.getElementById('searchBtn');
+            searchPanel.classList.add('hidden');
+            if (searchBtn) searchBtn.style.display = '';
         }
 
         // 源标签切换（智能搜索模式下只有一个平台）
@@ -2375,15 +2438,15 @@ btn.addEventListener('mousedown', startLongPress);
 
         // 智能搜索系统
         const PROXY_LIST = [
-            null,
-            'https://fragrant-snow-ea12.3764.workers.dev/?url=',
-            'https://vbox.ccwu.cc/?url='
+          null,
+          'https://vbox.ltd/?url='
         ];
         const PROXY_TOKEN = '199114';
-        const TIMEOUT_MS = 10000;
-        const SEARCH_TIMEOUT_MS = 3000; // 从1500升到3000
+        const TIMEOUT_MS = 15000;
+        const SEARCH_TIMEOUT_MS = 8000;
         const DISCOVER_CACHE_TTL = 10 * 60 * 1000;
-        const SEARCH_CONCURRENCY = 12; // 从10提高到12
+        const SEARCH_CONCURRENCY = 12;
+        const FAST_SEARCH_LIMIT = 5;
         
         // 测试接口可用性（快速验证）
         async function testInterfaceSpeed(interfaceUrl) {
@@ -2437,8 +2500,8 @@ btn.addEventListener('mousedown', startLongPress);
         let cachedSearchInterfacesTime = 0;
         let currentProxyIndex = 0;
 
-        // 代理开关：从 localStorage 读取设置（默认关闭，提高速度）
-        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== 'false';
+        // 代理开关：从 localStorage 读取设置（默认关闭，因为代理服务器可能不稳定）
+        let useProxyEnabled = localStorage.getItem('useProxyEnabled') === 'true';
         function toggleProxy() {
             useProxyEnabled = !useProxyEnabled;
             localStorage.setItem('useProxyEnabled', useProxyEnabled);
@@ -2455,8 +2518,15 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         const SAVED_API_URLS = [
-            'http://154.219.117.232:9981/jacloudapi.php/provide/vod/',
-            'https://www.caiji.cyou/api.php/provide/vod/'
+            'http://caiji.dyttzyapi.com/api.php/provide/vod/',
+            'https://cj.lziapi.com/api.php/provide/vod/',
+            'https://api.wujinapi.com/api.php/provide/vod/',
+            'https://api.apibdzy.com/api.php/provide/vod/',
+            'https://api.maoyanapi.top/api.php/provide/vod/',
+            'https://cj.ffzyapi.com/api.php/provide/vod/',
+            'https://jyzyapi.com/api.php/provide/vod/',
+            'https://wolongzyw.com/api.php/provide/vod/',
+            'https://www.mdzyapi.com/api.php/provide/vod/'
         ];
         
         // 搜索接口URL -> 平台名称映射，从订阅JSON的 name/title/key 字段自动提取
@@ -2464,8 +2534,22 @@ btn.addEventListener('mousedown', startLongPress);
         const SEARCH_INTERFACE_DETAIL_MAP = {};
 
         // 手动添加固定接口的平台名称映射
-        SEARCH_INTERFACE_NAME_MAP['http://154.219.117.232:9981/jacloudapi.php/provide/vod/?ac=list'] = '789官源';
-        SEARCH_INTERFACE_NAME_MAP['https://www.caiji.cyou/api.php/provide/vod/?ac=list'] = '建安官源';
+        SEARCH_INTERFACE_NAME_MAP['http://caiji.dyttzyapi.com/api.php/provide/vod/?ac=list'] = '采集资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.lziapi.com/api.php/provide/vod/?ac=list'] = '量子资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.wujinapi.com/api.php/provide/vod/?ac=list'] = '无尽资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.apibdzy.com/api.php/provide/vod/?ac=list'] = '百度资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.maoyanapi.top/api.php/provide/vod/?ac=list'] = '猫眼资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.ffzyapi.com/api.php/provide/vod/?ac=list'] = '非凡资源';
+        SEARCH_INTERFACE_NAME_MAP['https://jyzyapi.com/api.php/provide/vod/?ac=list'] = '金鹰资源';
+        SEARCH_INTERFACE_NAME_MAP['https://wolongzyw.com/api.php/provide/vod/?ac=list'] = '卧龙资源';
+        SEARCH_INTERFACE_NAME_MAP['https://www.mdzyapi.com/api.php/provide/vod/?ac=list'] = '魔都资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.rycjapi.com/api.php/provide/vod/?ac=list'] = '如意资源';
+
+        // ===== 网盘聚合搜索接口 =====
+        // 使用网盘聚合搜索引擎API，搜索各大网盘的资源分享链接
+        const CLOUD_DRIVE_SEARCH_API = [
+            { url: 'https://so.252035.xyz/api/search?keyword=', name: '盘搜', type: 'pan_api' }
+        ];
 
         // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
         const PRIORITY_SEARCH_KEYWORDS = ['zhanyuan', '站源', 'zy', 'zanyuan', '战源', '资源', '资源站', '资源源']; // 扩展关键词，包括可能的变体
@@ -2532,11 +2616,11 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function fetchFastWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
-            const proxyCandidates = [PROXY_LIST[1], PROXY_LIST[2]].filter(Boolean);
+            const proxyCandidates = [PROXY_LIST[1]].filter(Boolean);
             let lastError = null;
 
             for (const proxyBase of proxyCandidates) {
-                const proxiedUrl = proxyBase + encodeURIComponent(url) + `&token=${encodeURIComponent(PROXY_TOKEN)}`;
+                const proxiedUrl = proxyBase + encodeURIComponent(url) + '&token=' + PROXY_TOKEN;
                 try {
                     const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
                     if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
@@ -2551,18 +2635,17 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function fetchForSearch(url) {
-            // 优先走代理
+            // 如果启用了代理，优先走代理，失败时回退到直连
             if (useProxyEnabled) {
-                return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
+                try {
+                    return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
+                } catch (proxyError) {
+                    console.log('代理失败，尝试直连:', proxyError.message);
+                    return await fetchDirect(url, SEARCH_TIMEOUT_MS);
+                }
             }
-            // 关闭代理时也先走代理再直连
-            try {
-                return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
-            } catch (proxyError) {
-                console.log('代理失败，尝试直连:', proxyError.message);
-                const response = await fetchDirect(url, SEARCH_TIMEOUT_MS);
-                return response;
-            }
+            // 关闭代理时直接走直连
+            return await fetchDirect(url, SEARCH_TIMEOUT_MS);
         }
 
         // 从URL中提取接口名称（优先使用订阅里的平台名称）
@@ -2653,6 +2736,9 @@ btn.addEventListener('mousedown', startLongPress);
             if (/[?&]keyword=/i.test(u)) {
                 return u.replace(/([?&]keyword=)[^&]*/i, `$1${kw}`);
             }
+            if (/[?&]keywords=/i.test(u)) {
+                return u.replace(/([?&]keywords=)[^&]*/i, `$1${kw}`);
+            }
             if (/[?&]search=/i.test(u)) {
                 return u.replace(/([?&]search=)[^&]*/i, `$1${kw}`);
             }
@@ -2671,10 +2757,10 @@ btn.addEventListener('mousedown', startLongPress);
             } catch (directError) {
                 console.log('直连失败，走双代理:', directError.message);
             }
-            const proxyCandidates = [PROXY_LIST[1], PROXY_LIST[2]].filter(Boolean);
+            const proxyCandidates = [PROXY_LIST[1]].filter(Boolean);
             let lastError = null;
             for (const proxyBase of proxyCandidates) {
-                const proxiedUrl = proxyBase + encodeURIComponent(url) + `&token=${encodeURIComponent(PROXY_TOKEN)}`;
+                const proxiedUrl = proxyBase + encodeURIComponent(url) + '&token=' + PROXY_TOKEN;
                 try {
                     const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
                     if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
@@ -2868,14 +2954,12 @@ btn.addEventListener('mousedown', startLongPress);
 
                     if (data.length > 0) {
                         const detailUrl = SEARCH_INTERFACE_DETAIL_MAP[interfaceUrl] || '';
-                        if (detailUrl) {
-                            data.forEach(item => {
-                                if (item && typeof item === 'object') {
-                                    item._detailurl = detailUrl;
-                                    item._sourceInterfaceUrl = interfaceUrl;
-                                }
-                            });
-                        }
+                        data.forEach(item => {
+                            if (item && typeof item === 'object') {
+                                if (detailUrl) item._detailurl = detailUrl;
+                                item._sourceInterfaceUrl = interfaceUrl;
+                            }
+                        });
                         return {
                             interfaceName: interfaceName,
                             interfaceUrl: interfaceUrl,
@@ -2907,14 +2991,12 @@ btn.addEventListener('mousedown', startLongPress);
 
                     if (data.length > 0) {
                         const detailUrl = SEARCH_INTERFACE_DETAIL_MAP[interfaceUrl] || '';
-                        if (detailUrl) {
-                            data.forEach(item => {
-                                if (item && typeof item === 'object') {
-                                    item._detailurl = detailUrl;
-                                    item._sourceInterfaceUrl = interfaceUrl;
-                                }
-                            });
-                        }
+                        data.forEach(item => {
+                            if (item && typeof item === 'object') {
+                                if (detailUrl) item._detailurl = detailUrl;
+                                item._sourceInterfaceUrl = interfaceUrl;
+                            }
+                        });
                         const result = {
                             interfaceName: interfaceName,
                             interfaceUrl: interfaceUrl,
@@ -3084,9 +3166,20 @@ btn.addEventListener('mousedown', startLongPress);
                         <div class="text-white/50 text-[10px] truncate">${item.vod_remarks || item.remarks || ''}${(item.vod_remarks || item.remarks) && (item.type_name || item.type) ? ' · ' : ''}${item.type_name || item.type || ''}</div>
                     `;
                     resultBtn.onclick = () => {
-                        const vodId = item.vod_id || item.id || (item._detailPageUrl || '');
+                        // 对于网盘聚合源 item（_driveType 标记），vod_id 可能为空，用 vod_name 或 _cloudIndex 作为 fallback
+                        const hasDriveMarker = !!(item._driveType && item._fileId);
+                        let vodId = item.vod_id || item.id || item._fileId || (item._detailPageUrl || '');
+                        if ((!vodId || hasDriveMarker) && item._cloudIndex !== undefined) {
+                            vodId = '_cloud_' + item._cloudIndex;
+                        }
+                        if (!vodId && hasDriveMarker) {
+                            vodId = item.vod_name || item.name || item.title || ('cloud_' + itemIndex);
+                        }
                         if (vodId) {
                             loadVideoDetail(vodId, String(index));
+                        } else {
+                            const fbId = item.vod_name || item.name || item.title || '';
+                            if (fbId) loadVideoDetail(fbId, String(index));
                         }
                     };
                     panel.appendChild(resultBtn);
@@ -3111,6 +3204,9 @@ btn.addEventListener('mousedown', startLongPress);
             }
         }
 
+        // 缓存最后一次完整搜索结果（含所有流程，如网盘聚合源等）
+        let _cachedSearchResults = [];
+
         // 轮训搜索所有源（智能搜索） - 新版优化流程
         async function searchAllSources() {
             const keyword = document.getElementById('searchInput').value.trim();
@@ -3118,6 +3214,11 @@ btn.addEventListener('mousedown', startLongPress);
                 await showAlert('请输入搜索关键词', '提示');
                 return;
             }
+            // 自动打开搜索面板
+            const panel = document.getElementById('searchPanel');
+            panel.classList.remove('hidden');
+            const searchBtn = document.getElementById('searchBtn');
+            if (searchBtn) searchBtn.style.display = 'none';
 
             const loadingEl = document.getElementById('searchLoading');
             loadingEl.classList.remove('hidden');
@@ -3149,6 +3250,8 @@ btn.addEventListener('mousedown', startLongPress);
                 console.log('步骤1: 获取所有接口');
                 const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
                 console.log(`发现 ${searchInterfaces.length} 个搜索接口`);
+
+                // 网盘聚合源单独在流程4.5中处理，不混入普通searchInterfaces
 
                 if (searchInterfaces.length === 0) {
                     container.innerHTML = '<div class="text-white/40 text-xs text-center py-2">未发现搜索接口</div>';
@@ -3308,6 +3411,101 @@ btn.addEventListener('mousedown', startLongPress);
                     );
                 }
 
+                // 流程4.5: 网盘聚合搜索（使用盘搜API扫描各大网盘资源）
+                if (CLOUD_DRIVE_SEARCH_API.length > 0) {
+                    promises.push(
+                        (async () => {
+                            console.log('流程4.5: 网盘聚合搜索', CLOUD_DRIVE_SEARCH_API.length, '个源');
+                            const allItems = [];
+                            const mergedKey = 'clouddrive-aggr:pan';
+
+                            for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
+                                try {
+                                    const searchUrl = apiDef.url + encodeURIComponent(keyword);
+                                    let respText;
+                                    if (useProxyEnabled) {
+                                        respText = await fetchFastWithProxy(searchUrl, 8000).catch(() => null);
+                                    } else {
+                                        respText = await fetchDirect(searchUrl, 8000).catch(() => null);
+                                    }
+                                    if (!respText || respText.length < 10) continue;
+
+                                    const json = JSON.parse(respText);
+                                    const merged = json.data && json.data.merged_by_type;
+                                    if (!merged) continue;
+
+                                    // 遍历所有网盘类型
+                                    const panTypes = Object.keys(merged);
+                                    for (const ptype of panTypes) {
+                                        const entries = merged[ptype] || [];
+                                        for (const entry of entries) {
+                                            const noteClean = (entry.note || '').replace(/[\(\）\（\]\[\【\】].*$/, '').trim();
+                                            allItems.push({
+                                                vod_id: entry.url || '',
+                                                vod_name: noteClean || entry.url || '',
+                                                vod_pic: (entry.images && entry.images[0]) || '',
+                                                vod_url: entry.url || '',
+                                                vod_remarks: ptype.toUpperCase() + (entry.password ? ' ' + entry.password : ''),
+                                                type_name: ptype,
+                                                _driveType: ptype,
+                                                _fileId: entry.url || '',
+                                                _panPassword: entry.password || '',
+                                                _cloudIndex: allItems.length,
+                                                _isVideo: true
+                                            });
+                                        }
+                                    }
+                                } catch(e) {
+                                    console.warn('网盘聚合搜索[' + apiDef.name + ']失败:', e.message);
+                                }
+                            }
+
+                            if (allItems.length > 0) {
+                                const key = mergedKey;
+                                if (!seenPlatforms.has(key)) seenPlatforms.add(key);
+                                allResults.push({ interfaceUrl: key, interfaceName: '☁️ 网盘资源', data: allItems });
+                                displayResultsBatch();
+                                console.log('流程4.5完成，共', allItems.length, '个网盘资源结果');
+                            } else {
+                                console.log('流程4.5完成，无结果');
+                            }
+                        })()
+                    );
+                }
+
+                // 流程5: 网盘搜索（扫描所有已登录网盘中匹配关键词的文件）
+                const driveTokens = loadDriveTokens();
+                const activeDrives = Object.entries(driveTokens).filter(([,v]) => v);
+                if (activeDrives.length > 0) {
+                    promises.push(
+                        (async () => {
+                            console.log('流程5: 网盘搜索', activeDrives.length, '个网盘');
+                            for (const [driveType, token] of activeDrives) {
+                                try {
+                                    const driveResults = await searchCloudDrive(driveType, token, keyword);
+                                    if (driveResults && driveResults.data && driveResults.data.length > 0) {
+                                        const result = {
+                                            interfaceUrl: 'clouddrive:' + driveType,
+                                            interfaceName: DRIVE_CONFIGS[driveType]?.name || driveType,
+                                            data: driveResults.data
+                                        };
+                                        const key = result.interfaceUrl;
+                                        if (!seenPlatforms.has(key)) {
+                                            seenPlatforms.add(key);
+                                            allResults.push(result);
+                                            displayResultsBatch();
+                                            console.log(`网盘[${driveType}]搜索结果:`, driveResults.data.length, '个');
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn(`网盘[${driveType}]搜索失败:`, e.message);
+                                }
+                            }
+                            console.log('流程5全部完成');
+                        })()
+                    );
+                }
+
                 // 等待所有流程完成或超时
                 await Promise.race([
                     Promise.allSettled(promises),
@@ -3317,6 +3515,7 @@ btn.addEventListener('mousedown', startLongPress);
                 // 显示最终结果
                 console.log(`全部搜索完成，总共找到 ${allResults.length} 个平台的结果`);
                 displaySmartSearchResults(allResults);
+                _cachedSearchResults = allResults;
 
             } catch (error) {
                 console.error('智能搜索失败:', error);
@@ -3340,14 +3539,12 @@ btn.addEventListener('mousedown', startLongPress);
 
                 if (data.length > 0) {
                     const detailUrl = SEARCH_INTERFACE_DETAIL_MAP[interfaceUrl] || '';
-                    if (detailUrl) {
-                        data.forEach(item => {
-                            if (item && typeof item === 'object') {
-                                item._detailurl = detailUrl;
-                                item._sourceInterfaceUrl = interfaceUrl;
-                            }
-                        });
-                    }
+                    data.forEach(item => {
+                        if (item && typeof item === 'object') {
+                            if (detailUrl) item._detailurl = detailUrl;
+                            item._sourceInterfaceUrl = interfaceUrl;
+                        }
+                    });
                     return {
                         interfaceName: interfaceName,
                         interfaceUrl: interfaceUrl,
@@ -3372,43 +3569,101 @@ btn.addEventListener('mousedown', startLongPress);
                 // 按索引直接查找（从展示面板点击）
                 if (sourceKey && /^\d+$/.test(sourceKey)) {
                     const resultIndex = parseInt(sourceKey);
-                    const tabs = document.getElementById('sourceTabs');
-                    const activeTab = tabs ? tabs.querySelector('.active') : null;
                     
-                    // 从当前显示的results中获取 - 需要重新搜索
-                    const keyword = document.getElementById('searchInput').value.trim();
-                    if (!keyword) {
-                        throw new Error('搜索关键词不能为空');
-                    }
-
-                    const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
-                    const results = await search(keyword, searchInterfaces);
-                    
-                    let zhanyuanCrawlers = [];
-                    try {
-                        for (const u of [...SAVED_API_URLS, ...jsonApis]) {
-                            const content = await fetchDirect(u, 5000).catch(() => null);
-                            if (content) {
-                                const parsed = JSON.parse(content);
-                                if (parsed.zhanyuan && Array.isArray(parsed.zhanyuan)) {
-                                    zhanyuanCrawlers = parsed.zhanyuan.filter(z => z.searchUrl);
-                                }
-                            }
-                        }
-                    } catch (e) {}
-                    const crawlerResults = zhanyuanCrawlers.length > 0 ? await searchZhanyuanAll(keyword, zhanyuanCrawlers) : [];
-                    
-                    // 合并结果，保持与展示顺序一致
-                    const allResults = sortSearchResultsByPriority(results.concat(crawlerResults));
+                    // 优先使用缓存的搜索结果（包含网盘聚合源等所有流程）
+                    const allResults = (_cachedSearchResults && _cachedSearchResults.length > 0) ? _cachedSearchResults : [];
                     
                     const result = allResults[resultIndex];
                     if (!result) {
                         throw new Error('未找到该平台的数据');
                     }
 
-                    let item = result.data.find(d => (d.vod_id === vodId || d.id === vodId));
+                    let item = result.data.find(d => (String(d.vod_id) === String(vodId) || String(d.id) === String(vodId) || String('_cloud_' + d._cloudIndex) === String(vodId)));
                     if (!item) {
-                        throw new Error('未找到该视频的详情');
+                        // 如果按 vodId 找不到，尝试用 vod_name 匹配（网盘聚合源 vod_id 可能为空字符串）
+                        item = result.data.find(d => (d.vod_name || d.name || d.title || '') === vodId);
+                    }
+                    if (!item) {
+                        // 最后兜底：取第一个 item（网盘聚合源进入此分支）
+                        item = result.data[0];
+                        if (!item) throw new Error('未找到该视频的详情');
+                    }
+
+                    // 如果是盘搜结果（_cloudIndex >= 0），直接用vod_url播放
+                    if (item._cloudIndex !== undefined && item.vod_url) {
+                        const playUrl = item.vod_url;
+                        videoList = [playUrl];
+                        currentVideoIndex = 0;
+                        closeSearchPanel();
+                        loadingEl.classList.add('hidden');
+                        loadVideo(0);
+                        return;
+                    }
+
+                    // 如果是网盘聚合源结果（流程4.5搜出的），直接用vod_url播放
+                    if (item._driveType && item._fileId) {
+                        const panName = item._driveType;
+                        // 检查是否是网盘聚合源结果（_driveType是网盘站名，如"玩偶云盘"）
+                        const isPanAggr = CLOUD_DRIVE_SEARCH_API.some(a => a.name === panName);
+                        if (isPanAggr) {
+                            // 网盘聚合源搜索结果，vod_url就是这个站点的播放地址，直接播放
+                            const playUrl = item.vod_url || item.play_url || item.video_url || '';
+                            if (playUrl) {
+                                videoList = [playUrl];
+                                currentVideoIndex = 0;
+                                closeSearchPanel();
+                                loadingEl.classList.add('hidden');
+                                loadVideo(0);
+                                return;
+                            }
+                            // 如果没vod_url，尝试通过vod_id获取详情
+                            if (item.vod_id) {
+                                const detailUrl = item._sourceInterfaceUrl || SEARCH_INTERFACE_DETAIL_MAP[item._sourceInterfaceUrl] || '';
+                                if (detailUrl) {
+                                    try {
+                                        const detailText = await fetchForSearch(detailUrl + encodeURIComponent(item.vod_id));
+                                        const detailData = parseResponseData(detailText);
+                                        if (detailData && detailData.length > 0) {
+                                            const d = detailData[0];
+                                            const rUrl = d.vod_url || d.url || d.play_url || d.video_url || '';
+                                            if (rUrl) {
+                                                videoList = [rUrl];
+                                                currentVideoIndex = 0;
+                                                loadVideo(0);
+                                                closeSearchPanel();
+                                                loadingEl.classList.add('hidden');
+                                                return;
+                                            }
+                                        }
+                                    } catch(e) {}
+                                }
+                            }
+                            showAlert('该网盘源的视频无法获取播放地址', '播放失败');
+                            loadingEl.classList.add('hidden');
+                            return;
+                        }
+
+                        // 以下是真正的网盘文件播放（阿里云盘/夸克/百度等，需要Token）
+                        const dt = item._driveType;
+                        closeSearchPanel();
+                        loadingEl.classList.add('hidden');
+                        // 设置网盘状态
+                        driveState.type = dt;
+                        const savedDriveTokens = loadDriveTokens();
+                        const token = savedDriveTokens[dt];
+                        if (token) {
+                            driveState.token = token;
+                            driveState.driveId = item._driveId || null;
+                            // 获取播放地址
+                            if (item._isVideo) {
+                                await getDriveVideoUrlByToken(dt, token, item._driveId, item._fileId, item.vod_name);
+                            } else {
+                                showAlert('该文件不是视频格式', '提示');
+                            }
+                        } else {
+                            showAlert('未找到' + DRIVE_CONFIGS[dt]?.name + '的Token', '提示');
+                        }
+                        return;
                     }
 
                     // 如果是爬虫源，走爬虫详情获取播放地址
@@ -3424,7 +3679,7 @@ btn.addEventListener('mousedown', startLongPress);
                             });
                             if (videoList.length > 0) {
                                 currentVideoIndex = 0;
-                                document.getElementById('searchPanel').classList.add('hidden');
+                                closeSearchPanel();
                                 loadVideo(0);
                                 loadingEl.classList.add('hidden');
                                 await showAlert('已加载《' + (item.vod_name || '') + '》共' + videoList.length + '集', '加载完成');
@@ -3458,7 +3713,7 @@ btn.addEventListener('mousedown', startLongPress);
                             categorizedChannels = {};
                             videoList.push(vodUrls[0]);
                             currentVideoIndex = 0;
-                            document.getElementById('searchPanel').classList.add('hidden');
+                            closeSearchPanel();
                             loadVideo(0);
                             loadingEl.classList.add('hidden');
                             return;
@@ -3503,7 +3758,7 @@ btn.addEventListener('mousedown', startLongPress);
                             loadVideo(0);
 
                             // 关闭搜索面板
-                            document.getElementById('searchPanel').classList.add('hidden');
+                            closeSearchPanel();
 
                             // 显示成功提示
                             await showAlert(`已加载《${item.vod_name}》共${channels.length}集`, '加载完成');
@@ -3717,6 +3972,706 @@ btn.addEventListener('mousedown', startLongPress);
                 addJsonApi();
             }
         });
+
+        /* ==================== 网盘播放模块 ==================== */
+        // 自定义API请求(支持POST/headers/body)，底层复用已有代理逻辑
+        async function apiFetch(url, options = {}) {
+            const method = options.method || 'GET';
+            const body = options.body || null;
+            const headers = options.headers || {};
+            
+            // POST请求不能走直连代理(因为代理只转发GET参数)
+            // 直接原生fetch并添加headers
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 15000);
+                const resp = await fetch(url, { method, body, headers, signal: controller.signal });
+                clearTimeout(timeout);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return await resp.text();
+            } catch(e) {
+                // 如果直连失败，尝试用代理转发GET方式的请求(仅适用于GET)
+                if (method === 'GET' || !options.forcePost) {
+                    return await fetchWithProxy(url, 15000);
+                }
+                throw e;
+            }
+        }
+
+        // 网盘类型配置 — API端点全部来自iBox逆向分析
+        const DRIVE_CONFIGS = {
+            alipan: {
+                name: '阿里云盘',
+                listUrl: 'https://api.aliyundrive.com/adrive/v3/file/list',
+                playUrl: 'https://open.aliyundrive.com/adrive/v1.0/openFile/getVideoPreviewPlayInfo',
+                downloadUrl: 'https://open.aliyundrive.com/adrive/v1.0/openFile/getDownloadUrl',
+                shareTokenUrl: 'https://api.aliyundrive.com/v2/share_link/get_share_token',
+                shareAnonymousUrl: 'https://api.aliyundrive.com/adrive/v3/share_link/get_share_by_anonymous',
+                listMethod: 'POST',
+                listBody: (driveId, parentFileId) => ({
+                    drive_id: driveId,
+                    parent_file_id: parentFileId || 'root',
+                    limit: 100,
+                    order_by: 'updated_at',
+                    order_direction: 'DESC',
+                    image_thumbnail_process: 'image/resize,w_200',
+                    video_thumbnail_process: 'video/snapshot,t_1000,f_jpg,w_200'
+                }),
+                getAuthHeader: (token) => ({ 'Authorization': 'Bearer ' + token }),
+                extractList: (data) => (data.items || []).map(f => ({
+                    id: f.file_id, name: f.name, type: f.type,
+                    isFolder: f.type === 'folder', isVideo: f.category === 'video' || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.name),
+                    size: f.size, ext: f.file_extension, mime: f.mime_type
+                })),
+                driveIdField: 'drive_id',
+                shareRegex: /(?:alipan|aliyundrive)\.com\/s\/([a-zA-Z0-9]+)/
+            },
+            quark: {
+                name: '夸克网盘',
+                listUrl: 'https://drive-pc.quark.cn/1/clouddrive/file/sort',
+                playUrl: 'https://drive-pc.quark.cn/1/clouddrive/file/v2/play',
+                downloadUrl: 'https://drive-pc.quark.cn/1/clouddrive/file/download',
+                shareTokenUrl: 'https://drive-pc.quark.cn/1/clouddrive/share/sharepage/token',
+                listMethod: 'GET',
+                listBody: (driveId, parentFileId) => null,
+                getAuthHeader: (token) => ({ 'Cookie': token }),
+                extractList: (data) => ((data.data && data.data.list) || data.list || []).map(f => ({
+                    id: f.fid, name: f.file_name || f.name, type: f.file ? 'file' : 'folder',
+                    isFolder: !f.file, isVideo: f.obj_category === 'video' || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.file_name || f.name),
+                    size: f.size, ext: f.ext
+                })),
+                driveIdField: 'pdir_fid',
+                shareRegex: /pan\.quark\.cn\/s\/([a-zA-Z0-9]+)/
+            },
+            baidu: {
+                name: '百度网盘',
+                listUrl: 'https://pan.baidu.com/api/list',
+                downloadUrl: 'https://d.pcs.baidu.com/rest/2.0/pcs/file',
+                shareTokenUrl: null,
+                listMethod: 'GET',
+                listBody: (driveId, parentFileId) => null,
+                getAuthHeader: (token) => ({ 'Cookie': 'BDUSS=' + token }),
+                extractList: (data) => ((data.data && data.data.list) || data.list || []).map(f => ({
+                    id: f.fs_id, name: f.server_filename, type: f.isdir ? 'folder' : 'file',
+                    isFolder: !!f.isdir, isVideo: f.category === 1 || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.server_filename),
+                    size: f.size, ext: f.server_filename ? f.server_filename.split('.').pop() : ''
+                })),
+                driveIdField: null,
+                shareRegex: /pan\.baidu\.com\/s\/([a-zA-Z0-9_-]+)/
+            },
+            uc: {
+                name: 'UC网盘',
+                listUrl: 'https://open-api-drive.uc.cn/file',
+                playUrl: null,
+                downloadUrl: null,
+                shareTokenUrl: null,
+                listMethod: 'GET',
+                listBody: (driveId, parentFileId) => null,
+                getAuthHeader: (token) => ({ 'Authorization': 'Bearer ' + token }),
+                extractList: (data) => ((data.data && data.data.list) || data.list || data.items || []).map(f => ({
+                    id: f.file_id || f.fid || f.id, name: f.file_name || f.name,
+                    type: (f.type === 'folder' || f.is_dir) ? 'folder' : 'file',
+                    isFolder: f.type === 'folder' || !!f.is_dir,
+                    isVideo: /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.file_name || f.name),
+                    size: f.size
+                })),
+                driveIdField: null,
+                shareRegex: /drive\.uc\.cn\/s\/([a-zA-Z0-9]+)/
+            },
+            '123pan': {
+                name: '123云盘',
+                listUrl: 'https://login.123pan.com/api/file/list',
+                playUrl: null,
+                downloadUrl: null,
+                shareTokenUrl: null,
+                listMethod: 'GET',
+                listBody: null,
+                getAuthHeader: (token) => ({ 'Cookie': token }),
+                extractList: (data) => ((data.data || data.list || []).map(f => ({
+                    id: f.fileId || f.id, name: f.fileName || f.name,
+                    type: f.isFolder ? 'folder' : 'file',
+                    isFolder: !!f.isFolder,
+                    isVideo: /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.fileName || f.name),
+                    size: f.size
+                }))),
+                driveIdField: null,
+                shareRegex: /123pan\.com\/s\/([a-zA-Z0-9]+)/
+            },
+            '139pan': {
+                name: '139云盘(和彩云)',
+                listUrl: null,
+                playUrl: null,
+                downloadUrl: null,
+                shareTokenUrl: null,
+                listMethod: 'GET',
+                getAuthHeader: (token) => ({ 'Cookie': token }),
+                extractList: (data) => [],
+                driveIdField: null,
+                shareRegex: /yun\.139\.com\/(?:share(?:web|wap)\/#\/)?[wm]\/i[\/?]([^\/]+)/
+            }
+        };
+
+        // 当前网盘状态
+        let driveState = {
+            type: 'alipan',
+            token: null,
+            driveId: null,
+            currentPath: [{ id: 'root', name: '根目录' }],
+            shareId: null,
+            sharePwd: null
+        };
+
+        // Token持久化
+        const DRIVE_TOKEN_KEY = 'drive_tokens';
+        function loadDriveTokens() {
+            try { return JSON.parse(localStorage.getItem(DRIVE_TOKEN_KEY) || '{}'); } catch(e) { return {}; }
+        }
+        function saveDriveTokens(tokens) { localStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify(tokens)); }
+        function getTokenForType(type) { const t = loadDriveTokens(); return t[type] || null; }
+        function setTokenForType(type, token) {
+            const t = loadDriveTokens();
+            t[type] = token;
+            saveDriveTokens(t);
+            renderTokenList();
+        }
+        function removeTokenForType(type) {
+            const t = loadDriveTokens();
+            delete t[type];
+            saveDriveTokens(t);
+            renderTokenList();
+        }
+
+        function renderTokenList() {
+            const container = document.getElementById('driveTokenList');
+            if (!container) return; // 旧ID已移除，跳过渲染
+            const tokens = loadDriveTokens();
+            const entries = Object.entries(tokens).filter(([,v]) => v);
+            if (!entries.length) {
+                container.innerHTML = '<div class="text-white/30 text-[10px] text-center py-1">暂无Token</div>';
+                return;
+            }
+            container.innerHTML = entries.map(([t, token]) => {
+                const cfg = DRIVE_CONFIGS[t];
+                return `<div class="drive-token-item">
+                    <span class="name">${cfg ? cfg.name : t} · ${token.substring(0,8)}...</span>
+                    <div class="actions">
+                        <button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-white/60 cursor-pointer" onclick="useDriveToken('${t}')">使用</button>
+                        <button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-red-400 cursor-pointer" onclick="removeTokenForType('${t}')">×</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function onDriveTypeChange() {
+            driveState.type = document.getElementById('driveTypeSelect').value;
+            driveState.currentPath = [{ id: 'root', name: '根目录' }];
+            driveState.token = getTokenForType(driveState.type);
+            driveState.driveId = null;
+            driveState.shareId = null;
+            driveState.sharePwd = null;
+            document.getElementById('driveStatus').textContent = driveState.token ? '已登录' : '未登录';
+        }
+
+        function setDriveToken() {
+            const input = document.getElementById('driveTokenInput');
+            const token = input.value.trim();
+            if (!token) { showAlert('请输入Token', '提示'); return; }
+            driveState.type = document.getElementById('driveTypeSelect').value;
+            setTokenForType(driveState.type, token);
+            driveState.token = token;
+            document.getElementById('driveStatus').textContent = '已登录';
+            input.value = '';
+            showAlert(`已设置 ${DRIVE_CONFIGS[driveState.type].name} Token`, '成功');
+        }
+
+        function useDriveToken(type) {
+            document.getElementById('driveTypeSelect').value = type;
+            onDriveTypeChange();
+            driveState.token = getTokenForType(type);
+            document.getElementById('driveStatus').textContent = '已登录';
+            openDriveBrowser();
+        }
+
+        // 分享链接解析
+        async function resolveShareUrl() {
+            const input = document.getElementById('driveShareInput');
+            const url = input.value.trim();
+            if (!url) { showAlert('请输入分享链接', '提示'); return; }
+
+            const type = document.getElementById('driveTypeSelect').value;
+            const cfg = DRIVE_CONFIGS[type];
+
+            let shareId = null;
+            let sharePwd = null;
+
+            if (cfg.shareRegex) {
+                const m = url.match(cfg.shareRegex);
+                if (m) shareId = m[1];
+            }
+            if (!shareId) {
+                const m2 = url.match(/\/s\/([a-zA-Z0-9_-]+)/);
+                if (m2) shareId = m2[1];
+            }
+            const pwdMatch = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[：:]\s*([a-zA-Z0-9]{4})/);
+            if (pwdMatch) sharePwd = pwdMatch[1];
+
+            if (!shareId) { showAlert('无法识别该分享链接格式', '错误'); return; }
+
+            driveState.shareId = shareId;
+            driveState.sharePwd = sharePwd;
+            driveState.currentPath = [{ id: 'root', name: '分享文件' }];
+            document.getElementById('driveStatus').textContent = '分享模式';
+
+            showAlert(`已解析分享链接: ${shareId.substring(0,12)}...${sharePwd ? ' 密码:' + sharePwd : ''}`, '解析成功');
+
+            if (cfg.shareTokenUrl) {
+                try {
+                    const t = driveState.token || '';
+                    await browseShareFiles(type, shareId, sharePwd, t);
+                } catch(e) {
+                    console.error('获取分享Token失败:', e);
+                    showAlert('获取分享Token失败，请检查Token或分享链接', '错误');
+                }
+            }
+        }
+
+        async function browseShareFiles(type, shareId, sharePwd, tokn) {
+            const cfg = DRIVE_CONFIGS[type];
+            const loadingEl = document.getElementById('driveFileList');
+            loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">加载分享内容中...</div>';
+
+            let shareToken = null;
+            try {
+                if (type === 'alipan') {
+                    const body = JSON.stringify({ share_id: shareId, share_pwd: sharePwd || '' });
+                    const resp = await apiFetch(cfg.shareTokenUrl, {
+                        method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
+                    });
+                    const data = JSON.parse(resp);
+                    shareToken = data.share_token;
+                    if (!shareToken) throw new Error('无法获取share_token');
+
+                    const listResp = await apiFetch(cfg.shareAnonymousUrl + '?share_id=' + shareId, {
+                        headers: { 'x-share-token': shareToken, ...cfg.getAuthHeader(tokn) }
+                    });
+                    const listData = JSON.parse(listResp);
+                    driveState.driveId = listData.drive_id || null;
+
+                    const files = (listData.items || []).map(f => ({
+                        id: f.file_id, name: f.name, type: f.type,
+                        isFolder: f.type === 'folder',
+                        isVideo: f.category === 'video' || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.name),
+                        size: f.size
+                    }));
+                    renderDriveFiles(files);
+                } else if (type === 'quark') {
+                    const body = JSON.stringify({ share_id: shareId, passcode: sharePwd || '', pdir_fid: '0', _page: 1, _size: 100, _fetch_total: 1 });
+                    const resp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail', {
+                        method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
+                    });
+                    const data = JSON.parse(resp);
+                    const files = (data.data && data.data.list || []).map(f => ({
+                        id: f.fid, name: f.file_name || f.name, type: f.file ? 'file' : 'folder',
+                        isFolder: !f.file,
+                        isVideo: /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.file_name || f.name),
+                        size: f.size
+                    }));
+                    renderDriveFiles(files);
+                } else {
+                    loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">该网盘分享需手动输入路径</div>';
+                }
+            } catch(e) {
+                console.error('浏览分享文件失败:', e);
+                loadingEl.innerHTML = '<div class="text-red-400 text-xs text-center py-4">加载失败: ' + e.message + '</div>';
+            }
+        }
+
+        async function openDriveBrowser() {
+            // 设置面板里的"浏览"按钮，改为直接打开设置面板的网盘管理
+            toggleDrivePanel();
+            openDriveBrowserFromPanel();
+        }
+
+        // 核心：通过网盘获取视频播放地址并播放
+        async function resolveDrivePlay(dtype, dtkn, dId, fId, fName, closePanel) {
+            const cfg = DRIVE_CONFIGS[dtype];
+            if (!cfg) { showAlert('不支持的网盘类型', '错误'); return; }
+            let playUrl = null;
+            try {
+                if (dtype === 'alipan') {
+                    const body = JSON.stringify({ drive_id: dId, file_id: fId, category: 'live_transcoding', template_id: '' });
+                    const resp = await apiFetch(cfg.playUrl, {
+                        method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(dtkn) }
+                    });
+                    const data = JSON.parse(resp);
+                    const tasks = data.video_preview_play_info && data.video_preview_play_info.live_transcoding_task_list;
+                    if (tasks && tasks.length > 0) {
+                        const best = tasks.find(t => t.template_id === 'FHD') || tasks.find(t => t.template_id === 'HD') || tasks.find(t => t.template_id === 'SD') || tasks[0];
+                        playUrl = best.url;
+                    }
+                    if (!playUrl) {
+                        const dlResp = await apiFetch(cfg.downloadUrl, {
+                            method: 'POST', body: JSON.stringify({ drive_id: dId, file_id: fId }),
+                            headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(dtkn) }
+                        });
+                        const dlD = JSON.parse(dlResp);
+                        playUrl = dlD.url || dlD.download_url;
+                    }
+                } else if (dtype === 'quark') {
+                    const params = new URLSearchParams({ fid: fId, pr: 'ucpro', fr: 'pc', uc_param_str: '' });
+                    const resp = await apiFetch(cfg.playUrl + '?' + params.toString(), { headers: cfg.getAuthHeader(dtkn) });
+                    const d = JSON.parse(resp);
+                    playUrl = d.data && d.data.play_url || d.play_url;
+                } else if (dtype === 'baidu') {
+                    const dlResp = await apiFetch(cfg.downloadUrl + '?app_id=250528&method=locatedownload&check_blue=1&path=' + encodeURIComponent(fId), { headers: cfg.getAuthHeader(dtkn) });
+                    const dlData = JSON.parse(dlResp);
+                    playUrl = dlData.url || (dlData.urls && dlData.urls[0] && dlData.urls[0].url);
+                }
+                if (playUrl) {
+                    videoList = [playUrl];
+                    currentVideoIndex = 0;
+                    loadVideo(0);
+                    if (closePanel !== false) toggleDrivePanel();
+                    showAlert(`正在播放: ${fName}`, '成功');
+                } else {
+                    showAlert('无法获取播放地址', '播放失败');
+                }
+            } catch(e) {
+                console.error('获取播放地址失败:', e);
+                showAlert('获取播放地址失败: ' + e.message, '错误');
+            }
+        }
+
+        async function getDriveVideoUrl(fileId, fileName) {
+            await resolveDrivePlay(driveState.type, driveState.token, driveState.driveId, fileId, fileName, true);
+        }
+
+        async function getDriveVideoUrlByToken(dtype, dtkn, dId, fId, fName) {
+            await resolveDrivePlay(dtype, dtkn, dId, fId, fName, false);
+        }
+
+        // 网盘搜索（在网盘中搜索匹配文件名的文件）
+        async function searchCloudDrive(driveType, token, keyword) {
+            const cfg = DRIVE_CONFIGS[driveType];
+            if (!cfg || !cfg.listUrl) return { data: [] };
+            
+            try {
+                let files = [];
+                
+                if (driveType === 'alipan') {
+                    // 先取 drive_id
+                    let driveId = null;
+                    try {
+                        const infoResp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', {
+                            headers: cfg.getAuthHeader(token)
+                        });
+                        const info = JSON.parse(infoResp);
+                        driveId = info.default_drive_id || info.resource_drive_id;
+                    } catch(e) {}
+                    if (!driveId) return { data: [] };
+                    
+                    // 阿里云盘搜索API：用adrive/v2/file/search
+                    const searchBody = JSON.stringify({
+                        drive_id: driveId,
+                        query: 'name match "' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"',
+                        limit: 50,
+                        order_by: 'updated_at',
+                        order_direction: 'DESC',
+                        image_thumbnail_process: 'image/resize,w_200',
+                        video_thumbnail_process: 'video/snapshot,t_1000,f_jpg,w_200'
+                    });
+                    const resp = await apiFetch('https://api.aliyundrive.com/adrive/v2/file/search', {
+                        method: 'POST', body: searchBody,
+                        headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(token) }
+                    });
+                    const data = JSON.parse(resp);
+                    files = (data.items || []).map(f => ({
+                        vod_id: f.file_id,
+                        vod_name: f.name,
+                        vod_pic: f.thumbnail || '',
+                        vod_remarks: (f.size ? (f.size > 1073741824 ? (f.size/1073741824).toFixed(1)+'GB' : f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 1024 ? (f.size/1024).toFixed(0)+'KB' : f.size+'B') : '') + (f.category === 'video' ? ' 🎬' : ' 📄'),
+                        _driveType: 'alipan',
+                        _driveId: driveId,
+                        _fileId: f.file_id,
+                        _isVideo: f.category === 'video' || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.name)
+                    }));
+                } else if (driveType === 'quark') {
+                    // 夸克通过文件列表+前端过滤（夸克没有公开的全文搜索API）
+                    const url = cfg.listUrl + '?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=100&_sort=file_type:asc,updated_at:desc';
+                    const resp = await apiFetch(url, { headers: cfg.getAuthHeader(token) });
+                    const data = JSON.parse(resp);
+                    const allFiles = cfg.extractList(data);
+                    files = allFiles
+                        .filter(f => f.name.toLowerCase().includes(keyword.toLowerCase()))
+                        .map(f => ({
+                            vod_id: f.id,
+                            vod_name: f.name,
+                            vod_pic: '',
+                            vod_remarks: (f.size ? (f.size > 1073741824 ? (f.size/1073741824).toFixed(1)+'GB' : f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 1024 ? (f.size/1024).toFixed(0)+'KB' : f.size+'B') : '') + (f.isVideo ? ' 🎬' : ' 📄'),
+                            _driveType: 'quark',
+                            _fileId: f.id,
+                            _isVideo: f.isVideo
+                        }));
+                } else if (driveType === 'baidu') {
+                    // 百度网盘全文搜索
+                    const searchUrl = 'https://pan.baidu.com/api/search?key=' + encodeURIComponent(keyword) + '&order=time&desc=1&web=1&num=50';
+                    const resp = await apiFetch(searchUrl, { headers: cfg.getAuthHeader(token) });
+                    const data = JSON.parse(resp);
+                    files = (data.data || data.list || []).map(f => ({
+                        vod_id: f.fs_id || f.id,
+                        vod_name: f.server_filename || f.name,
+                        vod_pic: f.thumb || '',
+                        vod_remarks: (f.size ? (f.size > 1073741824 ? (f.size/1073741824).toFixed(1)+'GB' : f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 1024 ? (f.size/1024).toFixed(0)+'KB' : f.size+'B') : '') + ' 📄',
+                        _driveType: 'baidu',
+                        _fileId: f.fs_id || f.id,
+                        _isVideo: f.category === 1 || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.server_filename || f.name)
+                    }));
+                }
+                
+                // 优先显示视频文件
+                files.sort((a, b) => {
+                    if (a._isVideo && !b._isVideo) return -1;
+                    if (!a._isVideo && b._isVideo) return 1;
+                    return 0;
+                });
+                
+                return { data: files };
+            } catch(e) {
+                console.warn('网盘搜索[' + driveType + ']出错:', e.message);
+                return { data: [] };
+            }
+        }
+
+
+        // ===== 网盘弹窗面板函数 =====
+        function toggleDrivePanel() {
+            var overlay = document.getElementById("drivePanelOverlay");
+            if (!overlay) { console.error("overlay not found"); return; }
+            overlay.classList.toggle("hidden");
+            if (!overlay.classList.contains("hidden")) {
+                document.getElementById("driveTypeSelect2").value = driveState.type;
+                renderTokenListPanel();
+                document.getElementById("driveStatusPanel").textContent = driveState.token ? "已登录" : "未登录";
+            }
+        }
+        function onDrivePanelTypeChange() {
+            var sel = document.getElementById("driveTypeSelect2");
+            driveState.type = sel ? sel.value : "alipan";
+            driveState.currentPath = [{ id: "root", name: "根目录" }];
+            driveState.token = getTokenForType(driveState.type);
+            driveState.driveId = null; driveState.shareId = null; driveState.sharePwd = null;
+            document.getElementById("driveStatusPanel").textContent = driveState.token ? "已登录" : "未登录";
+            document.getElementById("driveFileListPanel").innerHTML = '<div class="text-white/40 text-xs text-center py-6">切换网盘后请点击"浏览"</div>';
+            document.getElementById("driveBreadcrumbPanel").innerHTML = "";
+            renderTokenListPanel();
+        }
+        function renderTokenListPanel() {
+            var c = document.getElementById("driveTokenListPanel"); if (!c) return;
+            var tokens = loadDriveTokens();
+            var entries = Object.entries(tokens).filter(function(p) { return p[1]; });
+            if (!entries.length) { c.innerHTML = '<div class="text-white/30 text-[10px] text-center py-2">暂无已保存的Token</div>'; return; }
+            c.innerHTML = entries.map(function(p) {
+                var t = p[0], tok = p[1], cfg = DRIVE_CONFIGS[t], n = cfg ? cfg.name : t;
+                return '<div class="flex items-center justify-between px-2 py-1.5 rounded-lg bg-white/5">' +
+                    '<span class="text-white/80 text-xs">' + n + ' <span class="text-white/40 text-[10px]">' + tok.substring(0,8) + '...</span></span>' +
+                    '<div class="flex gap-1"><button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-emerald-400 cursor-pointer" onclick="useDriveTokenPanel(\x27'+t+'\x27)">使用</button>' +
+                    '<button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-red-400 cursor-pointer" onclick="removeTokenForType(\x27'+t+'\x27);renderTokenListPanel()">x</button></div></div>';
+            }).join("");
+        }
+        function useDriveTokenPanel(type) {
+            document.getElementById("driveTypeSelect2").value = type;
+            onDrivePanelTypeChange();
+            driveState.token = getTokenForType(type);
+            openDriveBrowserFromPanel();
+        }
+        function setDriveTokenFromPanel() {
+            var input = document.getElementById("driveTokenInputPanel");
+            var token = input ? input.value.trim() : "";
+            if (!token) { showAlert("请输入Token", "提示"); return; }
+            var type = document.getElementById("driveTypeSelect2") ? document.getElementById("driveTypeSelect2").value : "alipan";
+            setTokenForType(type, token);
+            driveState.type = type; driveState.token = token;
+            document.getElementById("driveStatusPanel").textContent = "已登录";
+            input.value = ""; renderTokenListPanel();
+            showAlert("已保存 " + (DRIVE_CONFIGS[type] ? DRIVE_CONFIGS[type].name : type) + " Token", "成功");
+        }
+        function resolveShareUrlFromPanel() {
+            var input = document.getElementById("driveShareInputPanel");
+            var url = input ? input.value.trim() : "";
+            if (!url) { showAlert("请输入分享链接", "提示"); return; }
+            resolveShareUrlWithUrl(url);
+            input.value = "";
+        }
+        async function resolveShareUrlWithUrl(url) {
+            var keys = Object.keys(DRIVE_CONFIGS);
+            for (var i = 0; i < keys.length; i++) {
+                var t = keys[i], cfg = DRIVE_CONFIGS[t];
+                if (!cfg.shareRegex) continue;
+                var m = url.match(cfg.shareRegex);
+                if (m) {
+                    driveState.type = t;
+                    document.getElementById("driveTypeSelect2").value = t;
+                    driveState.token = getTokenForType(t);
+                    document.getElementById("driveStatusPanel").textContent = "解析中...";
+                    var p = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/) || [null,null];
+                    driveState.shareId = m[1]; driveState.sharePwd = p[1];
+                    driveState.currentPath = [{id:"root",name:"分享文件"}];
+                    await browseShareFiles(t, m[1], p[1], driveState.token || "");
+                    document.getElementById("driveStatusPanel").textContent = "分享模式";
+                    return;
+                }
+            }
+            showAlert("无法识别该分享链接格式", "错误");
+        }
+        async function openDriveBrowserFromPanel() {
+            driveState.token = getTokenForType(driveState.type);
+            if (!driveState.token) { showAlert("请先保存Token", "提示"); return; }
+            document.getElementById("driveStatusPanel").textContent = "加载中...";
+            renderBreadcrumbPanel();
+            await loadDriveFilesPanel("root");
+        }
+        function renderBreadcrumbPanel() {
+            var bc = document.getElementById("driveBreadcrumbPanel"); if (!bc) return;
+            bc.innerHTML = driveState.currentPath.map(function(p,i) {
+                var last = i === driveState.currentPath.length-1;
+                var sep = i>0 ? '<span style="color:rgba(255,255,255,0.3)">/</span>' : "";
+                return sep + '<span onclick="navigateDrivePathPanel(' + i + ')" style="color:' + (last?"rgba(255,255,255,0.9);font-weight:600":"rgba(255,255,255,0.4)") + ';font-size:11px;cursor:pointer">' + p.name + '</span>';
+            }).join("");
+        }
+        function navigateDrivePathPanel(index) {
+            driveState.currentPath = driveState.currentPath.slice(0, index+1);
+            renderBreadcrumbPanel();
+            loadDriveFilesPanel(driveState.currentPath[driveState.currentPath.length-1].id);
+        }
+        async function loadDriveFilesPanel(parentFileId) {
+            var container = document.getElementById("driveFileListPanel"); if (!container) return;
+            container.innerHTML = '<div class="text-white/40 text-xs text-center py-4">加载中...</div>';
+            var cfg = DRIVE_CONFIGS[driveState.type], token = driveState.token;
+            try {
+                var resp;
+                if (driveState.type === "alipan") {
+                    if (!driveState.driveId) {
+                        var r = await apiFetch("https://api.aliyundrive.com/adrive/v1/user/getDriveInfo", {headers:cfg.getAuthHeader(token)});
+                        driveState.driveId = JSON.parse(r).default_drive_id;
+                    }
+                    resp = await apiFetch(cfg.listUrl, {method:"POST", body:JSON.stringify(cfg.listBody(driveState.driveId,parentFileId)), headers:{"Content-Type":"application/json", ...cfg.getAuthHeader(token)}});
+                } else if (driveState.type === "quark") {
+                    resp = await apiFetch(cfg.listUrl+"?pr=ucpro&fr=pc&uc_param_str=&pdir_fid="+(parentFileId||"0")+"&_page=1&_size=100&_sort=file_type:asc,updated_at:desc", {headers:cfg.getAuthHeader(token)});
+                } else if (driveState.type === "baidu") {
+                    resp = await apiFetch(cfg.listUrl+"?dir="+encodeURIComponent(parentFileId||"/")+"&order=name&desc=0", {headers:cfg.getAuthHeader(token)});
+                } else { container.innerHTML='<div class="text-white/40 text-xs text-center py-4">该网盘暂不支持</div>'; return; }
+                var files = cfg.extractList(JSON.parse(resp));
+                renderDriveFilesPanel(files);
+                document.getElementById("driveStatusPanel").textContent = "已登录";
+            } catch(e) { container.innerHTML='<div class="text-red-400 text-xs text-center py-4">加载失败: '+e.message+'</div>'; document.getElementById("driveStatusPanel").textContent="加载失败"; }
+        }
+        function renderDriveFilesPanel(files) {
+            var c = document.getElementById("driveFileListPanel"); if (!c) return;
+            if (!files||!files.length) { c.innerHTML='<div class="text-white/40 text-xs text-center py-4">空目录</div>'; document.getElementById("driveFileCountPanel").textContent="0"; return; }
+            c.innerHTML = files.map(function(f) {
+                var icon="", cls="other";
+                if (f.isFolder) { icon="📁"; cls="folder"; }
+                else if (f.isVideo) { icon="🎬"; cls="video"; }
+                else icon="📄";
+                var sz = f.size ? (f.size>1073741824?(f.size/1073741824).toFixed(1)+"GB":f.size>1048576?(f.size/1048576).toFixed(1)+"MB":f.size>1024?Math.round(f.size/1024)+"KB":f.size+"B"):"";
+                var nm = (f.name||"").replace(/"/g,"&quot;");
+                return '<div class="drive-file-item '+cls+'" onclick="handleDriveFileClickPanel(\x27' + f.id + '\x27,' + f.isFolder + ',' + f.isVideo + ',\x27' + nm.replace(/\x27/g,'%27') + '\x27)">' +
+                    '<span class="drive-file-icon">'+icon+'</span><span class="drive-file-name">'+nm+'</span><span class="drive-file-size">'+sz+'</span></div>';
+            }).join("");
+            document.getElementById("driveFileCountPanel").textContent = files.length + "个文件";
+        }
+        async function handleDriveFileClickPanel(fileId, isFolder, isVideo, fileName) {
+            if (isFolder) { driveState.currentPath.push({id:fileId,name:fileName}); renderBreadcrumbPanel(); await loadDriveFilesPanel(fileId); }
+            else if (isVideo) { await resolveDrivePlay(driveState.type, driveState.token, driveState.driveId, fileId, fileName, false); toggleDrivePanel(); }
+            else { showAlert("该文件不是视频格式", "提示"); }
+        }
+        function refreshDriveFilesFromPanel() {
+            var t = driveState.currentPath[driveState.currentPath.length-1];
+            loadDriveFilesPanel(t ? t.id : "root");
+        }
+        renderTokenList();
+        onDriveTypeChange();
+        console.log('☁️ 网盘播放模块已就绪, 支持: 阿里云盘/夸克/百度/UC/123/139');
+
+        // 窗口大小改变时重新计算搜索面板位置
+        window.addEventListener('resize', function() {
+            const searchPanel = document.getElementById('searchPanel');
+            if (!searchPanel.classList.contains('hidden')) {
+                const searchBtn = document.getElementById('searchBtn');
+                const panelWidth = 256; // 16rem = 256px
+                const btnRect = searchBtn.getBoundingClientRect();
+                const leftPosition = (window.innerWidth - panelWidth) / 2;
+                
+                searchPanel.style.left = leftPosition + 'px';
+                searchPanel.style.bottom = (window.innerHeight - btnRect.top) + 8 + 'px';
+            }
+        });
     </script>
+
+    <!-- 网盘管理弹窗 -->
+    <div id="drivePanelOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);" onclick="if(event.target===this)toggleDrivePanel()">
+        <div class="rounded-2xl overflow-hidden" style="width: 92%; max-width: 420px; max-height: 85vh; background: rgba(15,15,25,0.96); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 24px 64px rgba(0,0,0,0.8);">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <h3 class="text-white text-sm font-semibold flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+                    网盘管理
+                </h3>
+                <button class="glass-btn p-1.5 rounded-lg text-white/60 hover:text-white cursor-pointer" onclick="toggleDrivePanel()">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+            </div>
+            <div class="p-4 space-y-4 overflow-y-auto" style="max-height: calc(85vh - 55px);">
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">选择网盘</label>
+                    <select id="driveTypeSelect2" class="w-full glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none cursor-pointer" onchange="onDrivePanelTypeChange()">
+                        <option value="alipan" class="bg-gray-800">☁️ 阿里云盘</option>
+                        <option value="quark" class="bg-gray-800">☁️ 夸克网盘</option>
+                        <option value="baidu" class="bg-gray-800">☁️ 百度网盘</option>
+                        <option value="uc" class="bg-gray-800">☁️ UC网盘</option>
+                        <option value="123pan" class="bg-gray-800">☁️ 123云盘</option>
+                        <option value="139pan" class="bg-gray-800">☁️ 139云盘</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">已保存的Token <span class="text-white/30">(点击使用)</span></label>
+                    <div id="driveTokenListPanel" class="space-y-1 max-h-[80px] overflow-y-auto"></div>
+                </div>
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">手动输入Token</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="driveTokenInputPanel" placeholder="粘贴 AccessToken 或 BDUSS" class="flex-1 glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none placeholder:text-white/40">
+                        <button class="glass-btn px-3 py-2 rounded-xl text-yellow-400 text-xs cursor-pointer whitespace-nowrap" onclick="setDriveTokenFromPanel()">保存</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-white/60 text-[11px] mb-1.5 block">解析分享链接</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="driveShareInputPanel" placeholder="粘贴分享链接(自动识别网盘)" class="flex-1 glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none placeholder:text-white/40">
+                        <button class="glass-btn px-3 py-2 rounded-xl text-blue-400 text-xs cursor-pointer whitespace-nowrap" onclick="resolveShareUrlFromPanel()">解析</button>
+                    </div>
+                    <p class="text-white/30 text-[10px] mt-1">支持: alipan.com/s/xxx . pan.quark.cn/s/xxx . pan.baidu.com/s/xxx</p>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-white/60 text-[11px]">文件浏览</span>
+                        <div class="flex gap-2">
+                            <button class="glass-btn px-2 py-1 rounded-lg text-white/60 text-[10px] cursor-pointer" onclick="refreshDriveFilesFromPanel()">刷新</button>
+                            <button class="glass-btn px-2 py-1 rounded-lg text-emerald-400 text-[10px] cursor-pointer" onclick="openDriveBrowserFromPanel()">浏览</button>
+                        </div>
+                    </div>
+                    <div class="drive-breadcrumb" id="driveBreadcrumbPanel"></div>
+                    <div id="driveFileListPanel" class="max-h-[200px] overflow-y-auto space-y-0.5 rounded-xl bg-white/5 p-2">
+                        <div class="text-white/40 text-xs text-center py-6">请先保存Token后点击"浏览"</div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-white/40 text-[11px] pt-2 border-t border-white/10">
+                    <span id="driveStatusPanel">未登录</span>
+                    <span id="driveFileCountPanel"></span>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
