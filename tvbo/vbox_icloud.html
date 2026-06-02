@@ -3532,26 +3532,26 @@
                                 });
 
                                 const results = await Promise.allSettled(tasks);
-                                results.forEach(r => {
+                                // 每个站有结果就单独加入一个Tab
+                                for (let ti = 0; ti < batch.length; ti++) {
+                                    const r = results[ti];
                                     if (r.status === 'fulfilled' && r.value.length > 0) {
-                                        allItems.push(...r.value);
+                                        const siteKey = 'cloud-pan:' + batch[ti].name;
+                                        if (!seenPlatforms.has(siteKey)) {
+                                            seenPlatforms.add(siteKey);
+                                            allResults.push({
+                                                interfaceUrl: siteKey,
+                                                interfaceName: batch[ti].name,
+                                                data: r.value
+                                            });
+                                            displayResultsBatch();
+                                        }
                                     }
-                                });
-
-                                //        
-                                if (allItems.length > 0) {
-                                    const key = mergedKey;
-                                    if (!seenPlatforms.has(key)) seenPlatforms.add(key);
-                                    //         
-                                    var idx = allResults.findIndex(r => r.interfaceUrl === key);
-                                    if (idx >= 0) allResults.splice(idx, 1);
-                                    allResults.push({ interfaceUrl: key, interfaceName: '☁️ 网盘资源', data: [...allItems] });
-                                    displayResultsBatch();
                                 }
                             }
 
                             if (allItems.length > 0) {
-                                console.log('流程4.5完成,共', allItems.length, '个网盘资源');
+                                console.log('流程4.5完成');
                             } else {
                                 console.log('流程4.5完成,无结果');
                             }
@@ -3559,7 +3559,7 @@
                     );
                 }
 
-                //   5:     (                  )
+                // 流程5: 网盘搜索（扫描所有已登录网盘中匹配关键词的文件）
                 const driveTokens = loadDriveTokens();
                 const activeDrives = Object.entries(driveTokens).filter(([,v]) => v);
                 if (activeDrives.length > 0) {
@@ -3686,73 +3686,7 @@
                         return;
                     }
 
-                    //           (  4.5   ),   vod_url  
-                    if (item._driveType && item._fileId) {
-                        const panName = item._driveType;
-                        //             (_driveType     , "    ")
-                        const isPanAggr = CLOUD_DRIVE_SEARCH_API.some(a => a.name === panName);
-                        if (isPanAggr) {
-                            //          ,vod_url           ,    
-                            const playUrl = item.vod_url || item.play_url || item.video_url || '';
-                            if (playUrl) {
-                                videoList = [playUrl];
-                                currentVideoIndex = 0;
-                                closeSearchPanel();
-                                loadingEl.classList.add('hidden');
-                                loadVideo(0);
-                                return;
-                            }
-                            //    vod_url,    vod_id    
-                            if (item.vod_id) {
-                                const detailUrl = item._sourceInterfaceUrl || SEARCH_INTERFACE_DETAIL_MAP[item._sourceInterfaceUrl] || '';
-                                if (detailUrl) {
-                                    try {
-                                        const detailText = await fetchForSearch(detailUrl + encodeURIComponent(item.vod_id));
-                                        const detailData = parseResponseData(detailText);
-                                        if (detailData && detailData.length > 0) {
-                                            const d = detailData[0];
-                                            const rUrl = d.vod_url || d.url || d.play_url || d.video_url || '';
-                                            if (rUrl) {
-                                                videoList = [rUrl];
-                                                currentVideoIndex = 0;
-                                                loadVideo(0);
-                                                closeSearchPanel();
-                                                loadingEl.classList.add('hidden');
-                                                return;
-                                            }
-                                        }
-                                    } catch(e) {}
-                                }
-                            }
-                            showAlert('该网盘源的视频无法获取播放地址', '播放失败');
-                            loadingEl.classList.add('hidden');
-                            return;
-                        }
-
-                        //             (    /  /   ,  Token)
-                        const dt = item._driveType;
-                        closeSearchPanel();
-                        loadingEl.classList.add('hidden');
-                        //       
-                        driveState.type = dt;
-                        const savedDriveTokens = loadDriveTokens();
-                        const token = savedDriveTokens[dt];
-                        if (token) {
-                            driveState.token = token;
-                            driveState.driveId = item._driveId || null;
-                            //       
-                            if (item._isVideo) {
-                                await getDriveVideoUrlByToken(dt, token, item._driveId, item._fileId, item.vod_name);
-                            } else {
-                                showAlert('该文件不是视频格式', '提示');
-                            }
-                        } else {
-                            showAlert('未找到' + DRIVE_CONFIGS[dt]?.name + '的Token', '提示');
-                        }
-                        return;
-                    }
-
-                    //         (  4.5),             
+                    // 如果是网盘爬虫源（流程4.5），走爬虫详情获取网盘分享链接
                     if (item._panSource && item._detailPageUrl) {
                         const episodes = await crawlZhanyuanDetail(item, item._panSource);
                         if (episodes.length > 0) {
@@ -3768,6 +3702,47 @@
                                 closeSearchPanel();
                                 loadVideo(0);
                                 loadingEl.classList.add('hidden');
+                                await showAlert('已加载《' + (item.vod_name || '') + '》' + videoList.length + '个网盘分享链接', '加载完成');
+                                return;
+                            }
+                        }
+                        showAlert('获取网盘播放地址失败', '播放失败');
+                        loadingEl.classList.add('hidden');
+                        return;
+                    }
+
+                    // 如果是网盘聚合源直接带播放地址的
+                    if (item._driveType && item.vod_url) {
+                        const playUrl = item.vod_url;
+                        videoList = [playUrl];
+                        currentVideoIndex = 0;
+                        closeSearchPanel();
+                        loadingEl.classList.add('hidden');
+                        loadVideo(0);
+                        return;
+                    }
+
+                    // 如果是真网盘文件（阿里云盘/夸克/百度等，需要Token）
+                    if (item._driveType && item._fileId && DRIVE_CONFIGS[item._driveType]) {
+                        const dt = item._driveType;
+                        closeSearchPanel();
+                        loadingEl.classList.add('hidden');
+                        driveState.type = dt;
+                        const savedDriveTokens = loadDriveTokens();
+                        const token = savedDriveTokens[dt];
+                        if (token) {
+                            driveState.token = token;
+                            driveState.driveId = item._driveId || null;
+                            if (item._isVideo) {
+                                await getDriveVideoUrlByToken(dt, token, item._driveId, item._fileId, item.vod_name);
+                            } else {
+                                showAlert('该文件不是视频格式', '提示');
+                            }
+                        } else {
+                            showAlert('未找到' + DRIVE_CONFIGS[dt]?.name + '的Token', '提示');
+                        }
+                        return;
+                    }
                                 await showAlert('已加载《' + (item.vod_name || '') + '》' + videoList.length + '个网盘分享链接', '加载完成');
                                 return;
                             }
