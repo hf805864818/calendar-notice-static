@@ -3975,6 +3975,8 @@
                                 const savedDriveTokens = loadDriveTokens();
                                 loadingEl.textContent = '正在解析分享链接...';
                                 let matchedAny = false;
+                                const loadingErrors = [];
+                                let browseLastError = null;
                                 
                                 for (const shareUrl of shareLinks) {
                                     try {
@@ -3996,48 +3998,68 @@
                                         const token = savedDriveTokens[driveType];
                                         const driveName = DRIVE_CONFIGS[driveType]?.name || driveType;
                                         if (!token) {
-                                            loadingEl.textContent = `未找到${driveName}的Token，尝试下一个...`;
+                                            loadingErrors.push(driveName + ': 未添加Token');
                                             continue;
                                         }
                                         
                                         loadingEl.textContent = `正在用${driveName}播放...`;
                                         
                                         const shareIdMatch = shareUrl.match(/\/s\/([a-zA-Z0-9_\-]+)/i);
-                                        if (!shareIdMatch) continue;
+                                        if (!shareIdMatch) { loadingErrors.push(driveName + ': 无法从链接提取share_id'); continue; }
                                         const shareId = shareIdMatch[1];
                                         const pwdMatch = shareUrl.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || shareUrl.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/);
                                         const sharePwd = pwdMatch ? pwdMatch[1] : '';
                                         
                                         loadingEl.textContent = `浏览分享文件(${driveName})...`;
-                                        const files = await browseShareFiles(driveType, shareId, sharePwd, token);
+                                        let files = [];
+                                        try {
+                                            files = await browseShareFiles(driveType, shareId, sharePwd, token);
+                                        } catch(err) {
+                                            loadingErrors.push(driveName + ': 获取文件列表失败 - ' + err.message);
+                                            continue;
+                                        }
                                         
                                         if (files && files.length > 0) {
                                             const videoFile = files.find(function(f) { return f.isVideo; }) || files.find(function(f) { return /\.(mp4|m3u8|mkv|avi|mov|flv|ts|webm)$/i.test(f.name || ''); });
                                             if (videoFile) {
                                                 loadingEl.textContent = '获取播放地址...';
-                                                // drive_id 从browseShareFiles中已设置到 driveState.driveId
-                                                const shareDriveId = driveState.driveId || '';
-                                                await resolveDrivePlay(driveType, token, shareDriveId, videoFile.id, videoFile.name || '视频', false);
-                                                loadingEl.classList.add('hidden');
-                                                closeSearchPanel();
-                                                return;
+                                                try {
+                                                    const shareDriveId = driveState.driveId || '';
+                                                    await resolveDrivePlay(driveType, token, shareDriveId, videoFile.id, videoFile.name || '视频', false);
+                                                    loadingEl.classList.add('hidden');
+                                                    closeSearchPanel();
+                                                    return;
+                                                } catch(err) {
+                                                    loadingErrors.push(driveName + ': 获取播放地址失败 - ' + err.message);
+                                                    continue;
+                                                }
+                                            } else {
+                                                loadingErrors.push(driveName + ': 文件列表为空或无视频文件');
                                             }
+                                        } else {
+                                            // browseShareFiles返回了空数组但没有抛异常
+                                            const lastErr = browseLastError || '未返回文件列表';
+                                            loadingErrors.push(driveName + ': ' + lastErr);
                                         }
                                     } catch(e) {
-                                        console.warn('分享链接解析失败:', shareUrl, e.message);
+                                        loadingErrors.push((DRIVE_CONFIGS[driveType]?.name || driveType) + ': 异常 - ' + e.message);
                                         continue;
                                     }
                                 }
                                 
                                 if (matchedAny) {
-                                    // 收集诊断信息
-                                    const diagMsgs = ['分享链接提取到 ' + shareLinks.length + ' 个:'];
+                                    let diagMsg = '播放链路诊断:\n\n';
+                                    diagMsg += '提取到 ' + shareLinks.length + ' 个分享链接:\n';
                                     for (const su of shareLinks) {
                                         const pt = identifyPanType(su);
-                                        const hasToken = savedDriveTokens[pt ? (pt === '阿里云盘' ? 'alipan' : pt === '夸克' ? 'quark' : pt === '百度' ? 'baidu' : pt === '115' ? '115' : '') : ''] ? '有Token' : '无Token';
-                                        diagMsgs.push(pt ? (pt + ' (' + hasToken + ')') : su.substring(0, 50));
+                                        diagMsg += '  ' + (pt || su.substring(0, 40)) + '\n';
                                     }
-                                    throw new Error('所有分享链接均无法播放\n\n' + diagMsgs.join('\n') + '\n\n请在设置→☁️网盘管理中填写对应网盘的Token');
+                                    diagMsg += '\n详细错误:\n';
+                                    for (const err of loadingErrors) {
+                                        diagMsg += '  ✗ ' + err + '\n';
+                                    }
+                                    diagMsg += '\n请在设置→☁️网盘管理中检查Token';
+                                    throw new Error(diagMsg);
                                 } else {
                                     // 没有匹配到已知网盘，走直链提取
                                     let playUrl = '';
@@ -4727,6 +4749,7 @@
             } catch(e) {
                 console.error('浏览分享文件失败:', e);
                 loadingEl.innerHTML = '<div class="text-red-400 text-xs text-center py-4">加载失败: ' + e.message + '</div>';
+                if (typeof browseLastError !== 'undefined') browseLastError = e.message;
                 return [];
             }
         }
