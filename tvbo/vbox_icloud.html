@@ -528,7 +528,7 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="text-white/70 text-xs mb-1.5 block">固定资源(采集/量子/无尽/百度/猫眼/非凡/金鹰/卧龙/魔都)</label>
+                                        <label class="text-white/70 text-xs mb-1.5 block">固定资源（采集/量子/无尽/百度/猫眼/非凡/金鹰/卧龙/魔都）</label>
                                         <div class="flex items-center gap-2">
                                             <button class="glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs cursor-pointer" onclick="toggleFixedSources()">
                                                 <span id="fixedSourcesLabel">已开启</span>
@@ -570,7 +570,7 @@
                                         <input type="checkbox" class="w-4 h-4 rounded" checked>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-white/70 text-xs">使用代理(可能不稳定)</span>
+                                        <span class="text-white/70 text-xs">使用代理（可能不稳定）</span>
                                         <input type="checkbox" id="proxySwitch" class="w-4 h-4 rounded" onchange="toggleProxy()">
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
@@ -594,7 +594,7 @@
                                             <input type="text" id="jsonApiUrlInput" placeholder="输入JSON接口URL" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
                                             <button class="glass-btn px-2 py-1 rounded-lg text-white text-xs cursor-pointer" onclick="addJsonApi()">添加</button>
                                         </div>
-                                        <p class="text-white/40 text-[10px] mt-1">仅保存URL,不做解析处理</p>
+                                        <p class="text-white/40 text-[10px] mt-1">仅保存URL，不做解析处理</p>
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
                                         <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-emerald-400 text-xs cursor-pointer flex items-center justify-center gap-2 hover:bg-emerald-500/20" onclick="toggleDrivePanel()">
@@ -656,23 +656,23 @@
         let isPlaying = false;
         let isVideoStarted = false;
 
-        //       
+        // 存储解析接口
         let customParsers = [];
         let jsonApis = [];
 
-        // HLS   
+        // HLS 实例
         let hls = null;
 
-        //     URL  
+        // 当前加载URL追踪
         let currentLoadingUrl = null;
 
-        // canplay      (       )
+        // canplay处理函数引用（用于移除监听器）
         let onCanPlayHandler = null;
 
-        //   AbortController(    fetch  )
+        // 当前AbortController（用于取消fetch请求）
         let currentAbortController = null;
 
-        //        URL(      )
+        // 当前播放的真实URL（用于错误提示）
         let currentPlayingUrl = null;
         let currentResolvedVideoUrl = null;
 
@@ -692,7 +692,7 @@
         video.addEventListener('play', () => {
           isPlaying = true;
           playPauseIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-          //              
+          // 视频开始播放时关闭选集弹窗
           document.getElementById('episodeMenu').classList.add('hidden');
         });
 
@@ -711,9 +711,9 @@
             durationEl.textContent = formatTime(video.duration);
         });
 
-        //         
+        // 视频加载错误处理
         video.addEventListener('error', () => {
-            //         ,       
+            // 如果正在清空资源，不显示错误弹窗
             if (isClearingResources) {
                 console.log('清空资源过程中忽略视频错误');
                 loadingIndicator.classList.add('hidden');
@@ -729,10 +729,10 @@
                         message = '视频加载被中止';
                         break;
                     case 2:
-                        message = '网络错误:视频服务器拒绝了请求(可能是防盗链或CORS限制)';
+                        message = '网络错误：视频服务器拒绝了请求（可能是防盗链或CORS限制）';
                         break;
                     case 3:
-                        message = '视频解码错误:格式不支持';
+                        message = '视频解码错误：格式不支持';
                         break;
                     case 4:
                         message = '视频格式不支持或地址无效';
@@ -740,11 +740,11 @@
                 }
             }
             console.error('Video error:', error);
-            //       URL   video.src(HLS   video.src     )
+            // 使用当前播放URL而不是video.src（HLS模式下video.src可能不准确）
             const displayUrl = currentPlayingUrl || video.src;
-            //         ,     
+            // 静默处理视频错误，不弹出弹窗
             console.log('视频错误:', message, '地址:', displayUrl);
-            // showAlert(message + '\n\n    : ' + displayUrl, '    '); //          
+            // showAlert(message + '\n\n当前地址: ' + displayUrl, '视频错误'); // 已禁用视频错误弹窗
         });
 
         video.addEventListener('waiting', () => {
@@ -758,29 +758,29 @@
           document.querySelector('.video-placeholder').classList.remove('hidden');
           isVideoStarted = false;
 
-            //        
+            // 自动播放下一集
             const autoPlayNextCheckbox = document.querySelector('input[type="checkbox"]');
             if (autoPlayNextCheckbox && autoPlayNextCheckbox.checked) {
                 let nextIndex = -1;
 
                 switch (playMode) {
                     case 'sequence':
-                        //     
+                        // 顺序播放
                         nextIndex = currentVideoIndex + 1;
                         if (nextIndex >= videoList.length) {
-                            console.log('已经是最后一集,顺序播放结束');
+                            console.log('已经是最后一集，顺序播放结束');
                             return;
                         }
                         break;
                     case 'loop':
-                        //     
+                        // 循环播放
                         nextIndex = currentVideoIndex + 1;
                         if (nextIndex >= videoList.length) {
-                            nextIndex = 0; //      
+                            nextIndex = 0; // 回到第一个
                         }
                         break;
                     case 'random':
-                        //     
+                        // 随机播放
                         do {
                             nextIndex = Math.floor(Math.random() * videoList.length);
                         } while (nextIndex === currentVideoIndex && videoList.length > 1);
@@ -801,7 +801,7 @@
             video.currentTime = percent * video.duration;
         }
 
-        //   :          ,       
+        // 全屏：强制在视频窗口内全屏，不弹系统播放器
         async function toggleFullscreen() {
             const videoEl = document.getElementById('video');
             if (!videoEl) return;
@@ -815,7 +815,7 @@
                 }
             } catch (e) {
                 console.warn('全屏切换失败:', e);
-                //   : video    
+                // 兜底：用video自身全屏
                 try { videoEl.webkitEnterFullscreen(); } catch(e2) {}
             }
         }
@@ -823,20 +823,20 @@
         function toggleSettings() {
             const isHidden = settingsPanel.classList.contains('hidden');
             if (isHidden) {
-                //   video-card(       )   
+                // 以 video-card（整个播放器容器）为中心
                 const videoCard = document.querySelector('.video-card');
                 const settingsPanelEl = document.getElementById('settingsPanel');
                 const panelWidth = 256;
                 
-                //    video-card    ,       
+                // 计算 video-card 的宽度，并找到其中心点
                 const videoCardWidth = videoCard.offsetWidth;
                 const videoCardRect = videoCard.getBoundingClientRect();
                 
-                //    settingsPanel     (settings     relative   )
+                // 获取 settingsPanel 的父元素（settings 按钮的 relative 容器）
                 const settingsBtn = document.querySelector('button[onclick="toggleSettings()"]');
                 const parentRect = settingsBtn.parentElement.getBoundingClientRect();
                 
-                //    video-card            
+                // 计算 video-card 中心相对于父容器的偏移
                 const videoCardCenter = videoCardRect.left - parentRect.left + videoCardWidth / 2;
                 const leftPos = videoCardCenter - panelWidth / 2;
                 
@@ -845,7 +845,7 @@
                 settingsPanelEl.style.transform = 'none';
                 settingsPanelEl.classList.remove('hidden');
                 
-                //       
+                // 关闭其他弹窗
                 document.getElementById('speedMenu').classList.add('hidden');
                 document.getElementById('episodeMenu').classList.add('hidden');
             } else {
@@ -857,12 +857,12 @@
             const speedMenuEl = document.getElementById('speedMenu');
             const isHidden = speedMenuEl.classList.contains('hidden');
             if (isHidden) {
-                //         ,     
+                // 紧贴倍速按键上方，左边框对齐
                 const speedBtn = document.querySelector('button[onclick="toggleSpeedMenu()"]');
                 const parentRect = speedBtn.parentElement.getBoundingClientRect();
                 const btnRect = speedBtn.getBoundingClientRect();
                 
-                //               
+                // 按钮左边框相对于父容器的位置
                 const btnLeft = btnRect.left - parentRect.left;
                 
                 speedMenuEl.style.left = `${btnLeft}px`;
@@ -870,7 +870,7 @@
                 speedMenuEl.style.transform = 'none';
                 speedMenuEl.classList.remove('hidden');
                 
-                //       
+                // 关闭其他弹窗
                 document.getElementById('settingsPanel').classList.add('hidden');
                 document.getElementById('episodeMenu').classList.add('hidden');
             } else {
@@ -878,22 +878,22 @@
             }
         }
 
-        //       
+        // 默认视频列表
         let videoList = [];
         let currentVideoIndex = 0;
 
-        //          
+        // 存储分类的频道数据
         let categorizedChannels = {};
         let currentCategory = null;
 
-        //     : 'sequence' =   , 'loop' =   , 'random' =   
+        // 播放模式: 'sequence' = 顺序, 'loop' = 循环, 'random' = 随机
         let playMode = 'sequence';
 
-        //       
+        // 主题切换函数
         function updateTheme(hue) {
             document.documentElement.style.setProperty('--theme-hue', hue);
             
-            //      
+            // 计算颜色值
             const h = parseInt(hue);
             const primaryBg = `hsla(${h}, 40%, 25%, 0.75)`;
             const primaryBgHover = `hsla(${h}, 40%, 30%, 0.85)`;
@@ -906,20 +906,20 @@
             document.documentElement.style.setProperty('--glass-bg-hover', glassBgHover);
         }
 
-        //               
+        // 尝试解析重定向链接的真实地址
         async function resolveRedirect(url) {
             try {
-                //     power34play       
+                // 如果是 power34play 类型的短链接
                 if (url.includes('power34play.vip/share/')) {
-                    //      CORS  ,        302      
-                    //        fetch   (    CORS  )
+                    // 由于浏览器CORS限制，前端无法直接获取302后的真实地址
+                    // 这里尝试通过 fetch 获取（可能会因CORS失败）
                     const response = await fetch(url, {
                         method: 'HEAD',
                         redirect: 'manual',
                         mode: 'no-cors'
                     });
                     
-                    //       Location ,      
+                    // 如果能获取到Location头，返回真实地址
                     const realUrl = response.headers.get('Location');
                     if (realUrl) {
                         return realUrl;
@@ -932,7 +932,7 @@
             }
         }
 
-        //   TXT    (        )
+        // 解析TXT格式内容（如用户提供的格式）
         function parseTXTContent(content) {
             const lines = content.split('\n');
             const newChannels = [];
@@ -942,13 +942,13 @@
                 line = line.trim();
                 if (!line) return;
                 
-                //       
-                if (line.includes(':') || line.includes(':')) {
-                    currentGroup = line.split(/[::]/)[0].trim();
+                // 检测分组标题
+                if (line.includes('：') || line.includes(':')) {
+                    currentGroup = line.split(/[：:]/)[0].trim();
                     return;
                 }
                 
-                //    $      :  $  
+                // 解析 $ 分隔的格式：名称$链接
                 if (line.includes('$')) {
                     const parts = line.split('$');
                     if (parts.length >= 2) {
@@ -972,19 +972,19 @@
             const input = document.getElementById('videoUrlInput');
             const url = input.value.trim();
             if (url) {
-                //        
+                // 添加到视频列表
                 videoList.push(url);
                 
-                //      ,    
+                // 如果是链接，尝试解析
                 if (url.startsWith('http')) {
-                    //         (  )
+                    // 尝试解析真实地址（异步）
                     resolveRedirect(url).then(realUrl => {
                         const index = videoList.indexOf(url);
                         if (index > -1 && realUrl !== url) {
                             videoList[index] = realUrl;
                         }
                     }).catch(() => {
-                        //     ,     
+                        // 解析失败，保留原链接
                     });
                 }
                 
@@ -992,7 +992,7 @@
                 updateEpisodeBtn();
                 renderCategorizedList();
                 
-                //         ,    
+                // 如果是第一个视频，自动加载
                 if (videoList.length === 1) {
                     loadVideo(0);
                 }
@@ -1001,16 +1001,16 @@
 
         let isClearingResources = false;
 
-        //       
+        // 清空所有资源
         async function clearAllResources() {
-            if (await showConfirm('确定要清空所有资源吗？此操作不可撤销.', '清空资源')) {
-                isClearingResources = true; //         
+            if (await showConfirm('确定要清空所有资源吗？此操作不可撤销。', '清空资源')) {
+                isClearingResources = true; // 标记正在清空资源
                 videoList = [];
                 categorizedChannels = {};
                 currentVideoIndex = -1;
                 currentCategory = null;
                 
-                //     
+                // 重置视频
                 video.pause();
                 video.src = '';
                 video.classList.add('hidden');
@@ -1018,14 +1018,14 @@
                 isVideoStarted = false;
                 isPlaying = false;
                 
-                //   UI
+                // 重置UI
                 playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
                 updateEpisodeBtn();
             renderEpisodeList();
             loadParsersFromStorage();
             loadJsonApisFromStorage();
-            updateProxySwitchUI(); //        UI
-            //          
+            updateProxySwitchUI(); // 初始化代理开关UI
+            // 自动加载第一个视频
             if (videoList.length > 0) {
                 video.src = videoList[0];
             }
@@ -1040,18 +1040,18 @@
             reader.onload = function(e) {
                 const content = e.target.result;
                 
-                //       
+                // 判断文件类型
                 if (file.name.endsWith('.m3u') || file.name.endsWith('.m3u8')) {
                     parseM3UContent(content);
                 } else if (file.name.endsWith('.txt')) {
-                    //      M3U  ,              
+                    // 尝试解析为M3U格式，如果失败则解析为简单文本格式
                     if (content.includes('#EXTM3U')) {
                         parseM3UContent(content);
                     } else {
-                        //          (        )
+                        // 解析为简单文本格式（如用户提供的格式）
                         const channels = parseTXTContent(content);
                         if (channels.length > 0) {
-                            //               
+                            // 将解析的频道添加到第一个分类
                             const groupName = channels[0].group || '导入的频道';
                             categorizedChannels[groupName] = channels;
                             channels.forEach(ch => {
@@ -1109,17 +1109,17 @@
             const categoryList = document.getElementById('categoryList');
             const channelList = document.getElementById('channelList');
             
-            //       
+            // 清空所有列表
             if (simpleList) simpleList.innerHTML = '';
             if (categoryList) categoryList.innerHTML = '';
             if (channelList) channelList.innerHTML = '';
             
-            //      ,      
+            // 如果有分类，显示双行模式
             if (categories.length > 0) {
                 if (simpleList) simpleList.classList.add('hidden');
                 if (categorizedList) categorizedList.classList.remove('hidden');
                 
-                //         (     )
+                // 渲染左侧分类列表（带滑动删除）
                 categories.forEach((group, index) => {
                     const categoryWrapper = document.createElement('div');
                     categoryWrapper.className = 'relative mb-1 overflow-hidden';
@@ -1131,7 +1131,7 @@
                     categoryBtn.dataset.group = group;
                     categoryBtn.dataset.index = index;
                     
-                    //      
+                    // 滑动删除层
                     const deleteLayer = document.createElement('div');
                     deleteLayer.className = 'absolute inset-0 bg-red-500/80 flex items-center justify-center text-white text-xs opacity-0 pointer-events-none transition-opacity duration-200';
                     deleteLayer.innerHTML = '<span>删除</span>';
@@ -1168,7 +1168,7 @@
                         
                         const diff = currentX - startX;
                         if (hasMoved && diff < -50) {
-                            //     
+                            // 确认删除
                             categoryBtn.style.transform = 'translateX(-100%)';
                             setTimeout(() => deleteCategory(group), 300);
                         } else {
@@ -1182,7 +1182,7 @@
                     categoryWrapper.addEventListener('touchend', handleTouchEnd);
                     categoryWrapper.addEventListener('touchcancel', handleTouchEnd);
                     
-                    //       (   )
+                    // 鼠标事件支持（桌面端）
                     categoryWrapper.addEventListener('mousedown', (e) => {
                         startX = e.clientX;
                         currentX = startX;
@@ -1226,14 +1226,14 @@
                     });
 
                     categoryBtn.onclick = () => {
-                        //         
+                        // 更新分类选中状态
                         Array.from(categoryList.children).forEach((wrapper, i) => {
                             const btn = wrapper.querySelector('button');
                             btn.className = i === index 
                                 ? 'w-full text-left px-2 py-2 rounded-lg text-xs cursor-pointer transition-colors whitespace-nowrap overflow-hidden text-ellipsis bg-white/20 text-white'
                                 : 'w-full text-left px-2 py-2 rounded-lg text-xs cursor-pointer transition-colors whitespace-nowrap overflow-hidden text-ellipsis text-white/70 hover:bg-white/10 hover:text-white';
                         });
-                        //          
+                        // 滚动到对应频道区域
                         const targetSection = document.getElementById(`category-section-${index}`);
                         if (targetSection) {
                             targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1245,7 +1245,7 @@
                     categoryList.appendChild(categoryWrapper);
                 });
                 
-                //         (     )
+                // 渲染右侧频道列表（带长按删除）
                 categories.forEach((group, groupIndex) => {
                     const channels = categorizedChannels[group];
                     
@@ -1269,7 +1269,7 @@
                         btn.style.userSelect = 'none';
                         btn.style.webkitUserSelect = 'none';
                         
-                        //        -         
+                        // 长按删除功能 - 使用更健壮的方式
                         let longPressTimer = null;
                         let isLongPress = false;
                         let touchStartTime = 0;
@@ -1285,7 +1285,7 @@
                                 btn.classList.remove('scale-95');
                                 btn.classList.add('bg-red-500/50');
                                 
-                                //     (    )
+                                // 震动反馈（如果支持）
                                 if (navigator.vibrate) {
                                     navigator.vibrate(200);
                                 }
@@ -1296,7 +1296,7 @@
                                     }
                                     btn.classList.remove('bg-red-500/50');
                                 }, 100);
-                            }, 1500); // 1.5   (      )
+                            }, 1500); // 1.5秒长按（更合理的时间）
                         };
                         
                         const cancelLongPress = () => {
@@ -1313,7 +1313,7 @@
                             }
                         };
                         
-                        //     
+                        // 触摸事件
                         btn.addEventListener('touchstart', startLongPress, { passive: false });
                         btn.addEventListener('touchend', (e) => {
                             cancelLongPress();
@@ -1322,7 +1322,7 @@
                         btn.addEventListener('touchmove', cancelLongPress);
                         btn.addEventListener('touchcancel', cancelLongPress);
                         
-                        //     
+                        // 鼠标事件
                         btn.addEventListener('mousedown', startLongPress);
                         btn.addEventListener('mouseup', (e) => {
                             cancelLongPress();
@@ -1331,7 +1331,7 @@
                         btn.addEventListener('mouseleave', cancelLongPress);
                         btn.addEventListener('mousemove', cancelLongPress);
                         
-                        //       
+                        // 右键菜单阻止
                         btn.addEventListener('contextmenu', (e) => e.preventDefault());
                         
                         channelContainer.appendChild(btn);
@@ -1341,7 +1341,7 @@
                     channelList.appendChild(sectionDiv);
                 });
             } else {
-                //    ,      
+                // 无分类，显示单行模式
                 if (simpleList) simpleList.classList.remove('hidden');
                 if (categorizedList) categorizedList.classList.add('hidden');
                 
@@ -1352,7 +1352,7 @@
                     btn.style.userSelect = 'none';
                     btn.style.webkitUserSelect = 'none';
                     
-                    //       
+                    // 长按删除功能
                     let longPressTimer = null;
                     let isLongPress = false;
                     let touchStartTime = 0;
@@ -1476,9 +1476,9 @@
             renderCategorizedList();
         }
 
-        // HLS   
+        // HLS 实例
 
-        //          
+        // 判断是否为视频直链
         function isDirectVideoUrl(url) {
             if (!url || typeof url !== 'string') {
                 return false;
@@ -1486,7 +1486,7 @@
 
             const lowerUrl = url.toLowerCase();
 
-            // 1.              
+            // 1. 检查是否包含常见视频扩展名
             const videoExtensions = [
                 '.m3u8', '.m3u', '.mp4', '.flv', '.webm', '.mkv', '.avi', '.mov',
                 '.ts', '.mts', '.m2ts', '.f4v', '.wmv', '.rm', '.rmvb', '.asf',
@@ -1513,15 +1513,15 @@
             return hasVideoExtension || isStreamProtocol || isCdnPattern || hasVideoParams;
         }
 
-        //   URL   
+        // 校验URL合法性
         function isValidUrl(url) {
             try {
                 const parsed = new URL(url);
-                //        http https
+                // 检查协议是否为http或https
                 if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
                     return false;
                 }
-                //         
+                // 检查是否有主机名
                 if (!parsed.hostname) {
                     return false;
                 }
@@ -1531,18 +1531,18 @@
             }
         }
 
-        //     fetch  
+        // 带重试的fetch请求
         async function fetchWithRetry(url, options = {}, maxRetries = 3, timeout = 10000, abortController = null) {
             let lastError = null;
 
-            //   URL    
+            // 检查URL是否合法
             if (!url || typeof url !== 'string') {
                 throw new Error('无效的URL');
             }
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
-                    //      abortController,       
+                    // 如果提供了abortController，检查是否已取消
                     if (abortController && abortController.signal.aborted) {
                         throw new Error('请求已被取消');
                     }
@@ -1550,7 +1550,7 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-                    //      abortController,       
+                    // 如果提供了abortController，监听其取消信号
                     if (abortController) {
                         const abortHandler = () => {
                             clearTimeout(timeoutId);
@@ -1566,22 +1566,22 @@
 
                     clearTimeout(timeoutId);
 
-                    //       
+                    // 检查响应状态
                     if (!response.ok) {
                         let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
                         try {
-                            //         
+                            // 尝试获取错误详情
                             const errorText = await response.text();
                             if (errorText && errorText.trim()) {
                                 errorMsg += ` (${errorText.substring(0, 100)})`;
                             }
                         } catch (e) {
-                            //       
+                            // 忽略解析错误
                         }
                         throw new Error(errorMsg);
                     }
 
-                    //         
+                    // 检查响应是否为空
                     const responseText = await response.text();
                     if (!responseText || !responseText.trim()) {
                         throw new Error('服务器返回空响应');
@@ -1592,14 +1592,14 @@
                     lastError = error;
                     console.warn(`请求失败 (尝试 ${attempt}/${maxRetries}):`, error.message);
 
-                    //        ,    
+                    // 如果是取消请求，直接抛出
                     if (error.name === 'AbortError' && abortController && abortController.signal.aborted) {
                         throw error;
                     }
 
-                    //        ,    
+                    // 如果是网络错误，可以重试
                     if (attempt < maxRetries) {
-                        //       
+                        // 指数退避策略
                         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
                         console.log(`等待 ${delay}ms 后重试...`);
                         await new Promise(resolve => setTimeout(resolve, delay));
@@ -1607,12 +1607,12 @@
                 }
             }
 
-            throw new Error(`请求失败,已重试 ${maxRetries} 次.最后错误: ${lastError.message}`);
+            throw new Error(`请求失败，已重试 ${maxRetries} 次。最后错误: ${lastError.message}`);
         }
 
-        //                 
+        // 从解析接口响应中提取真实播放地址
         function extractRealPlayUrl(responseText, originalUrl) {
-            //         
+            // 检查是否为空响应
             if (!responseText || !responseText.trim()) {
                 console.warn('解析接口返回空响应');
                 return null;
@@ -1621,14 +1621,14 @@
             const trimmedText = responseText.trim();
             console.log('解析响应内容:', trimmedText.substring(0, 200));
 
-            // 1.     JSON  
+            // 1. 尝试解析JSON格式
             if (trimmedText.startsWith('{') || trimmedText.startsWith('[')) {
                 try {
                     const data = JSON.parse(trimmedText);
 
-                    //     URL     
+                    // 递归查找URL的辅助函数
                     function findUrl(obj, depth = 0) {
-                        //       ,      
+                        // 限制递归深度，防止无限循环
                         if (depth > 5) return null;
 
                         if (typeof obj === 'string') {
@@ -1636,7 +1636,7 @@
                                 return obj;
                             }
                         } else if (typeof obj === 'object' && obj !== null) {
-                            //           
+                            // 优先检查常见的字段名
                             const possibleFields = [
                                 'url', 'playUrl', 'play_url', 'videoUrl', 'video_url',
                                 'realUrl', 'real_url', 'data', 'src', 'link', 'address',
@@ -1650,17 +1650,17 @@
                                 }
                             }
 
-                            //       ,    
+                            // 如果没有找到，递归搜索
                             for (const key in obj) {
                                 const result = findUrl(obj[key], depth + 1);
                                 if (result) return result;
                             }
                         } else if (Array.isArray(obj) && obj.length > 0) {
-                            //          
+                            // 检查数组第一个元素
                             if (typeof obj[0] === 'string' && obj[0].startsWith('http')) {
                                 return obj[0];
                             }
-                            //         
+                            // 递归搜索数组元素
                             for (const item of obj) {
                                 const result = findUrl(item, depth + 1);
                                 if (result) return result;
@@ -1675,22 +1675,22 @@
                         return url;
                     }
                 } catch (e) {
-                    console.log('JSON解析失败,尝试其他方式:', e.message);
+                    console.log('JSON解析失败，尝试其他方式:', e.message);
                 }
             }
 
-            // 2.            URL
+            // 2. 尝试使用正则表达式提取URL
             const urlPatterns = [
-                //          URL
+                // 优先匹配带扩展名的URL
                 /https?:\/\/[^\s"'><\}\]]+?\.(?:m3u8|mp4|flv|ts|webm|mkv|avi|mov)[^\s"'><\}\]]*/gi,
-                //     URL
+                // 匹配所有URL
                 /https?:\/\/[^\s"'><\}\]]+/gi
             ];
 
             for (const pattern of urlPatterns) {
                 const matches = trimmedText.match(pattern);
                 if (matches && matches.length > 0) {
-                    //       HTML       
+                    // 过滤掉可能的HTML标签和无效字符
                     const validUrls = matches.filter(url =>
                         !url.includes('<') &&
                         !url.includes('>') &&
@@ -1707,13 +1707,13 @@
                 }
             }
 
-            // 3.             URL
+            // 3. 如果响应内容本身就是一个URL
             if (trimmedText.startsWith('http') && isValidUrl(trimmedText)) {
                 console.log('响应内容本身就是URL:', trimmedText);
                 return trimmedText;
             }
 
-            // 4.       Base64   URL
+            // 4. 检查是否包含Base64编码的URL
             const base64Pattern = /['"]([A-Za-z0-9+/=]{50,})['"]/g;
             const base64Matches = trimmedText.match(base64Pattern);
             if (base64Matches) {
@@ -1735,30 +1735,30 @@
             return null;
         }
 
-        //         
+        // 多层解析视频地址
         async function parseVideoUrl(url, maxLayers = 3, abortController = null) {
             console.log(`开始解析视频地址 (最多 ${maxLayers} 层):`, url);
 
-            // 1.          
+            // 1. 首先检查是否为直链
             if (isDirectVideoUrl(url)) {
-                console.log('检测到直链,直接播放:', url);
+                console.log('检测到直链，直接播放:', url);
                 return url;
             }
 
-            // 2.   URL   
+            // 2. 校验URL合法性
             if (!isValidUrl(url)) {
                 throw new Error(`URL格式不合法: ${url}`);
             }
 
-            // 3.             
+            // 3. 检查是否有可用的解析接口
             if (!customParsers || customParsers.length === 0) {
-                //             
+                // 没有解析接口也能播放直链
                 if (url.startsWith('http') && (url.endsWith('.m3u8') || url.endsWith('.mp4') || url.endsWith('.flv') || url.includes('.m3u8?') || url.includes('.mp4?'))) {
                     console.log('没有解析接口但地址是直链可播放:', url);
                     return url;
                 }
-                console.warn('没有可用的解析接口,无法解析非直链地址');
-                throw new Error(`无法播放:当前地址需要解析,但未配置解析接口.请在设置中添加解析接口.\n\n地址: ${url}`);
+                console.warn('没有可用的解析接口，无法解析非直链地址');
+                throw new Error(`无法播放：当前地址需要解析，但未配置解析接口。请在设置中添加解析接口。\n\n地址: ${url}`);
             }
 
             console.log(`准备使用 ${customParsers.length} 个解析接口进行解析`);
@@ -1768,33 +1768,33 @@
             let lastValidUrl = null;
             const parserResults = [];
 
-            // 4.            
+            // 4. 依次调用自定义解析接口
             for (const parser of customParsers) {
                 try {
-                    //        
+                    // 检查是否已取消
                     if (abortController && abortController.signal.aborted) {
                         throw new Error('解析请求已被取消');
                     }
 
                     layer++;
-                    console.log(`第 ${layer} 层解析,使用接口:`, parser);
+                    console.log(`第 ${layer} 层解析，使用接口:`, parser);
 
-                    //       URL
+                    // 构建解析请求URL
                     const parseUrl = parser + encodeURIComponent(currentUrl);
                     console.log(`解析请求URL:`, parseUrl);
 
-                    //             ,  abortController
+                    // 使用重试机制请求解析接口，传入abortController
                     const responseText = await fetchWithRetry(parseUrl, {}, 3, 10000, abortController);
 
-                    //        
+                    // 检查是否已取消
                     if (abortController && abortController.signal.aborted) {
                         throw new Error('解析请求已被取消');
                     }
 
-                    //              
+                    // 从响应中提取真实的播放地址
                     const realUrl = extractRealPlayUrl(responseText, currentUrl);
 
-                    //       
+                    // 记录解析结果
                     parserResults.push({
                         parser: parser,
                         success: !!realUrl,
@@ -1802,7 +1802,7 @@
                     });
 
                     if (realUrl) {
-                        //      URL    
+                        // 校验提取的URL是否合法
                         if (!isValidUrl(realUrl)) {
                             console.warn('提取的URL不合法:', realUrl);
                             continue;
@@ -1810,23 +1810,23 @@
 
                         lastValidUrl = realUrl;
 
-                        //      URL        
+                        // 检查提取的URL是否需要继续解析
                         if (isDirectVideoUrl(realUrl)) {
-                            console.log('解析完成,获得真实地址:', realUrl);
+                            console.log('解析完成，获得真实地址:', realUrl);
                             return realUrl;
                         } else if (layer >= maxLayers) {
-                            console.warn(`已达到最大解析层数 (${maxLayers}),但地址仍不是直链:`, realUrl);
-                            //       ,      
+                            console.warn(`已达到最大解析层数 (${maxLayers})，但地址仍不是直链:`, realUrl);
+                            // 返回这个地址，让播放器尝试
                             return realUrl;
                         } else {
                             console.log('需要继续解析下一层:', realUrl);
                             currentUrl = realUrl;
                         }
                     } else {
-                        console.log(`接口 ${parser} 未能提取有效地址,尝试下一个解析接口`);
+                        console.log(`接口 ${parser} 未能提取有效地址，尝试下一个解析接口`);
                     }
                 } catch (error) {
-                    //        ,    
+                    // 如果是取消请求，直接抛出
                     if (error.name === 'AbortError' || error.message.includes('已被取消')) {
                         throw error;
                     }
@@ -1840,7 +1840,7 @@
                 }
             }
 
-            //         
+            // 输出解析结果摘要
             console.log('解析结果摘要:', {
                 totalParsers: customParsers.length,
                 successCount: parserResults.filter(r => r.success).length,
@@ -1848,13 +1848,13 @@
                 results: parserResults
             });
 
-            // 5.               ,           URL
+            // 5. 如果所有自定义解析接口都失败，尝试使用最后一个有效的URL
             if (lastValidUrl) {
-                console.log('所有解析接口执行完毕,使用最后一个有效地址:', lastValidUrl);
+                console.log('所有解析接口执行完毕，使用最后一个有效地址:', lastValidUrl);
                 return lastValidUrl;
             }
 
-            // 6.         ,      
+            // 6. 如果没有有效地址，抛出详细错误
             const errorDetails = parserResults.map(r => {
                 if (r.success) {
                     return `✓ ${r.parser} → ${r.url}`;
@@ -1863,16 +1863,16 @@
                 }
             }).join('\n');
 
-            throw new Error(`所有解析接口均失败,无法获取有效的播放地址.\n\n原始地址: ${url}\n\n解析详情:\n${errorDetails}`);
+            throw new Error(`所有解析接口均失败，无法获取有效的播放地址。\n\n原始地址: ${url}\n\n解析详情:\n${errorDetails}`);
         }
 
         function loadVideo(index) {
             if (index >= 0 && index < videoList.length) {
                 currentVideoIndex = index;
                 const originalUrl = videoList[index];
-                console.log('点击列表资源,原始地址:', originalUrl);
+                console.log('点击列表资源，原始地址:', originalUrl);
 
-                //          URL(      )
+                // 判断是否为播放页面URL（非直接视频流）
                 const isPlayPage = (originalUrl.match(/\/play\/[a-zA-Z0-9]+$/i) ||
                                    originalUrl.includes('/share/')) &&
                                    !originalUrl.includes('.m3u8') &&
@@ -1880,7 +1880,7 @@
                                    !originalUrl.includes('.ts');
 
                 if (isPlayPage) {
-                    //       ,    iframe    
+                    // 对于播放页面，尝试使用iframe或者跳转
                     const iframeContainer = document.createElement('div');
                     iframeContainer.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:100;display:flex;flex-direction:column;';
 
@@ -1905,50 +1905,50 @@
                     return;
                 }
 
-                //        
+                // 取消之前的请求
                 if (currentAbortController) {
                     currentAbortController.abort();
                 }
 
-                //        
+                // 停止之前的播放
                 currentResolvedVideoUrl = null;
                 video.pause();
                 video.src = '';
 
-                //    video,      
+                // 先隐藏video，等待加载成功
                 video.classList.add('hidden');
                 document.querySelector('.video-placeholder').classList.remove('hidden');
 
-                //      HLS   
+                // 清理旧的 HLS 实例
                 if (hls) {
                     hls.destroy();
                     hls = null;
                 }
 
-                //      canplay   
+                // 清理之前的canplay监听器
                 if (onCanPlayHandler) {
                     video.removeEventListener('canplay', onCanPlayHandler);
                     onCanPlayHandler = null;
                 }
 
-                //     AbortController
+                // 创建新的AbortController
                 currentAbortController = new AbortController();
 
-                //        URL
+                // 记录当前加载的URL
                 currentLoadingUrl = originalUrl;
 
-                //   loading
+                // 显示loading
                 loadingIndicator.classList.remove('hidden');
 
-                //         
-                // m3u8/mp4        (       )
+                // 异步解析视频地址
+                // m3u8/mp4通过代理域名播放（仅在代理开启时）
                 const isDirectStream = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.ts') || originalUrl.includes('.flv');
                 const proxyPlayUrl = (useProxyEnabled && isDirectStream) ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
                 parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
-                        //             
+                        // 检查是否已被新的请求替换
                         if (currentLoadingUrl !== originalUrl) {
-                            console.log('请求已被替换,忽略旧结果:', originalUrl);
+                            console.log('请求已被替换，忽略旧结果:', originalUrl);
                             return;
                         }
                         console.log('解析后的真实地址:', realUrl);
@@ -1956,9 +1956,9 @@
                         loadVideoByUrl(realUrl);
                     })
                     .catch(async error => {
-                        //                
+                        // 检查是否已被新的请求替换或取消
                         if (currentLoadingUrl !== originalUrl) {
-                            console.log('请求已被替换,忽略错误:', originalUrl);
+                            console.log('请求已被替换，忽略错误:', originalUrl);
                             return;
                         }
                         if (error.name === 'AbortError' || error.message.includes('已被取消')) {
@@ -1975,23 +1975,23 @@
             }
         }
 
-        //     URL    
+        // 使用真实URL加载视频
         function loadVideoByUrl(videoUrl) {
             currentResolvedVideoUrl = videoUrl;
-            //       URL(      )
+            // 记录当前播放URL（用于错误提示）
             currentPlayingUrl = videoUrl;
 
-            //          
+            // 再次检查是否为直链
             if (!isDirectVideoUrl(videoUrl)) {
                 console.warn('loadVideoByUrl接收到非直链地址:', videoUrl);
-                //       ,     
+                // 继续尝试播放，可能会失败
             }
 
-            //       M3U8
+            // 判断是否为 M3U8
             const isM3U8 = videoUrl.includes('.m3u8') || videoUrl.includes('m3u8');
 
             if (isM3U8 && Hls.isSupported()) {
-                //    HLS.js    M3U8
+                // 使用 HLS.js 播放 M3U8
                 hls = new Hls({
                     debug: false,
                     enableWorker: true,
@@ -2033,11 +2033,11 @@
                     }
                 });
             } else {
-                //         
+                // 普通视频直接播放
                 video.src = videoUrl;
                 video.load();
 
-                //   canplay    
+                // 定义canplay处理函数
                 onCanPlayHandler = () => {
                     video.classList.remove('hidden');
                     document.querySelector('.video-placeholder').classList.add('hidden');
@@ -2046,7 +2046,7 @@
                     video.play().catch(err => {
                         console.log('播放被阻止:', err);
                     });
-                    //      
+                    // 移除监听器
                     video.removeEventListener('canplay', onCanPlayHandler);
                     onCanPlayHandler = null;
                 };
@@ -2059,7 +2059,7 @@
             const episodeMenu = document.getElementById('episodeMenu');
             const isHidden = episodeMenu.classList.contains('hidden');
             if (isHidden) {
-                //   video-card(       )   
+                // 以 video-card（整个播放器容器）为中心
                 const videoCard = document.querySelector('.video-card');
                 const panelWidth = 256; // 16rem
                 const videoCardWidth = videoCard.offsetWidth;
@@ -2091,7 +2091,7 @@
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
-        //        
+        // 播放上一个视频
         function playPrevious() {
             if (currentVideoIndex > 0) {
                 loadVideo(currentVideoIndex - 1);
@@ -2100,7 +2100,7 @@
             }
         }
 
-        //        
+        // 播放下一个视频
         function playNext() {
             if (currentVideoIndex >= 0 && currentVideoIndex < videoList.length - 1) {
                 loadVideo(currentVideoIndex + 1);
@@ -2109,22 +2109,22 @@
             }
         }
 
-        //       
+        // 设置播放模式
         function setPlayMode(mode) {
             playMode = mode;
 
-            //       
+            // 更新按钮样式
             const modeSequence = document.getElementById('modeSequence');
             const modeLoop = document.getElementById('modeLoop');
             const modeRandom = document.getElementById('modeRandom');
 
-            //         
+            // 重置所有按钮样式
             [modeSequence, modeLoop, modeRandom].forEach(btn => {
                 btn.classList.remove('text-white');
                 btn.classList.add('text-white/80');
             });
 
-            //       
+            // 高亮当前模式
             switch (mode) {
                 case 'sequence':
                     modeSequence.classList.remove('text-white/80');
@@ -2194,12 +2194,12 @@
             }
         });
 
-        //       
+        // 存储解析接口
         let isParsing = false;
         const PARSER_STORAGE_KEY = 'video_parser_urls';
         const JSON_API_STORAGE_KEY = 'json_api_urls';
 
-        //  localStorage      
+        // 从localStorage加载解析接口
         function loadParsersFromStorage() {
             try {
                 const stored = localStorage.getItem(PARSER_STORAGE_KEY);
@@ -2213,7 +2213,7 @@
             renderParserList();
         }
 
-        //  localStorage  JSON  
+        // 从localStorage加载JSON接口
         function loadJsonApisFromStorage() {
             try {
                 const stored = localStorage.getItem(JSON_API_STORAGE_KEY);
@@ -2227,7 +2227,7 @@
             renderJsonApiList();
         }
 
-        //   JSON   localStorage
+        // 保存JSON接口到localStorage
         function saveJsonApisToStorage() {
             try {
                 localStorage.setItem(JSON_API_STORAGE_KEY, JSON.stringify(jsonApis));
@@ -2236,7 +2236,7 @@
             }
         }
 
-        //   JSON  
+        // 添加JSON接口
         async function addJsonApi() {
             const input = document.getElementById('jsonApiUrlInput');
             const url = input.value.trim();
@@ -2258,7 +2258,7 @@
             input.value = '';
         }
 
-        //   JSON  
+        // 删除JSON接口
         async function removeJsonApi(index) {
             if (await showConfirm('确定要删除这个JSON接口吗？', '删除JSON接口')) {
                 jsonApis.splice(index, 1);
@@ -2267,7 +2267,7 @@
             }
         }
 
-        //   JSON    
+        // 渲染JSON接口列表
         function renderJsonApiList() {
             const list = document.getElementById('jsonApiList');
             if (jsonApis.length === 0) {
@@ -2282,7 +2282,7 @@
             `).join('');
         }
 
-        //        localStorage
+        // 保存解析接口到localStorage
         function saveParsersToStorage() {
             try {
                 localStorage.setItem(PARSER_STORAGE_KEY, JSON.stringify(customParsers));
@@ -2291,7 +2291,7 @@
             }
         }
 
-        //       
+        // 解析接口管理
         async function addParser() {
             const input = document.getElementById('parserUrlInput');
             const url = input.value.trim();
@@ -2353,7 +2353,7 @@
             }
         }
         
-        //                
+        // 统一关闭搜索面板并恢复搜索按钮
         function closeSearchPanel() {
             const searchPanel = document.getElementById('searchPanel');
             const searchBtn = document.getElementById('searchBtn');
@@ -2361,10 +2361,10 @@
             if (searchBtn) searchBtn.style.display = '';
         }
 
-        //      (             )
+        // 源标签切换（智能搜索模式下只有一个平台）
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('source-tab')) {
-                //       (        ,       )
+                // 更新标签样式（虽然只有一个平台，但保持切换功能）
                 document.querySelectorAll('.source-tab').forEach(tab => {
                     tab.classList.remove('active', 'text-white');
                     tab.classList.add('text-white/70');
@@ -2374,7 +2374,7 @@
             }
         });
 
-        //        (     alert / confirm)
+        // 自定义弹窗系统（替代原生 alert / confirm）
         let modalResolver = null;
 
         function closeCustomModal(result = false) {
@@ -2436,7 +2436,7 @@
             });
         }
 
-        //       
+        // 智能搜索系统
         const PROXY_LIST = [
           null,
           'https://vbox.ltd/?url='
@@ -2448,7 +2448,7 @@
         const SEARCH_CONCURRENCY = 12;
         const FAST_SEARCH_LIMIT = 5;
         
-        //        (    )
+        // 测试接口可用性（快速验证）
         async function testInterfaceSpeed(interfaceUrl) {
             const testUrl = buildSearchUrl(interfaceUrl, 'test');
             try {
@@ -2470,10 +2470,10 @@
             }
         }
 
-        //          :           
+        // 智能过滤并排序接口：快的和能返回数据的优先
         async function getBestSearchInterfaces(searchInterfaces) {
             const orderedInterfaces = sortSearchInterfacesByPriority(searchInterfaces);
-            //     8   ,      
+            // 只测试前8个接口，减少验证时间
             const interfacesToTest = orderedInterfaces.slice(0, Math.min(8, orderedInterfaces.length));
             
             const tests = await Promise.all(
@@ -2483,7 +2483,7 @@
                 }))
             );
             
-            //    :      ->       ->    
+            // 可用性：能成功请求 -> 能返回数据 -> 速度快
             const sorted = tests.sort((a, b) => {
                 if (a.success !== b.success) return b.success ? 1 : -1;
                 if (a.hasData !== b.hasData) return b.hasData ? 1 : -1;
@@ -2491,23 +2491,23 @@
             });
             
             return sorted
-                .filter(result => result.success) //       
+                .filter(result => result.success) // 只保留成功的
                 .map(result => result.url)
-                .concat(orderedInterfaces.slice(8)); //           
+                .concat(orderedInterfaces.slice(8)); // 后面没测试的接在后面
         }
         let cachedSearchInterfaces = null;
         let cachedSearchInterfacesKey = '';
         let cachedSearchInterfacesTime = 0;
         let currentProxyIndex = 0;
 
-        //     :  localStorage     (    ,            )
+        // 代理开关：从 localStorage 读取设置（默认关闭，因为代理服务器可能不稳定）
         let useProxyEnabled = localStorage.getItem('useProxyEnabled') === 'true';
         function toggleProxy() {
             useProxyEnabled = !useProxyEnabled;
             localStorage.setItem('useProxyEnabled', useProxyEnabled);
             updateProxySwitchUI();
             console.log('代理开关:', useProxyEnabled ? '开启' : '关闭');
-            //       ,                 
+            // 清除接口缓存，因为代理设置改变后搜索结果可能不同
             cachedSearchInterfaces = null;
         }
         function updateProxySwitchUI() {
@@ -2529,96 +2529,78 @@
             'https://www.mdzyapi.com/api.php/provide/vod/'
         ];
         
-        //     URL ->       ,   JSON  name/title/key       
+        // 搜索接口URL -> 平台名称映射，从订阅JSON的 name/title/key 字段自动提取
         const SEARCH_INTERFACE_NAME_MAP = {};
         const SEARCH_INTERFACE_DETAIL_MAP = {};
 
-        //                
-        SEARCH_INTERFACE_NAME_MAP['http://caiji.dyttzyapi.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://cj.lziapi.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://api.wujinapi.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://api.apibdzy.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://api.maoyanapi.top/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://cj.ffzyapi.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://jyzyapi.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://wolongzyw.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://www.mdzyapi.com/api.php/provide/vod/?ac=list'] = '    ';
-        SEARCH_INTERFACE_NAME_MAP['https://cj.rycjapi.com/api.php/provide/vod/?ac=list'] = '    ';
+        // 手动添加固定接口的平台名称映射
+        SEARCH_INTERFACE_NAME_MAP['http://caiji.dyttzyapi.com/api.php/provide/vod/?ac=list'] = '采集资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.lziapi.com/api.php/provide/vod/?ac=list'] = '量子资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.wujinapi.com/api.php/provide/vod/?ac=list'] = '无尽资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.apibdzy.com/api.php/provide/vod/?ac=list'] = '百度资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.maoyanapi.top/api.php/provide/vod/?ac=list'] = '猫眼资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.ffzyapi.com/api.php/provide/vod/?ac=list'] = '非凡资源';
+        SEARCH_INTERFACE_NAME_MAP['https://jyzyapi.com/api.php/provide/vod/?ac=list'] = '金鹰资源';
+        SEARCH_INTERFACE_NAME_MAP['https://wolongzyw.com/api.php/provide/vod/?ac=list'] = '卧龙资源';
+        SEARCH_INTERFACE_NAME_MAP['https://www.mdzyapi.com/api.php/provide/vod/?ac=list'] = '魔都资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.rycjapi.com/api.php/provide/vod/?ac=list'] = '如意资源';
 
-        // =====          =====
-        //           API,             
-        // 16        (  uz   Pan_xxx.js)
-        //          HTML  ,  XPath      
-                const CLOUD_DRIVE_SEARCH_API = [
-            { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+        // ===== 网盘聚合搜索接口 =====
+        // 使用网盘聚合搜索引擎API，搜索各大网盘的资源分享链接
+        // 16个网盘爬虫站，每个站独立Tab展示
+        const CLOUD_DRIVE_SEARCH_API = [
+            { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler', 
+              searchUrl: '/vodsearch/-------------.html?wd=', searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title', 
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'http://feimao888.fun', name: '蜡笔云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://tv.yydsys.top', name: '多多云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://sd.sduc.site', name: '闪电云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'http://2xiaopan.fun', name: '二小云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://oog.nxog.eu.org', name: '欧歌云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'http://www.miqk.cc', name: '至臻云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'http://103.45.162.207:20720', name: '虎斑云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'http://xsayang.fun:12512', name: '小斑云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://www.91panta.cn', name: '盘Ta云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://www.leijing.xyz', name: '雷鲸云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://www.nanf.cc', name: '南风云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://pan.funletu.com', name: '趣盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://4ktop.com', name: '4KTop云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://libvio.mov', name: 'LibVio云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
             { url: 'https://666.666291.xyz', name: '木偶云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
               searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
-              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' }
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' }
         ];
 
-        //           :      /URL              
-        const PRIORITY_SEARCH_KEYWORDS = ['zhanyuan', '站源', 'zy', 'zanyuan', '战源', '资源', '资源站', '资源源']; //      ,       
+        // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
+        const PRIORITY_SEARCH_KEYWORDS = ['zhanyuan', '站源', 'zy', 'zanyuan', '战源', '资源', '资源站', '资源源']; // 扩展关键词，包括可能的变体
 
         function isPrioritySearchInterface(url) {
             const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
@@ -2644,7 +2626,7 @@
             });
         }
 
-        //     fetch  
+        // 带超时的fetch请求
         async function fetchWithTimeout(url, options = {}, timeout = TIMEOUT_MS) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -2665,14 +2647,14 @@
             }
         }
 
-        //       URL
+        // 获取代理后的URL
         function getProxiedUrl(url) {
             const proxy = PROXY_LIST[currentProxyIndex];
             if (!proxy) return url;
             return proxy + encodeURIComponent(url);
         }
 
-        //             
+        // 使用代理降级策略发起请求
         async function fetchDirect(url, timeout = SEARCH_TIMEOUT_MS) {
             const response = await fetchWithTimeout(url, {}, timeout);
             if (!response.ok) {
@@ -2701,24 +2683,24 @@
         }
 
         async function fetchForSearch(url) {
-            //        ,     ,        
+            // 如果启用了代理，优先走代理，失败时回退到直连
             if (useProxyEnabled) {
                 try {
                     return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
                 } catch (proxyError) {
-                    console.log('代理失败,尝试直连:', proxyError.message);
+                    console.log('代理失败，尝试直连:', proxyError.message);
                     return await fetchDirect(url, SEARCH_TIMEOUT_MS);
                 }
             }
-            //           
+            // 关闭代理时直接走直连
             return await fetchDirect(url, SEARCH_TIMEOUT_MS);
         }
 
-        //  URL       (            )
+        // 从URL中提取接口名称（优先使用订阅里的平台名称）
         function extractInterfaceName(url) {
             if (!url) return '接口';
             if (SEARCH_INTERFACE_NAME_MAP[url]) return SEARCH_INTERFACE_NAME_MAP[url];
-            //   MAP     
+            // 遍历MAP找部分匹配
             for (const k in SEARCH_INTERFACE_NAME_MAP) {
                 if (url && k && (url.includes(k) || k.includes(url))) {
                     return SEARCH_INTERFACE_NAME_MAP[k];
@@ -2733,7 +2715,7 @@
                 return match ? match[1].replace(/^www\./, '').split('.')[0].substring(0, 12) : '接口';
             }
         }
-        //      
+        // 固定源开关
         function toggleFixedSources() {
             const current = localStorage.getItem('useFixedSources');
             const newVal = current === 'false' ? 'true' : 'false';
@@ -2742,7 +2724,7 @@
             if (label) label.textContent = newVal === 'false' ? '已关闭' : '已开启';
         }
 
-        //         UI(  addEventListener )
+        // 初始化固定源开关UI（放在addEventListener前）
         (function initFixedSourcesUI() {
             const label = document.getElementById('fixedSourcesLabel');
             if (label) {
@@ -2751,20 +2733,20 @@
             }
         })();
 
-        //          (   wd/key/keyword/search/query        )
+        // 检查是否为搜索接口（支持 wd/key/keyword/search/query 多种关键词参数）
         function isSearchInterface(url) {
             if (!url) return false;
             return /(\?|&)(wd|key|keyword|search|query)=/i.test(String(url));
         }
 
-        //     API          
+        // 将基础 API 规范化为可搜索接口
         function normalizeToSearchApi(url) {
             if (!url) return '';
 
             let u = String(url).trim();
             if (!/^https?:\/\//i.test(u)) return '';
 
-            //    JSON/HTML               
+            // 清理 JSON/HTML 中可能混进来的转义和多余符号
             u = u
                 .replace(/\\\//g, '/')
                 .replace(/&amp;/g, '&')
@@ -2772,23 +2754,23 @@
                 .replace(/["'<>]+$/g, '')
                 .trim();
 
-            //         ,        
+            // 已经有关键词参数，直接作为搜索接口
             if (isSearchInterface(u)) return u;
 
-            //     ac         ,  wd=
+            // 已经有 ac 参数但缺少关键词，补 wd=
             if (/[?&]ac=/i.test(u)) {
-                //      videolist     wd= (ac=detail      )
+                // 强制改为 videolist 并加上 wd= (ac=detail 不返回数据)
                 const withVideoList = u.replace(/ac=[^&]*/i, 'ac=videolist');
                 return `${withVideoList}${withVideoList.includes('?') ? '&' : '?'}wd=`;
             }
 
-            //     CMS  API,   list     
-            //    http://xxx/api.php/provide/vod => http://xxx/api.php/provide/vod/?ac=list&wd=
+            // 常见苹果CMS基础API，补成 list 搜索接口
+            // 例如 http://xxx/api.php/provide/vod => http://xxx/api.php/provide/vod/?ac=list&wd=
             const clean = u.replace(/\/+$/, '');
             return `${clean}/?ac=list&wd=`;
         }
 
-        //     URL(   wd/key/keyword/search/query)
+        // 构建搜索URL（兼容 wd/key/keyword/search/query）
         function buildSearchUrl(interfaceUrl, keyword) {
             const kw = encodeURIComponent(keyword || '');
             let u = String(interfaceUrl || '').trim();
@@ -2815,13 +2797,13 @@
             return `${u}${u.includes('?') ? '&' : '?'}wd=${kw}`;
         }
 
-        //     fetch(              )
+        // 带代理的fetch（用于获取接口详情页和视频详情）
         async function fetchWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
             try {
                 const response = await fetchDirect(url, timeout);
                 return response;
             } catch (directError) {
-                console.log('直连失败,走双代理:', directError.message);
+                console.log('直连失败，走双代理:', directError.message);
             }
             const proxyCandidates = [PROXY_LIST[1]].filter(Boolean);
             let lastError = null;
@@ -2839,7 +2821,7 @@
             throw lastError || new Error('所有代理请求失败');
         }
 
-        //    JSON/         :   api/url/link/vod_api/player_api    
+        // 从订阅JSON/文本中发现搜索接口：支持 api/url/link/vod_api/player_api 等字段
         async function discoverSearchInterfaces(baseUrls) {
             const sourceUrls = Array.isArray(baseUrls) ? baseUrls : [];
             const cacheKey = JSON.stringify(sourceUrls);
@@ -2856,7 +2838,7 @@
                 if (normalized) {
                     if (sourceName) {
                         SEARCH_INTERFACE_NAME_MAP[normalized] = String(sourceName).trim();
-                        //      url key
+                        // 同时用原始url做key
                         if (candidate && candidate !== normalized) {
                             SEARCH_INTERFACE_NAME_MAP[String(candidate).trim()] = String(sourceName).trim();
                         }
@@ -2876,7 +2858,7 @@
                 if (depth > 8 || value == null) return;
 
                 if (typeof value === 'string') {
-                    //          API,         URL
+                    // 字符串本身可能就是API，也可能里面包含多个URL
                     addCandidate(value, parentName);
                     const urls = value.match(/https?:\/\/[^\s"'<>\\]+/g) || [];
                     urls.forEach(u => addCandidate(u, parentName));
@@ -2890,42 +2872,42 @@
 
                 if (typeof value === 'object') {
                     const currentName = value.name || value.title || value.key || value.site_name || value.group || value.desc || parentName;
-                    //       .json    apiyuan:searchurl/detailurl          CMS  
+                    // 兼容“影视源.json”里的 apiyuan：searchurl/detailurl 是可直接对接的苹果CMS接口
                     if (value.searchurl || value.searchUrl || value.websearchurl) {
                         const directSearchUrl = value.searchurl || value.searchUrl;
                         if (directSearchUrl) addCandidate(directSearchUrl, currentName, value.detailurl || value.detailUrl || '');
                     }
-                    //           ,               
+                    // 优先采集常见接口字段，并把当前对象的平台名绑定到接口
                     ['api', 'url', 'link', 'vod_api', 'player_api', 'search', 'searchUrl', 'search_url', 'parse', 'ext'].forEach(key => {
                         if (value[key]) collectDeep(value[key], depth + 1, currentName);
                     });
-                    //          ,      
+                    // 再兜底递归所有字段，兼容嵌套订阅
                     Object.keys(value).forEach(key => collectDeep(value[key], depth + 1, currentName));
                 }
             };
 
             for (const url of sourceUrls) {
                 try {
-                    //              API
+                    // 订阅地址本身也可能就是基础API
                     addCandidate(url);
 
                     let content;
                     try {
                         content = await fetchWithProxy(url);
                     } catch (e) {
-                        console.warn('订阅地址代理失败,尝试直连:', url, e.message);
+                        console.warn('订阅地址代理失败，尝试直连:', url, e.message);
                         content = await fetchDirect(url, 5000);
                     }
 
-                    // A.         URL
+                    // A. 从纯文本中抓所有URL
                     const allUrls = content.match(/https?:\/\/[^\s"'<>\\]+/g) || [];
                     allUrls.forEach(addCandidate);
 
-                    // B.   JSON   ,     api/url/link    
+                    // B. 按 JSON 解析，深度提取 api/url/link 等字段
                     try {
                         const parsed = JSON.parse(content);
                         collectDeep(parsed, 0, extractInterfaceName(url));
-                        //    JSON      
+                        // 尝试从JSON顶层获取名称
                         if (parsed && typeof parsed === 'object') {
                             const inferred = String(parsed.name || parsed.title || parsed.key || parsed.site_name || parsed.group || parsed.desc || '').trim();
                             if (inferred) {
@@ -2936,7 +2918,7 @@
                             }
                         }
                     } catch (jsonError) {
-                        console.warn('订阅内容不是标准JSON,已按文本提取URL:', url);
+                        console.warn('订阅内容不是标准JSON，已按文本提取URL:', url);
                     }
                 } catch (error) {
                     console.error(`发现接口失败: ${url}`, error);
@@ -2945,7 +2927,7 @@
 
             const deduped = sortSearchInterfacesByPriority([...new Set(searchInterfaces.filter(Boolean))]);
             
-            //   :     zhanyuan     
+            // 调试：检查是否有zhanyuan接口被发现
             const zhanyuanInterfaces = deduped.filter(url => {
                 const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
                 const urlText = url.toLowerCase();
@@ -2954,10 +2936,10 @@
             if (zhanyuanInterfaces.length > 0) {
                 console.log('发现 zhanyuan 接口:', zhanyuanInterfaces);
             } else {
-                console.log('未发现 zhanyuan 接口,所有接口:', deduped.slice(0, 10).map(url => ({url, name: SEARCH_INTERFACE_NAME_MAP[url]})));
+                console.log('未发现 zhanyuan 接口，所有接口:', deduped.slice(0, 10).map(url => ({url, name: SEARCH_INTERFACE_NAME_MAP[url]})));
             }
             
-            //   :        
+            // 调试：打印名称映射情况
             console.log('SEARCH_INTERFACE_NAME_MAP 映射统计:', Object.keys(SEARCH_INTERFACE_NAME_MAP).length);
             if (Object.keys(SEARCH_INTERFACE_NAME_MAP).length > 0) {
                 console.log('名称映射前3个:', Object.entries(SEARCH_INTERFACE_NAME_MAP).slice(0, 3));
@@ -3002,8 +2984,8 @@
             return results;
         }
 
-        //       
-        //     :       ,    
+        // 执行搜索操作
+        // 极速搜索：只搜前几个接口，秒出结果
         async function fastSearch(keyword, searchInterfaces) {
             const orderedInterfaces = sortSearchInterfacesByPriority(searchInterfaces);
             const fastInterfaces = orderedInterfaces.slice(0, FAST_SEARCH_LIMIT);
@@ -3043,12 +3025,12 @@
         }
 
         async function search(keyword, searchInterfaces, onPartialResult = null) {
-            //        ,      ,      
+            // 简化的搜索函数，不再智能验证，由主流程控制
             const taskResults = await runWithConcurrency(searchInterfaces, SEARCH_CONCURRENCY, async (interfaceUrl) => {
                 const interfaceName = extractInterfaceName(interfaceUrl);
                 if (!interfaceName) return null;
 
-                //          
+                // 拼接关键词发起搜索
                 const searchUrl = buildSearchUrl(interfaceUrl, keyword);
 
                 try {
@@ -3086,12 +3068,12 @@
         function normalizePlatformName(name) {
             let s = String(name || '').trim();
             if (!s) return '';
-            //                  ,           
-            s = s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, ''); //    emoji
-            s = s.replace(/[\u200B-\u200D\uFEFF]/g, ''); //       
+            // 只保留中文、英文、数字、常见分隔符，不要过滤掉所有特殊符号
+            s = s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, ''); // 移除 emoji
+            s = s.replace(/[\u200B-\u200D\uFEFF]/g, ''); // 移除零宽字符
             s = s.replace(/\s+/g, ' ').trim();
             if (!s) return '';
-            //                  ,    
+            // 如果包含竖线、点、横线等常见分隔符，保留它们
             const hasUsefulChar = /[\u4e00-\u9fa5a-zA-Z0-9]/.test(s);
             if (!hasUsefulChar) return '';
             return s;
@@ -3148,11 +3130,11 @@
                     return s;
                 }
             }
-            //          ,   URL      
+            // 如果所有候选都无效，从接口URL生成友好名称
             if (result && result.interfaceUrl) {
                 try {
                     const url = new URL(result.interfaceUrl);
-                    //    hostname  (  api.yutu.com    api)
+                    // 用整个hostname显示（如 api.yutu.com 而非 api）
                     const host = url.hostname.replace(/^www\./,"");
                     const parts = host.split('.');
                     if (parts.length >= 2) {
@@ -3160,10 +3142,10 @@
                         if (name && name.length > 1) return name;
                     }
                 } catch (e) {
-                    //   URL    
+                    // 忽略URL解析错误
                 }
             }
-            //     "     "
+            // 最后才用"未命名平台"
             return '未命名平台';
         }
 
@@ -3181,7 +3163,7 @@
             });
         }
 
-        //       :        ,            ,        
+        // 显示搜索结果：平台名称横向展示，下面显示当前平台对应资源，左右滑动切换平台
         function displaySmartSearchResults(results) {
             const container = document.getElementById('searchResultsContainer');
             const tabs = document.getElementById('sourceTabs');
@@ -3232,7 +3214,7 @@
                         <div class="text-white/50 text-[10px] truncate">${item.vod_remarks || item.remarks || ''}${(item.vod_remarks || item.remarks) && (item.type_name || item.type) ? ' · ' : ''}${item.type_name || item.type || ''}</div>
                     `;
                     resultBtn.onclick = () => {
-                        //         item(_driveType   ),vod_id     ,  vod_name   _cloudIndex    fallback
+                        // 对于网盘聚合源 item（_driveType 标记），vod_id 可能为空，用 vod_name 或 _cloudIndex 作为 fallback
                         const hasDriveMarker = !!(item._driveType && item._fileId);
                         let vodId = item.vod_id || item.id || item._fileId || (item._detailPageUrl || '');
                         if ((!vodId || hasDriveMarker) && item._cloudIndex !== undefined) {
@@ -3256,7 +3238,7 @@
 
             const summary = document.createElement('div');
             summary.className = 'text-white/40 text-[10px] text-center py-1';
-            summary.textContent = `共 ${results.length} 个平台 / ${totalCount} 条结果,横向滑动上方平台名称切换`;
+            summary.textContent = `共 ${results.length} 个平台 / ${totalCount} 条结果，横向滑动上方平台名称切换`;
             container.appendChild(summary);
         }
         function renderSearchResultsRealtime(results, isSearching = true) {
@@ -3265,22 +3247,22 @@
             const summary = document.getElementById('searchResultsContainer')?.lastElementChild;
             if (summary && summary.className.includes('text-center')) {
                 summary.textContent = isSearching
-                    ? `${summary.textContent},其他平台继续搜索中...`
-                    : summary.textContent.replace(',其他平台继续搜索中...', '');
+                    ? `${summary.textContent}，其他平台继续搜索中...`
+                    : summary.textContent.replace('，其他平台继续搜索中...', '');
             }
         }
 
-        //             (     ,       )
+        // 缓存最后一次完整搜索结果（含所有流程，如网盘聚合源等）
         let _cachedSearchResults = [];
 
-        //        (    ) -       
+        // 轮训搜索所有源（智能搜索） - 新版优化流程
         async function searchAllSources() {
             const keyword = document.getElementById('searchInput').value.trim();
             if (!keyword) {
                 await showAlert('请输入搜索关键词', '提示');
                 return;
             }
-            //         
+            // 自动打开搜索面板
             const panel = document.getElementById('searchPanel');
             panel.classList.remove('hidden');
             const searchBtn = document.getElementById('searchBtn');
@@ -3296,12 +3278,12 @@
                 tabs.innerHTML = '<button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] whitespace-nowrap active">搜索中...</button>';
             }
 
-            //       
+            // 收集所有结果
             const allResults = [];
             const seenPlatforms = new Set();
             let isFirstDisplay = true;
 
-            //        
+            // 显示结果的函数
             const displayResultsBatch = () => {
                 if (allResults.length > 0) {
                     if (isFirstDisplay) {
@@ -3317,14 +3299,14 @@
                 const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
                 console.log(`发现 ${searchInterfaces.length} 个搜索接口`);
 
-                //           4.5   ,     searchInterfaces
+                // 网盘聚合源单独在流程4.5中处理，不混入普通searchInterfaces
 
                 if (searchInterfaces.length === 0) {
                     container.innerHTML = '<div class="text-white/40 text-xs text-center py-2">未发现搜索接口</div>';
                     return;
                 }
 
-                //   zhanyuan  (     )
+                // 提取zhanyuan接口（优先级最高）
                 const zhanyuanInterfaces = searchInterfaces.filter(url => {
                     const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
                     const urlText = url.toLowerCase();
@@ -3332,7 +3314,7 @@
                 });
                 console.log(`发现 ${zhanyuanInterfaces.length} 个zhanyuan接口`);
 
-                //   zhanyuan   (   JSON zhanyuan  )
+                // 收集zhanyuan爬虫源（从订阅JSON的zhanyuan字段）
                 let zhanyuanCrawlers = [];
                 try {
                     for (const u of [...SAVED_API_URLS, ...jsonApis]) {
@@ -3349,7 +3331,7 @@
                     console.warn('获取zhanyuan爬虫源失败:', e.message);
                 }
 
-                //    8       (  8  zhanyuan )
+                // 提取前8个切片资源接口（不足8个用zhanyuan补）
                 const apiInterfaces = searchInterfaces.filter(url => {
                     const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
                     const urlText = url.toLowerCase();
@@ -3362,18 +3344,18 @@
                 }
                 console.log('流程2切片资源接口:', topSliceInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
                 
-                //       ( localStorage  ,    )
+                // 固定平台开关（从localStorage读取，默认开启）
                 const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
                 
-                //         (          )
+                // 提取固定平台接口（根据开关决定是否搜索）
                 const fixedPlatformInterfaces = useFixedSources ? searchInterfaces.slice(0, Math.min(2, searchInterfaces.length)) : [];
                 
-                //     (      zhanyuan)
+                // 其他接口（排除前两个和zhanyuan）
                 const otherInterfaces = searchInterfaces.slice(2).filter(url => !zhanyuanInterfaces.includes(url));
 
-                //           
+                // 同时执行三个搜索流程
                 const promises = [
-                    //   1:     2     
+                    // 流程1: 立即搜索2个固定平台
                     (async () => {
                         console.log('流程1: 搜索2个固定平台');
                         const fixedResults = [];
@@ -3394,10 +3376,10 @@
                             }
                         });
                         await Promise.allSettled(tasks);
-                        console.log(`流程1完成,找到 ${fixedResults.length} 个固定平台结果`);
+                        console.log(`流程1完成，找到 ${fixedResults.length} 个固定平台结果`);
                     })(),
 
-                    //   2:      8 zhanyuan  
+                    // 流程2: 同时搜索前8个zhanyuan接口
                     (async () => {
                         console.log(`流程2: 搜索${topSliceInterfaces.length}个切片资源接口`);
                         const sliceResults = [];
@@ -3418,13 +3400,13 @@
                             }
                         });
                         await Promise.allSettled(tasks);
-                        console.log(`流程2完成,找到 ${sliceResults.length} 个结果`);
+                        console.log(`流程2完成，找到 ${sliceResults.length} 个结果`);
                     })(),
 
-                    //   3:         
+                    // 流程3: 分批搜索其他接口
                     (async () => {
                         console.log(`流程3: 分批搜索${otherInterfaces.length}个其他接口`);
-                        //   8   
+                        // 每批8个接口
                         const batchSize = 8;
                         for (let i = 0; i < otherInterfaces.length; i += batchSize) {
                             const batch = otherInterfaces.slice(i, i + batchSize);
@@ -3446,11 +3428,11 @@
                                 }
                             });
                             await Promise.allSettled(tasks);
-                            console.log(`第${Math.floor(i/batchSize)+1}批完成,找到 ${batchResults.length} 个结果`);
+                            console.log(`第${Math.floor(i/batchSize)+1}批完成，找到 ${batchResults.length} 个结果`);
                             
-                            //              ,      
+                            // 如果前几批已经找到足够结果，可以提前结束
                             if (allResults.length >= 8 && i > batchSize * 2) {
-                                console.log('已找到足够结果,提前结束流程3');
+                                console.log('已找到足够结果，提前结束流程3');
                                 break;
                             }
                         }
@@ -3458,7 +3440,7 @@
                     })()
                 ];
 
-                //   4:     zhanyuan   
+                // 流程4: 爬虫搜索zhanyuan网页源
                 if (zhanyuanCrawlers.length > 0) {
                     promises.push(
                         (async () => {
@@ -3472,88 +3454,68 @@
                                 }
                             });
                             displayResultsBatch();
-                            console.log('流程4完成,找到', crawlerResults.length, '个爬虫结果');
+                            console.log('流程4完成，找到', crawlerResults.length, '个爬虫结果');
                         })()
                     );
                 }
 
-                //   4.5: 16       ( uz        ,        )
+                // 流程4.5: 网盘聚合搜索（使用盘搜API扫描各大网盘资源）
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源,8并发');
+                            console.log('流程4.5: 网盘聚合搜索', CLOUD_DRIVE_SEARCH_API.length, '个源');
                             const allItems = [];
                             const mergedKey = 'clouddrive-aggr:pan';
 
-                            // 8     
-                            for (let bi = 0; bi < CLOUD_DRIVE_SEARCH_API.length; bi += 8) {
-                                const batch = CLOUD_DRIVE_SEARCH_API.slice(bi, bi + 8);
-                                const tasks = batch.map(async (apiDef) => {
-                                    try {
-                                        const baseUrl = apiDef.url.replace(/\/+$/, '');
-                                        const searchPath = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
-                                        const fullUrl = baseUrl + (searchPath.startsWith('/') ? '' : '/') + searchPath + encodeURIComponent(keyword);
-                                        const resp = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
-                                        if (!resp || resp.length < 100) return [];
-
-                                        const parser = new DOMParser();
-                                        const doc = parser.parseFromString(resp, 'text/html');
-
-                                        const items = [];
-                                        //   XPath  (     )
-                                        const searchContainers = doc.querySelectorAll('.module-search-item');
-                                        searchContainers.forEach(container => {
-                                            const link = container.querySelector('.video-serial');
-                                            const img = container.querySelector('img');
-                                            const title = link?.getAttribute('title') || link?.textContent || '';
-                                            const href = link?.getAttribute('href') || '';
-                                            const pic = img?.getAttribute('data-src') || img?.getAttribute('src') || '';
-                                            const remarksEl = container.querySelector('.module-search-item-tag, .video-serial');
-                                            const remarks = remarksEl?.textContent?.replace(title, '').trim() || '';
-                                            if (title) {
-                                                const absUrl = href.startsWith('http') ? href : baseUrl + (href.startsWith('/') ? '' : '/') + href;
-                                                items.push({
-                                                    vod_id: absUrl,
-                                                    vod_name: title.trim(),
-                                                    vod_remarks: remarks || '',
-                                                    vod_pic: pic || '',
-                                                    vod_url: '',
-                                                    _detailPageUrl: absUrl,
-                                                    _driveType: apiDef.name,
-                                                    _panSource: apiDef,
-                                                    _isVideo: true
-                                                });
-                                            }
-                                        });
-                                        return items;
-                                    } catch(e) {
-                                        return [];
+                            for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
+                                try {
+                                    const searchUrl = apiDef.url + encodeURIComponent(keyword);
+                                    let respText;
+                                    if (useProxyEnabled) {
+                                        respText = await fetchFastWithProxy(searchUrl, 8000).catch(() => null);
+                                    } else {
+                                        respText = await fetchDirect(searchUrl, 8000).catch(() => null);
                                     }
-                                });
+                                    if (!respText || respText.length < 10) continue;
 
-                                const results = await Promise.allSettled(tasks);
-                                // 每个站有结果就单独加入一个Tab
-                                for (let ti = 0; ti < batch.length; ti++) {
-                                    const r = results[ti];
-                                    if (r.status === 'fulfilled' && r.value.length > 0) {
-                                        const siteKey = 'cloud-pan:' + batch[ti].name;
-                                        if (!seenPlatforms.has(siteKey)) {
-                                            seenPlatforms.add(siteKey);
-                                            allResults.push({
-                                                interfaceUrl: siteKey,
-                                                interfaceName: batch[ti].name,
-                                                data: r.value
+                                    const json = JSON.parse(respText);
+                                    const merged = json.data && json.data.merged_by_type;
+                                    if (!merged) continue;
+
+                                    // 遍历所有网盘类型
+                                    const panTypes = Object.keys(merged);
+                                    for (const ptype of panTypes) {
+                                        const entries = merged[ptype] || [];
+                                        for (const entry of entries) {
+                                            const noteClean = (entry.note || '').replace(/[\(\）\（\]\[\【\】].*$/, '').trim();
+                                            allItems.push({
+                                                vod_id: entry.url || '',
+                                                vod_name: noteClean || entry.url || '',
+                                                vod_pic: (entry.images && entry.images[0]) || '',
+                                                vod_url: entry.url || '',
+                                                vod_remarks: ptype.toUpperCase() + (entry.password ? ' ' + entry.password : ''),
+                                                type_name: ptype,
+                                                _driveType: ptype,
+                                                _fileId: entry.url || '',
+                                                _panPassword: entry.password || '',
+                                                _cloudIndex: allItems.length,
+                                                _isVideo: true
                                             });
-                                            displayResultsBatch();
                                         }
                                     }
+                                } catch(e) {
+                                    console.warn('网盘聚合搜索[' + apiDef.name + ']失败:', e.message);
                                 }
                             }
 
                             if (allItems.length > 0) {
-                                console.log('流程4.5完成');
+                                const key = mergedKey;
+                                if (!seenPlatforms.has(key)) seenPlatforms.add(key);
+                                allResults.push({ interfaceUrl: key, interfaceName: '☁️ 网盘资源', data: allItems });
+                                displayResultsBatch();
+                                console.log('流程4.5完成，共', allItems.length, '个网盘资源结果');
                             } else {
-                                console.log('流程4.5完成,无结果');
+                                console.log('流程4.5完成，无结果');
                             }
                         })()
                     );
@@ -3592,14 +3554,14 @@
                     );
                 }
 
-                //            
+                // 等待所有流程完成或超时
                 await Promise.race([
                     Promise.allSettled(promises),
-                    new Promise(resolve => setTimeout(resolve, 15000)) // 15   
+                    new Promise(resolve => setTimeout(resolve, 15000)) // 15秒超时
                 ]);
 
-                //       
-                console.log(`全部搜索完成,总共找到 ${allResults.length} 个平台的结果`);
+                // 显示最终结果
+                console.log(`全部搜索完成，总共找到 ${allResults.length} 个平台的结果`);
                 displaySmartSearchResults(allResults);
                 _cachedSearchResults = allResults;
 
@@ -3611,12 +3573,12 @@
             }
         }
 
-        //         
+        // 单个接口搜索函数
         async function searchSingleInterface(interfaceUrl, keyword) {
             const interfaceName = extractInterfaceName(interfaceUrl);
             if (!interfaceName) return null;
 
-            //          
+            // 拼接关键词发起搜索
             const searchUrl = buildSearchUrl(interfaceUrl, keyword);
 
             try {
@@ -3644,7 +3606,7 @@
             return null;
         }
 
-        //       (      )
+        // 加载视频详情（支持智能搜索）
         async function loadVideoDetail(vodId, sourceKey) {
             const loadingEl = document.getElementById('searchLoading');
             const container = document.getElementById('searchResultsContainer');
@@ -3652,11 +3614,11 @@
             loadingEl.classList.remove('hidden');
 
             try {
-                //        (       )
+                // 按索引直接查找（从展示面板点击）
                 if (sourceKey && /^\d+$/.test(sourceKey)) {
                     const resultIndex = parseInt(sourceKey);
                     
-                    //            (            )
+                    // 优先使用缓存的搜索结果（包含网盘聚合源等所有流程）
                     const allResults = (_cachedSearchResults && _cachedSearchResults.length > 0) ? _cachedSearchResults : [];
                     
                     const result = allResults[resultIndex];
@@ -3666,16 +3628,16 @@
 
                     let item = result.data.find(d => (String(d.vod_id) === String(vodId) || String(d.id) === String(vodId) || String('_cloud_' + d._cloudIndex) === String(vodId)));
                     if (!item) {
-                        //     vodId    ,    vod_name   (      vod_id        )
+                        // 如果按 vodId 找不到，尝试用 vod_name 匹配（网盘聚合源 vod_id 可能为空字符串）
                         item = result.data.find(d => (d.vod_name || d.name || d.title || '') === vodId);
                     }
                     if (!item) {
-                        //     :     item(          )
+                        // 最后兜底：取第一个 item（网盘聚合源进入此分支）
                         item = result.data[0];
                         if (!item) throw new Error('未找到该视频的详情');
                     }
 
-                    //        (_cloudIndex >= 0),   vod_url  
+                    // 如果是盘搜结果（_cloudIndex >= 0），直接用vod_url播放
                     if (item._cloudIndex !== undefined && item.vod_url) {
                         const playUrl = item.vod_url;
                         videoList = [playUrl];
@@ -3686,53 +3648,61 @@
                         return;
                     }
 
-                    // 如果是网盘爬虫源（流程4.5），走爬虫详情获取网盘分享链接
-                    if (item._panSource && item._detailPageUrl) {
-                        const episodes = await crawlZhanyuanDetail(item, item._panSource);
-                        if (episodes.length > 0) {
-                            videoList = [];
-                            categorizedChannels = {};
-                            episodes.forEach(ep => {
-                                if (ep.url.startsWith('http')) {
-                                    videoList.push(ep.url);
-                                }
-                            });
-                            if (videoList.length > 0) {
+                    // 如果是网盘聚合源结果（流程4.5搜出的），直接用vod_url播放
+                    if (item._driveType && item._fileId) {
+                        const panName = item._driveType;
+                        // 检查是否是网盘聚合源结果（_driveType是网盘站名，如"玩偶云盘"）
+                        const isPanAggr = CLOUD_DRIVE_SEARCH_API.some(a => a.name === panName);
+                        if (isPanAggr) {
+                            // 网盘聚合源搜索结果，vod_url就是这个站点的播放地址，直接播放
+                            const playUrl = item.vod_url || item.play_url || item.video_url || '';
+                            if (playUrl) {
+                                videoList = [playUrl];
                                 currentVideoIndex = 0;
                                 closeSearchPanel();
-                                loadVideo(0);
                                 loadingEl.classList.add('hidden');
-                                await showAlert('已加载《' + (item.vod_name || '') + '》' + videoList.length + '个网盘分享链接', '加载完成');
+                                loadVideo(0);
                                 return;
                             }
+                            // 如果没vod_url，尝试通过vod_id获取详情
+                            if (item.vod_id) {
+                                const detailUrl = item._sourceInterfaceUrl || SEARCH_INTERFACE_DETAIL_MAP[item._sourceInterfaceUrl] || '';
+                                if (detailUrl) {
+                                    try {
+                                        const detailText = await fetchForSearch(detailUrl + encodeURIComponent(item.vod_id));
+                                        const detailData = parseResponseData(detailText);
+                                        if (detailData && detailData.length > 0) {
+                                            const d = detailData[0];
+                                            const rUrl = d.vod_url || d.url || d.play_url || d.video_url || '';
+                                            if (rUrl) {
+                                                videoList = [rUrl];
+                                                currentVideoIndex = 0;
+                                                loadVideo(0);
+                                                closeSearchPanel();
+                                                loadingEl.classList.add('hidden');
+                                                return;
+                                            }
+                                        }
+                                    } catch(e) {}
+                                }
+                            }
+                            showAlert('该网盘源的视频无法获取播放地址', '播放失败');
+                            loadingEl.classList.add('hidden');
+                            return;
                         }
-                        showAlert('获取网盘播放地址失败', '播放失败');
-                        loadingEl.classList.add('hidden');
-                        return;
-                    }
 
-                    // 如果是网盘聚合源直接带播放地址的
-                    if (item._driveType && item.vod_url) {
-                        const playUrl = item.vod_url;
-                        videoList = [playUrl];
-                        currentVideoIndex = 0;
-                        closeSearchPanel();
-                        loadingEl.classList.add('hidden');
-                        loadVideo(0);
-                        return;
-                    }
-
-                    // 如果是真网盘文件（阿里云盘/夸克/百度等，需要Token）
-                    if (item._driveType && item._fileId && DRIVE_CONFIGS[item._driveType]) {
+                        // 以下是真正的网盘文件播放（阿里云盘/夸克/百度等，需要Token）
                         const dt = item._driveType;
                         closeSearchPanel();
                         loadingEl.classList.add('hidden');
+                        // 设置网盘状态
                         driveState.type = dt;
                         const savedDriveTokens = loadDriveTokens();
                         const token = savedDriveTokens[dt];
                         if (token) {
                             driveState.token = token;
                             driveState.driveId = item._driveId || null;
+                            // 获取播放地址
                             if (item._isVideo) {
                                 await getDriveVideoUrlByToken(dt, token, item._driveId, item._fileId, item.vod_name);
                             } else {
@@ -3743,14 +3713,8 @@
                         }
                         return;
                     }
-                                await showAlert('已加载《' + (item.vod_name || '') + '》' + videoList.length + '个网盘分享链接', '加载完成');
-                                return;
-                            }
-                        }
-                        throw new Error('获取网盘播放地址失败');
-                    }
 
-                    //       ,           
+                    // 如果是爬虫源，走爬虫详情获取播放地址
                     if (item._zhanyuanItem && item._detailPageUrl) {
                         const episodes = await crawlZhanyuanDetail(item, item._zhanyuanItem);
                         if (episodes.length > 0) {
@@ -3773,7 +3737,7 @@
                         throw new Error('爬虫获取播放地址失败');
                     }
 
-                    //              ,    detailurl + vod_id     
+                    // 如果搜索接口只返回基础信息，则使用 detailurl + vod_id 获取详情
                     let playlist = item.vod_play_url || item.vod_url || item.play_url || item.video_url || '';
 
                     if (!playlist && (item._detailurl || item._sourceInterfaceUrl) && (item.vod_id || item.id)) {
@@ -3789,7 +3753,7 @@
                         }
                     }
 
-                    //    m3u8     vod_play_url,    
+                    // 如果是m3u8直链但没有vod_play_url，直接播放
                     if (!playlist) {
                         const vodUrls = [item.vod_url || item.play_url || item.video_url || ''].filter(Boolean);
                         if (vodUrls.length > 0 && vodUrls[0].startsWith('http')) {
@@ -3804,13 +3768,13 @@
                         }
                     }
 
-                    //       
+                    // 解析播放地址
                     if (playlist) {
-                        //       
+                        // 清空现有列表
                         videoList = [];
                         categorizedChannels = {};
 
-                        //         :  $URL#  $URL...
+                        // 解析播放地址格式：标题$URL#标题$URL...
                         const episodes = playlist.split('#');
                         const channels = [];
 
@@ -3834,17 +3798,17 @@
                             categorizedChannels[item.vod_name] = channels;
                             currentVideoIndex = 0;
 
-                            //   UI
+                            // 更新UI
                             updateEpisodeBtn();
                             renderCategorizedList();
 
-                            //        
+                            // 加载第一个视频
                             loadVideo(0);
 
-                            //       
+                            // 关闭搜索面板
                             closeSearchPanel();
 
-                            //       
+                            // 显示成功提示
                             await showAlert(`已加载《${item.vod_name}》共${channels.length}集`, '加载完成');
                         } else {
                             throw new Error('未找到可播放的集数');
@@ -3862,7 +3826,7 @@
         }
 
         /* ================ zhanyuan网页爬虫引擎 ================ */
-        //   DOMParser  (      DOMParser)
+        // 注入DOMParser兼容（某些浏览器无DOMParser）
         const SAFE_DOMParser = typeof DOMParser !== 'undefined' ? DOMParser : class {
             parseFromString(str, type) {
                 const doc = document.implementation.createHTMLDocument('');
@@ -3871,7 +3835,7 @@
             }
         };
 
-        // XPath    
+        // XPath提取函数
         function xpathText(xpath, context) {
             const nodes = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
             const results = [];
@@ -3892,19 +3856,19 @@
             return results;
         }
 
-        //   XPath      &&&     "(   zhanyuan      )
+        // 将 XPath 字符串中 &&& 替换为 "（适配 zhanyuan 的转义写法）
         function fixXPath(expr) {
             if (!expr) return '';
             return String(expr).replace(/&&&/g, '"').replace(/&apos;/g, "'").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
         }
 
-        //       :   [{title, url, desc, pic}]
+        // 执行爬虫搜索：返回 [{title, url, desc, pic}]
         async function crawlZhanyuanSite(zhanyuanItem, keyword) {
             const name = zhanyuanItem.name || '未知';
             const searchUrl = zhanyuanItem.websearchurl || zhanyuanItem.searchUrl || '';
-            //   websearchurl  ,        URL
+            // 如果websearchurl为空，自动构造默认搜索URL
             if (!searchUrl) {
-                //     CMS    
+                // 尝试常见CMS搜索路径
                 if (zhanyuanItem.searchUrl) {
                     searchUrl = zhanyuanItem.searchUrl.replace(/\/+$/, '') + '/vodsearch/-------------.html?wd=';
                 }
@@ -3918,11 +3882,11 @@
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 const html = await response.text();
 
-                //     XML/RSS
+                // 尝试解析XML/RSS
                 const parser = new SAFE_DOMParser();
                 const doc = parser.parseFromString(html, 'text/xml');
 
-                //    RSS  (  <rss>   <feed>)
+                // 如果是RSS格式（有 <rss> 或 <feed>）
                 const isRSS = doc.querySelector('rss') || doc.querySelector('feed') || doc.querySelector('item');
                 if (isRSS) {
                     const items = doc.querySelectorAll('item, entry');
@@ -3934,11 +3898,11 @@
                     })).filter(r => r.title || r.url);
                 }
 
-                //     HTML
+                // 尝试解析HTML
                 const htmlDoc = parser.parseFromString(html, 'text/html');
                 const fix = (e) => fixXPath(e);
 
-                //   XPath      
+                // 使用XPath提取搜索结果
                 const snameXP = fix(zhanyuanItem.searchname);
                 const sidXP = fix(zhanyuanItem.searchid);
                 const spicXP = fix(zhanyuanItem.searchpic);
@@ -3953,7 +3917,7 @@
                 const results = [];
                 for (let i = 0; i < maxLen; i++) {
                     const url = urls[i] || '';
-                    //       
+                    // 相对路径补全
                     const absUrl = url.startsWith('http') ? url : (zhanyuanItem.searchUrl || '').replace(/\/+$/, '') + '/' + url.replace(/^\//, '');
                     results.push({
                         title: titles[i] || '',
@@ -3969,7 +3933,7 @@
             }
         }
 
-        //              
+        // 爬虫获取详情页面的播放地址
         async function crawlZhanyuanDetail(item, zhanyuanItem) {
             const detailPageUrl = item.url || '';
             if (!detailPageUrl || !detailPageUrl.startsWith('http')) return [];
@@ -3984,7 +3948,7 @@
                 const doc = parser.parseFromString(html, 'text/html');
                 const fix = (e) => fixXPath(e);
 
-                //       
+                // 提取播放列表
                 const dlXP = fix(zhanyuanItem.detaillist);
                 const xlXP = fix(zhanyuanItem.detailxl);
                 const jsXP = fix(zhanyuanItem.detailjs);
@@ -3992,7 +3956,7 @@
 
                 let episodes = [];
 
-                //   1: detaillist   
+                // 方案1：从detaillist里提取
                 if (dlXP) {
                     const containers = document.evaluate(dlXP, doc, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
                     for (let ci = 0; ci < containers.snapshotLength; ci++) {
@@ -4018,7 +3982,7 @@
             }
         }
 
-        //   zhanyuan    :      zhanyuan 
+        // 总的zhanyuan搜索入口：并发爬取所有zhanyuan源
         async function searchZhanyuanAll(keyword, zhanyuanList) {
             const allResults = [];
             const tasks = zhanyuanList.map(async (zyItem) => {
@@ -4043,14 +4007,14 @@
             return allResults;
         }
 
-        //            
+        // 搜索输入框回车触发搜索
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 searchAllSources();
             }
         });
 
-        // JSON           
+        // JSON接口输入框回车触发添加
         document.getElementById('jsonApiUrlInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 addJsonApi();
@@ -4058,14 +4022,14 @@
         });
 
         /* ==================== 网盘播放模块 ==================== */
-        //    API  (  POST/headers/body),          
+        // 自定义API请求(支持POST/headers/body)，底层复用已有代理逻辑
         async function apiFetch(url, options = {}) {
             const method = options.method || 'GET';
             const body = options.body || null;
             const headers = options.headers || {};
             
-            // POST         (       GET  )
-            //     fetch   headers
+            // POST请求不能走直连代理(因为代理只转发GET参数)
+            // 直接原生fetch并添加headers
             try {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 15000);
@@ -4074,7 +4038,7 @@
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 return await resp.text();
             } catch(e) {
-                //       ,       GET     (    GET)
+                // 如果直连失败，尝试用代理转发GET方式的请求(仅适用于GET)
                 if (method === 'GET' || !options.forcePost) {
                     return await fetchWithProxy(url, 15000);
                 }
@@ -4082,7 +4046,7 @@
             }
         }
 
-        //          API      iBox    
+        // 网盘类型配置 — API端点全部来自iBox逆向分析
         const DRIVE_CONFIGS = {
             alipan: {
                 name: '阿里云盘',
@@ -4195,7 +4159,7 @@
             }
         };
 
-        //       
+        // 当前网盘状态
         let driveState = {
             type: 'alipan',
             token: null,
@@ -4205,7 +4169,7 @@
             sharePwd: null
         };
 
-        // Token   
+        // Token持久化
         const DRIVE_TOKEN_KEY = 'drive_tokens';
         function loadDriveTokens() {
             try { return JSON.parse(localStorage.getItem(DRIVE_TOKEN_KEY) || '{}'); } catch(e) { return {}; }
@@ -4227,7 +4191,7 @@
 
         function renderTokenList() {
             const container = document.getElementById('driveTokenList');
-            if (!container) return; //  ID   ,    
+            if (!container) return; // 旧ID已移除，跳过渲染
             const tokens = loadDriveTokens();
             const entries = Object.entries(tokens).filter(([,v]) => v);
             if (!entries.length) {
@@ -4276,7 +4240,7 @@
             openDriveBrowser();
         }
 
-        //       
+        // 分享链接解析
         async function resolveShareUrl() {
             const input = document.getElementById('driveShareInput');
             const url = input.value.trim();
@@ -4296,7 +4260,7 @@
                 const m2 = url.match(/\/s\/([a-zA-Z0-9_-]+)/);
                 if (m2) shareId = m2[1];
             }
-            const pwdMatch = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[::]\s*([a-zA-Z0-9]{4})/);
+            const pwdMatch = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[：:]\s*([a-zA-Z0-9]{4})/);
             if (pwdMatch) sharePwd = pwdMatch[1];
 
             if (!shareId) { showAlert('无法识别该分享链接格式', '错误'); return; }
@@ -4314,7 +4278,7 @@
                     await browseShareFiles(type, shareId, sharePwd, t);
                 } catch(e) {
                     console.error('获取分享Token失败:', e);
-                    showAlert('获取分享Token失败,请检查Token或分享链接', '错误');
+                    showAlert('获取分享Token失败，请检查Token或分享链接', '错误');
                 }
             }
         }
@@ -4371,12 +4335,12 @@
         }
 
         async function openDriveBrowser() {
-            //       "  "  ,               
+            // 设置面板里的"浏览"按钮，改为直接打开设置面板的网盘管理
             toggleDrivePanel();
             openDriveBrowserFromPanel();
         }
 
-        //   :               
+        // 核心：通过网盘获取视频播放地址并播放
         async function resolveDrivePlay(dtype, dtkn, dId, fId, fName, closePanel) {
             const cfg = DRIVE_CONFIGS[dtype];
             if (!cfg) { showAlert('不支持的网盘类型', '错误'); return; }
@@ -4434,7 +4398,7 @@
             await resolveDrivePlay(dtype, dtkn, dId, fId, fName, false);
         }
 
-        //     (              )
+        // 网盘搜索（在网盘中搜索匹配文件名的文件）
         async function searchCloudDrive(driveType, token, keyword) {
             const cfg = DRIVE_CONFIGS[driveType];
             if (!cfg || !cfg.listUrl) return { data: [] };
@@ -4443,7 +4407,7 @@
                 let files = [];
                 
                 if (driveType === 'alipan') {
-                    //    drive_id
+                    // 先取 drive_id
                     let driveId = null;
                     try {
                         const infoResp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', {
@@ -4454,7 +4418,7 @@
                     } catch(e) {}
                     if (!driveId) return { data: [] };
                     
-                    //       API: adrive/v2/file/search
+                    // 阿里云盘搜索API：用adrive/v2/file/search
                     const searchBody = JSON.stringify({
                         drive_id: driveId,
                         query: 'name match "' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"',
@@ -4480,7 +4444,7 @@
                         _isVideo: f.category === 'video' || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.name)
                     }));
                 } else if (driveType === 'quark') {
-                    //         +    (           API)
+                    // 夸克通过文件列表+前端过滤（夸克没有公开的全文搜索API）
                     const url = cfg.listUrl + '?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=100&_sort=file_type:asc,updated_at:desc';
                     const resp = await apiFetch(url, { headers: cfg.getAuthHeader(token) });
                     const data = JSON.parse(resp);
@@ -4497,7 +4461,7 @@
                             _isVideo: f.isVideo
                         }));
                 } else if (driveType === 'baidu') {
-                    //         
+                    // 百度网盘全文搜索
                     const searchUrl = 'https://pan.baidu.com/api/search?key=' + encodeURIComponent(keyword) + '&order=time&desc=1&web=1&num=50';
                     const resp = await apiFetch(searchUrl, { headers: cfg.getAuthHeader(token) });
                     const data = JSON.parse(resp);
@@ -4512,7 +4476,7 @@
                     }));
                 }
                 
-                //         
+                // 优先显示视频文件
                 files.sort((a, b) => {
                     if (a._isVideo && !b._isVideo) return -1;
                     if (!a._isVideo && b._isVideo) return 1;
@@ -4527,7 +4491,7 @@
         }
 
 
-        // =====          =====
+        // ===== 网盘弹窗面板函数 =====
         function toggleDrivePanel() {
             var overlay = document.getElementById("drivePanelOverlay");
             if (!overlay) { console.error("overlay not found"); return; }
@@ -4597,7 +4561,7 @@
                     document.getElementById("driveTypeSelect2").value = t;
                     driveState.token = getTokenForType(t);
                     document.getElementById("driveStatusPanel").textContent = "解析中...";
-                    var p = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[::]\s*([a-zA-Z0-9]{4})/) || [null,null];
+                    var p = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/) || [null,null];
                     driveState.shareId = m[1]; driveState.sharePwd = p[1];
                     driveState.currentPath = [{id:"root",name:"分享文件"}];
                     await browseShareFiles(t, m[1], p[1], driveState.token || "");
@@ -4677,7 +4641,7 @@
         onDriveTypeChange();
         console.log('☁️ 网盘播放模块已就绪, 支持: 阿里云盘/夸克/百度/UC/123/139');
 
-        //                  
+        // 窗口大小改变时重新计算搜索面板位置
         window.addEventListener('resize', function() {
             const searchPanel = document.getElementById('searchPanel');
             if (!searchPanel.classList.contains('hidden')) {
