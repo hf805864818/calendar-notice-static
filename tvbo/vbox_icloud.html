@@ -3474,21 +3474,18 @@
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源');
-                            for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
-                                try {
-                                    if (apiDef.type !== 'crawler') continue;
+                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，8并发');
+                            // 8个一批并发
+                            for (let bi = 0; bi < CLOUD_DRIVE_SEARCH_API.length; bi += 8) {
+                                const batch = CLOUD_DRIVE_SEARCH_API.slice(bi, bi + 8);
+                                const tasks = batch.map(async (apiDef) => {
+                                    if (apiDef.type !== 'crawler') return null;
                                     const baseUrl = apiDef.url.replace(/\/+$/, '');
                                     const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
                                     const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + encodeURIComponent(keyword);
-                                    // 代理优先，失败后重试1次，再失败降级直连
-                                    let text = await fetchFastWithProxy(fullUrl, 10000).catch(() => null);
-                                    if (!text) {
-                                        await new Promise(r => setTimeout(r, 300));
-                                        text = await fetchFastWithProxy(fullUrl, 10000).catch(() => null);
-                                    }
-                                    if (!text) text = await fetchDirect(fullUrl, 8000).catch(() => null);
-                                    if (!text || text.length < 100) continue;
+                                    let text = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
+                                    if (!text) text = await fetchDirect(fullUrl, 6000).catch(() => null);
+                                    if (!text || text.length < 100) return null;
                                     const parser = new DOMParser();
                                     const doc = parser.parseFromString(text, 'text/html');
                                     const items = [];
@@ -3506,17 +3503,19 @@
                                             });
                                         }
                                     });
-                                    if (items.length > 0) {
-                                        const key = 'cloud-pan:' + apiDef.name;
+                                    return { name: apiDef.name, items };
+                                });
+                                const results = await Promise.allSettled(tasks);
+                                results.forEach((r, ti) => {
+                                    if (r.status === 'fulfilled' && r.value && r.value.items.length > 0) {
+                                        const key = 'cloud-pan:' + r.value.name;
                                         if (!seenPlatforms.has(key)) {
                                             seenPlatforms.add(key);
-                                            allResults.push({ interfaceUrl: key, interfaceName: apiDef.name, data: items });
+                                            allResults.push({ interfaceUrl: key, interfaceName: r.value.name, data: r.value.items });
                                             displayResultsBatch();
                                         }
                                     }
-                                } catch(e) {
-                                    console.warn('网盘[' + apiDef.name + ']失败:', e.message);
-                                }
+                                });
                             }
                             console.log('流程4.5完成');
                         })()
