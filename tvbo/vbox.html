@@ -2623,56 +2623,108 @@
 
         // ===== 网盘聚合搜索接口 =====
         // 使用网盘聚合搜索引擎API，搜索各大网盘的资源分享链接
-        // 16个网盘爬虫站，每个站独立Tab展示
+        // 16个网盘爬虫站，每个站独立配置搜索URL和选择器
         const CLOUD_DRIVE_SEARCH_API = [
-            { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler', 
-              searchUrl: '/vodsearch/-------------.html?wd=', searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title', 
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'http://feimao888.fun', name: '蜡笔云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://tv.yydsys.top', name: '多多云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://sd.sduc.site', name: '闪电云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'http://2xiaopan.fun', name: '二小云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://oog.nxog.eu.org', name: '欧歌云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'http://www.miqk.cc', name: '至臻云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'http://103.45.162.207:20720', name: '虎斑云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'http://xsayang.fun:12512', name: '小斑云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://www.91panta.cn', name: '盘Ta云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://www.leijing.xyz', name: '雷鲸云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://www.nanf.cc', name: '南风云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://pan.funletu.com', name: '趣盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://4ktop.com', name: '4KTop云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://libvio.mov', name: 'LibVio云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
-            { url: 'https://666.666291.xyz', name: '木偶云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
-              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
-              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' }
+            { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial',
+              titleAttr: 'title',
+              linkSelector: '.video-serial',
+              linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'http://feimao888.fun', name: '蜡笔云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://tv.yydsys.top', name: '多多云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://sd.sduc.site', name: '闪电云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'http://2xiaopan.fun', name: '二小云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://oog.nxog.eu.org', name: '欧歌云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'http://www.miqk.cc', name: '至臻云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'http://103.45.162.207:20720', name: '虎斑云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'http://xsayang.fun:12512', name: '小斑云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://www.91panta.cn', name: '盘Ta云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://www.leijing.xyz', name: '雷鲸云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://www.nanf.cc', name: '南风云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://pan.funletu.com', name: '趣盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://4ktop.com', name: '4KTop云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-card-item, .module-search-item, .vodlist__item, .stui-vodlist__item, .video-item',
+              titleSelector: 'a[href*="/voddetail/"] strong, .module-card-item-title a, .video-serial, .stui-vodlist__thumb',
+              titleAttr: 'title',
+              linkSelector: '.module-card-item-poster, a[href*="/voddetail/"], .video-serial, .stui-vodlist__thumb',
+              linkAttr: 'href',
+              imgAttr: 'data-original' },
+            { url: 'https://libvio.mov', name: 'LibVio云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item, .stui-vodlist__item, .module-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' },
+            { url: 'https://666.666291.xyz', name: '木偶云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              itemSelector: '.module-search-item',
+              titleSelector: '.video-serial', titleAttr: 'title',
+              linkSelector: '.video-serial', linkAttr: 'href',
+              imgAttr: 'data-src' }
         ];
 
         // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
@@ -3276,8 +3328,12 @@
                     shownVods.add(vodKey);
                     const resultBtn = document.createElement('div');
                     resultBtn.className = 'px-2 py-1.5 cursor-pointer hover:bg-white/10 border-t border-white/5';
+                    const sourceTag = item._panAggrSource ? item._panAggrSource.name : (item._driveType ? (DRIVE_CONFIGS[item._driveType]?.name || item._driveType) : '');
                     resultBtn.innerHTML = `
-                        <div class="text-white text-xs font-medium truncate">${deriveItemTitle(item, itemIndex)}</div>
+                        <div class="text-white text-xs font-medium truncate flex items-center gap-1">
+                            ${sourceTag ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded flex-shrink-0">${sourceTag}</span>` : ''}
+                            <span class="truncate">${deriveItemTitle(item, itemIndex)}</span>
+                        </div>
                         <div class="text-white/50 text-[10px] truncate">${item.vod_remarks || item.remarks || ''}${(item.vod_remarks || item.remarks) && (item.type_name || item.type) ? ' · ' : ''}${item.type_name || item.type || ''}</div>
                     `;
                     resultBtn.onclick = () => {
@@ -3565,21 +3621,55 @@
                                     const parser = new DOMParser();
                                     const doc = parser.parseFromString(text, 'text/html');
                                     const items = [];
-                                    doc.querySelectorAll('.module-search-item').forEach(c => {
-                                        const link = c.querySelector('.video-serial');
+                                    
+                                    // 使用多选择器提取搜索结果
+                                    const itemSelectors = (apiDef.itemSelector || '.module-search-item').split(',').map(s => s.trim());
+                                    const itemEls = [];
+                                    for (const sel of itemSelectors) {
+                                        const found = doc.querySelectorAll(sel);
+                                        if (found.length > 0) {
+                                            found.forEach(el => itemEls.push(el));
+                                            break; // 找到匹配的选择器就不再试
+                                        }
+                                    }
+                                    
+                                    for (const c of itemEls) {
+                                        // 提取标题
+                                        let title = '';
+                                        const titleSel = apiDef.titleSelector || '.video-serial';
+                                        const titleEl = c.querySelector(titleSel) || c.querySelector('a');
+                                        if (titleEl) {
+                                            title = titleEl.getAttribute(apiDef.titleAttr || 'title') || titleEl.getAttribute('title') || titleEl.textContent || '';
+                                        }
+                                        
+                                        // 提取链接
+                                        let href = '';
+                                        const linkSel = apiDef.linkSelector || '.video-serial';
+                                        const linkEl = c.querySelector(linkSel) || c.querySelector('a');
+                                        if (linkEl) {
+                                            href = linkEl.getAttribute(apiDef.linkAttr || 'href') || '';
+                                        }
+                                        if (!href) {
+                                            // 兜底：取第一个含有href的a
+                                            const firstA = c.querySelector('a[href]');
+                                            if (firstA) href = firstA.getAttribute('href') || '';
+                                        }
+                                        
+                                        // 提取图片
                                         const img = c.querySelector('img');
-                                        const title = link?.getAttribute('title') || link?.textContent || '';
-                                        const href = link?.getAttribute('href') || '';
+                                        const imgUrl = img ? (img.getAttribute(apiDef.imgAttr || 'data-src') || img.getAttribute('src') || '') : '';
+                                        
+                                        title = title.trim();
                                         if (title) {
                                             let absUrl = href;
-                                            if (!href.startsWith('http')) absUrl = baseUrl + (href.startsWith('/') ? '' : '/') + href;
+                                            if (href && !href.startsWith('http')) absUrl = baseUrl + (href.startsWith('/') ? '' : '/') + href;
                                             items.push({
-                                                vod_id: absUrl, vod_name: title.trim(), vod_pic: img?.getAttribute('data-src') || '',
-                                                _detailPageUrl: absUrl, _panSource: apiDef, _isVideo: true,
-                                                _panAggrSource: apiDef  // 标记为流程4.5网盘聚合源结果
+                                                vod_id: absUrl || '', vod_name: title, vod_pic: imgUrl || '',
+                                                _detailPageUrl: absUrl || '', _panSource: apiDef, _isVideo: true,
+                                                _panAggrSource: apiDef
                                             });
                                         }
-                                    });
+                                    }
                                     if (items.length > 0) {
                                         const key = 'cloud-pan:' + apiDef.name;
                                         if (!seenPlatforms.has(key)) {
@@ -3863,10 +3953,10 @@
                                 // 对每个分享链接，尝试用已保存的Token解析播放
                                 const savedDriveTokens = loadDriveTokens();
                                 loadingEl.textContent = '正在解析分享链接...';
+                                let matchedAny = false;
                                 
                                 for (const shareUrl of shareLinks) {
                                     try {
-                                        // 识别网盘类型
                                         let driveType = '';
                                         if (/aliyundrive\.com|alipan\.com/i.test(shareUrl)) driveType = 'alipan';
                                         else if (/pan\.quark\.cn/i.test(shareUrl)) driveType = 'quark';
@@ -3877,57 +3967,36 @@
                                         else if (/cloud\.189\.cn/i.test(shareUrl)) driveType = '189';
                                         else if (/pikpak/i.test(shareUrl)) driveType = 'pikpak';
                                         
-                                        if (!driveType) continue; // 不认识的网盘跳过
+                                        if (!driveType) continue;
+                                        matchedAny = true;
                                         
                                         const token = savedDriveTokens[driveType];
-                                        if (!token) continue; // 没有Token跳过
+                                        const driveName = DRIVE_CONFIGS[driveType]?.name || driveType;
+                                        if (!token) {
+                                            loadingEl.textContent = `未找到${driveName}的Token，尝试下一个...`;
+                                            continue;
+                                        }
                                         
-                                        loadingEl.textContent = `正在用${DRIVE_CONFIGS[driveType]?.name || driveType}播放...`;
+                                        loadingEl.textContent = `正在用${driveName}播放...`;
                                         
-                                        // 解析分享链接
                                         const shareIdMatch = shareUrl.match(/\/s\/([a-zA-Z0-9_\-]+)/i);
                                         if (!shareIdMatch) continue;
                                         const shareId = shareIdMatch[1];
                                         const pwdMatch = shareUrl.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || shareUrl.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/);
                                         const sharePwd = pwdMatch ? pwdMatch[1] : '';
                                         
-                                        // 调用resolveShareUrlWithUrl获取文件列表(已有函数)
-                                        driveState.type = driveType;
-                                        driveState.token = token;
-                                        driveState.shareId = shareId;
-                                        driveState.sharePwd = sharePwd;
-                                        driveState.currentPath = [{id:'root',name:'分享文件'}];
+                                        loadingEl.textContent = `浏览分享文件(${driveName})...`;
+                                        const files = await browseShareFiles(driveType, shareId, sharePwd, token);
                                         
-                                        loadingEl.textContent = '浏览分享文件...';
-                                        await browseShareFiles(driveType, shareId, sharePwd, token || '');
-                                        
-                                        // 在文件列表中找第一个视频文件播放
-                                        const fileListPanel = document.getElementById('driveFileListPanel');
-                                        // 通过驱动配置获取文件列表
-                                        const cfg = DRIVE_CONFIGS[driveType];
-                                        let files = [];
-                                        try {
-                                            const respData = await apiFetch(
-                                                driveType === 'alipan' 
-                                                    ? (cfg.listUrl + '?share_id=' + shareId + '&parent_file_id=root&limit=100')
-                                                    : cfg.listUrl + '?share_id=' + shareId + '&parent_file_id=root',
-                                                { headers: cfg.getAuthHeader(token) }
-                                            );
-                                            const parsed = JSON.parse(respData);
-                                            files = cfg.extractList ? cfg.extractList(parsed) : (parsed.items || parsed.data || parsed.list || []);
-                                        } catch(e) {
-                                            console.warn('获取分享文件列表失败:', e);
-                                            continue;
-                                        }
-                                        
-                                        // 找第一个视频文件
-                                        const videoFile = files.find(f => f.isVideo) || files.find(f => /\.(mp4|m3u8|mkv|avi|mov|flv|ts|webm)$/i.test(f.name));
-                                        if (videoFile) {
-                                            loadingEl.textContent = '获取播放地址...';
-                                            await resolveDrivePlay(driveType, token, null, videoFile.id, videoFile.name || '视频', false);
-                                            loadingEl.classList.add('hidden');
-                                            closeSearchPanel();
-                                            return;
+                                        if (files && files.length > 0) {
+                                            const videoFile = files.find(function(f) { return f.isVideo; }) || files.find(function(f) { return /\.(mp4|m3u8|mkv|avi|mov|flv|ts|webm)$/i.test(f.name || ''); });
+                                            if (videoFile) {
+                                                loadingEl.textContent = '获取播放地址...';
+                                                await resolveDrivePlay(driveType, token, null, videoFile.id, videoFile.name || '视频', false);
+                                                loadingEl.classList.add('hidden');
+                                                closeSearchPanel();
+                                                return;
+                                            }
                                         }
                                     } catch(e) {
                                         console.warn('分享链接解析失败:', shareUrl, e.message);
@@ -3935,7 +4004,33 @@
                                     }
                                 }
                                 
-                                throw new Error('所有分享链接均无法播放（可能是未添加对应网盘的Token）');
+                                if (matchedAny) {
+                                    throw new Error('所有分享链接均无法播放（Token无效或网盘API异常）');
+                                } else {
+                                    // 没有匹配到已知网盘，走直链提取
+                                    let playUrl = '';
+                                    const videoTag = doc.querySelector('video source') || doc.querySelector('video');
+                                    if (videoTag) playUrl = videoTag.getAttribute('src') || '';
+                                    if (!playUrl) {
+                                        const iframe = doc.querySelector('iframe');
+                                        if (iframe) playUrl = iframe.getAttribute('src') || '';
+                                    }
+                                    if (!playUrl) {
+                                        const bodyText = doc.body?.textContent || '';
+                                        const m3u8Match = bodyText.match(/https?:\/\/[^\s"'<>]+\.(m3u8|mp4)[^\s"'<>]*/i);
+                                        if (m3u8Match) playUrl = m3u8Match[0];
+                                    }
+                                    if (!playUrl) {
+                                        const allUrls = html.match(/https?:\/\/[^\s"'<>]+\.(m3u8|mp4|flv|ts)[^\s"'<>]*/gi);
+                                        if (allUrls && allUrls.length > 0) playUrl = allUrls[0];
+                                    }
+                                    if (playUrl) {
+                                        videoList = [playUrl]; currentVideoIndex = 0;
+                                        closeSearchPanel(); loadVideo(0); loadingEl.classList.add('hidden');
+                                        return;
+                                    }
+                                    throw new Error('未找到已知网盘的分享链接且无直链');
+                                }
                             } catch (e) {
                                 console.warn('网盘聚合源获取详情失败:', e.message);
                                 showAlert('无法播放: ' + e.message, '播放失败');
@@ -4521,6 +4616,7 @@
             const cfg = DRIVE_CONFIGS[type];
             const loadingEl = document.getElementById('driveFileList');
             loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">加载分享内容中...</div>';
+            let allFiles = [];
 
             let shareToken = null;
             try {
@@ -4539,32 +4635,34 @@
                     const listData = JSON.parse(listResp);
                     driveState.driveId = listData.drive_id || null;
 
-                    const files = (listData.items || []).map(f => ({
+                    allFiles = (listData.items || []).map(f => ({
                         id: f.file_id, name: f.name, type: f.type,
                         isFolder: f.type === 'folder',
                         isVideo: f.category === 'video' || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.name),
                         size: f.size
                     }));
-                    renderDriveFiles(files);
                 } else if (type === 'quark') {
                     const body = JSON.stringify({ share_id: shareId, passcode: sharePwd || '', pdir_fid: '0', _page: 1, _size: 100, _fetch_total: 1 });
                     const resp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail', {
                         method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
                     });
                     const data = JSON.parse(resp);
-                    const files = (data.data && data.data.list || []).map(f => ({
+                    allFiles = (data.data && data.data.list || []).map(f => ({
                         id: f.fid, name: f.file_name || f.name, type: f.file ? 'file' : 'folder',
                         isFolder: !f.file,
                         isVideo: /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.file_name || f.name),
                         size: f.size
                     }));
-                    renderDriveFiles(files);
                 } else {
                     loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">该网盘分享需手动输入路径</div>';
+                    return [];
                 }
+                renderDriveFiles(allFiles);
+                return allFiles;
             } catch(e) {
                 console.error('浏览分享文件失败:', e);
                 loadingEl.innerHTML = '<div class="text-red-400 text-xs text-center py-4">加载失败: ' + e.message + '</div>';
+                return [];
             }
         }
 
