@@ -1943,7 +1943,7 @@
                 // 异步解析视频地址
                 // m3u8/mp4通过代理域名播放（仅在代理开启时）
                 const isDirectStream = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.ts') || originalUrl.includes('.flv');
-                const proxyPlayUrl = (useProxyEnabled && isDirectStream) ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
+                const proxyPlayUrl = originalUrl; // M3U8/MP4直链不走代理直接播放
                 parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
                         // 检查是否已被新的请求替换
@@ -2501,7 +2501,7 @@
         let currentProxyIndex = 0;
 
         // 代理开关：从 localStorage 读取设置（默认关闭，因为代理服务器可能不稳定）
-        let useProxyEnabled = localStorage.getItem('useProxyEnabled') === 'true';
+        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== 'false';
         function toggleProxy() {
             useProxyEnabled = !useProxyEnabled;
             localStorage.setItem('useProxyEnabled', useProxyEnabled);
@@ -3459,64 +3459,51 @@
                     );
                 }
 
-                // 流程4.5: 网盘聚合搜索（使用盘搜API扫描各大网盘资源）
+                // 流程4.5: 16个网盘爬虫搜索（每站独立Tab，代理失败降级直连）
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘聚合搜索', CLOUD_DRIVE_SEARCH_API.length, '个源');
-                            const allItems = [];
-                            const mergedKey = 'clouddrive-aggr:pan';
-
+                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源');
                             for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
                                 try {
-                                    const searchUrl = apiDef.url + encodeURIComponent(keyword);
-                                    let respText;
-                                    if (useProxyEnabled) {
-                                        respText = await fetchFastWithProxy(searchUrl, 8000).catch(() => null);
-                                    } else {
-                                        respText = await fetchDirect(searchUrl, 8000).catch(() => null);
-                                    }
-                                    if (!respText || respText.length < 10) continue;
-
-                                    const json = JSON.parse(respText);
-                                    const merged = json.data && json.data.merged_by_type;
-                                    if (!merged) continue;
-
-                                    // 遍历所有网盘类型
-                                    const panTypes = Object.keys(merged);
-                                    for (const ptype of panTypes) {
-                                        const entries = merged[ptype] || [];
-                                        for (const entry of entries) {
-                                            const noteClean = (entry.note || '').replace(/[\(\）\（\]\[\【\】].*$/, '').trim();
-                                            allItems.push({
-                                                vod_id: entry.url || '',
-                                                vod_name: noteClean || entry.url || '',
-                                                vod_pic: (entry.images && entry.images[0]) || '',
-                                                vod_url: entry.url || '',
-                                                vod_remarks: ptype.toUpperCase() + (entry.password ? ' ' + entry.password : ''),
-                                                type_name: ptype,
-                                                _driveType: ptype,
-                                                _fileId: entry.url || '',
-                                                _panPassword: entry.password || '',
-                                                _cloudIndex: allItems.length,
-                                                _isVideo: true
+                                    if (apiDef.type !== 'crawler') continue;
+                                    const baseUrl = apiDef.url.replace(/\/+$/, '');
+                                    const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
+                                    const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + encodeURIComponent(keyword);
+                                    // 代理优先，失败降级直连
+                                    let text = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
+                                    if (!text) text = await fetchDirect(fullUrl, 8000).catch(() => null);
+                                    if (!text || text.length < 100) continue;
+                                    const parser = new DOMParser();
+                                    const doc = parser.parseFromString(text, 'text/html');
+                                    const items = [];
+                                    doc.querySelectorAll('.module-search-item').forEach(c => {
+                                        const link = c.querySelector('.video-serial');
+                                        const img = c.querySelector('img');
+                                        const title = link?.getAttribute('title') || link?.textContent || '';
+                                        const href = link?.getAttribute('href') || '';
+                                        if (title) {
+                                            let absUrl = href;
+                                            if (!href.startsWith('http')) absUrl = baseUrl + (href.startsWith('/') ? '' : '/') + href;
+                                            items.push({
+                                                vod_id: absUrl, vod_name: title.trim(), vod_pic: img?.getAttribute('data-src') || '',
+                                                _detailPageUrl: absUrl, _panSource: apiDef, _isVideo: true
                                             });
+                                        }
+                                    });
+                                    if (items.length > 0) {
+                                        const key = 'cloud-pan:' + apiDef.name;
+                                        if (!seenPlatforms.has(key)) {
+                                            seenPlatforms.add(key);
+                                            allResults.push({ interfaceUrl: key, interfaceName: apiDef.name, data: items });
+                                            displayResultsBatch();
                                         }
                                     }
                                 } catch(e) {
-                                    console.warn('网盘聚合搜索[' + apiDef.name + ']失败:', e.message);
+                                    console.warn('网盘[' + apiDef.name + ']失败:', e.message);
                                 }
                             }
-
-                            if (allItems.length > 0) {
-                                const key = mergedKey;
-                                if (!seenPlatforms.has(key)) seenPlatforms.add(key);
-                                allResults.push({ interfaceUrl: key, interfaceName: '☁️ 网盘资源', data: allItems });
-                                displayResultsBatch();
-                                console.log('流程4.5完成，共', allItems.length, '个网盘资源结果');
-                            } else {
-                                console.log('流程4.5完成，无结果');
-                            }
+                            console.log('流程4.5完成');
                         })()
                     );
                 }
