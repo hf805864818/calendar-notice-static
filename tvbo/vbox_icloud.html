@@ -2439,7 +2439,7 @@
         //       
         const PROXY_LIST = [
           null,
-          null
+          'https://vbox.ltd/?url='
         ];
         const PROXY_TOKEN = '199114';
         const TIMEOUT_MS = 15000;
@@ -3542,7 +3542,7 @@
                                         const baseUrl = apiDef.url.replace(/\/+$/, '');
                                         const searchPath = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
                                         const fullUrl = baseUrl + (searchPath.startsWith('/') ? '' : '/') + searchPath + encodeURIComponent(keyword);
-                                        const resp = await fetchDirect(fullUrl, 8000).catch(() => null);
+                                        const resp = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
                                         if (!resp || resp.length < 100) return [];
 
                                         const parser = new DOMParser();
