@@ -322,37 +322,40 @@
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
-    <svg class="hidden">
-        <symbol id="icon-play" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
+    <!-- SVG Icons - Direct inline SVG for better browser compatibility -->
+    <svg class="hidden" aria-hidden="true">
+      <defs>
+        <symbol id="icon-play" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M8 5v14l11-7z"/>
         </symbol>
-        <symbol id="icon-pause" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+        <symbol id="icon-pause" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
         </symbol>
-        <symbol id="icon-fullscreen" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        <symbol id="icon-fullscreen" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
         </symbol>
-        <symbol id="icon-fullscreen-exit" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+        <symbol id="icon-fullscreen-exit" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
         </symbol>
-        <symbol id="icon-settings" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        <symbol id="icon-settings" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
         </symbol>
-        <symbol id="icon-speed" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
+        <symbol id="icon-speed" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
         </symbol>
-        <symbol id="icon-chevron-up" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
+        <symbol id="icon-chevron-up" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
         </symbol>
-        <symbol id="icon-prev" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+        <symbol id="icon-prev" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
         </symbol>
-        <symbol id="icon-next" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+        <symbol id="icon-next" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
         </symbol>
-        <symbol id="icon-close" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        <symbol id="icon-close" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
         </symbol>
+      </defs>
     </svg>
 
     <div id="customModal" class="fixed inset-0 hidden items-center justify-center z-[9999] p-4" style="background: rgba(0,0,0,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
@@ -373,24 +376,24 @@
                 <div class="absolute inset-0 video-placeholder flex items-center justify-center">
                     <div class="text-center">
                         <div class="glass-btn rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:scale-110 transition-transform duration-200" onclick="togglePlay()">
-                            <svg class="w-10 h-10 text-white ml-1" fill="currentColor">
-                                <use href="#icon-play"/>
-                            </svg>
+                          <svg class="w-10 h-10 text-white ml-1" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
                         </div>
                         <p class="text-white/60 text-sm font-light">点击播放视频</p>
                     </div>
                 </div>
 
-                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5"
-                    <source src="" type="video/mp4">
+                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5">
+                  <source src="" type="video/mp4">
                 </video>
 
                 <div class="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div class="flex items-center justify-end">
                         <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer" title="全屏" onclick="toggleFullscreen()">
-                            <svg id="fullscreenIcon" class="w-4 h-4" fill="currentColor">
-                                <use href="#icon-fullscreen"/>
-                            </svg>
+                          <svg id="fullscreenIcon" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                          </svg>
                         </button>
                     </div>
                 </div>
@@ -415,90 +418,66 @@
 
         <div class="tv-base">
             <div class="control-bar py-2.5 px-4">
-                <div class="flex items-center gap-2">
-                    <button id="playPauseBtn" class="glass-btn p-3.5 rounded-xl text-white cursor-pointer flex-shrink-0" onclick="togglePlay()">
-                        <svg id="playPauseIcon" class="w-5 h-5" fill="currentColor">
-                            <use href="#icon-play"/>
-                        </svg>
+                <div class="flex items-center gap-1 flex-nowrap">
+                    <button id="playPauseBtn" class="glass-btn rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0 flex items-center justify-center" style="width: 3.2rem; height: 3.2rem;" onclick="togglePlay()">
+                      <svg id="playPauseIcon" style="width: 1.28rem; height: 1.28rem;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
                     </button>
 
-                    <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="上一个" onclick="playPrevious()">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <use href="#icon-prev"/>
-                        </svg>
+                    <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="上一个" onclick="playPrevious()">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                      </svg>
                     </button>
-                    <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="下一个" onclick="playNext()">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <use href="#icon-next"/>
-                        </svg>
+                    <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="下一个" onclick="playNext()">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                      </svg>
                     </button>
+
+                    <div class="relative">
+                        <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="搜索" id="searchBtn" onclick="toggleSearchPanel()">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/>
+                            </svg>
+                        </button>
+                        <div id="searchPanel" class="settings-panel hidden fixed" style="width: 16rem; max-height: 14rem; left: 50%; transform: translateX(-50%); bottom: 4.5rem;">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-white text-sm font-semibold">搜索</h3>
+                                    <div id="searchLoading" class="hidden flex items-center gap-1">
+                                        <div class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span class="text-white/60 text-[10px] whitespace-nowrap">搜索中...</span>
+                                    </div>
+                                </div>
+                                <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleSearchPanel()">
+                                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                  </svg>
+                                </button>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex gap-1.5 items-center">
+                                    <input type="text" id="searchInput" placeholder="输入名称" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
+                                    <button class="glass-btn px-2 py-1 rounded-lg text-white text-xs cursor-pointer whitespace-nowrap" onclick="searchAllSources()">搜索</button>
+                                </div>
+                                <div class="relative">
+                                    <div id="sourceTabs" class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide" style="scroll-behavior: smooth;">
+                                        <button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer whitespace-nowrap active" data-source="default">默认平台</button>
+                                    </div>
+                                </div>
+                                <div id="searchResultsContainer" class="max-h-[7rem] overflow-y-auto space-y-1"></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="flex-1"></div>
 
-                    <div class="flex items-center gap-2">
-                        <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer" title="搜索" onclick="toggleSearchPanel()">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/>
-                                </svg>
-                            </button>
-                            <div id="searchPanel" class="settings-panel hidden" style="width: 16rem; max-height: 14rem; left: 50%; transform: translateX(-50%); bottom: 100%; margin-bottom: 8px;">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <h3 class="text-white text-sm font-semibold">搜索</h3>
-                                        <div id="searchLoading" class="hidden flex items-center gap-1">
-                                            <div class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                            <span class="text-white/60 text-[10px] whitespace-nowrap">搜索中...</span>
-                                        </div>
-                                    </div>
-                                    <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleSearchPanel()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor">
-                                            <use href="#icon-close"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="space-y-2">
-                                    <div class="flex gap-1.5 items-center">
-                                        <input type="text" id="searchInput" placeholder="输入名称" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
-                                        <button class="glass-btn px-2 py-1 rounded-lg text-white text-xs cursor-pointer whitespace-nowrap" onclick="searchAllSources()">搜索</button>
-                                    </div>
-                                    <div class="relative">
-                                        <div id="sourceTabs" class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide" style="scroll-behavior: smooth;">
-                                            <button class="source-tab glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer whitespace-nowrap active" data-source="default">默认平台</button>
-                                        </div>
-                                    </div>
-                                    <div id="searchResultsContainer" class="max-h-[7rem] overflow-y-auto space-y-1"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 网盘文件浏览器 -->
-                        <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer" title="网盘" id="driveBrowserBtn" onclick="toggleDriveBrowser()" style="display:none">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z"/>
-                                </svg>
-                            </button>
-                            <div id="driveBrowserPanel" class="settings-panel hidden" style="width: 320px; max-height: 420px; right: 0; left: auto; transform: none;">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h3 class="text-white text-sm font-semibold" id="driveBrowserTitle">网盘文件</h3>
-                                    <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleDriveBrowser()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor"><use href="#icon-close"/></svg>
-                                    </button>
-                                </div>
-                                <div class="drive-breadcrumb" id="driveBreadcrumb"></div>
-                                <div id="driveFileList" class="max-h-[16rem] overflow-y-auto space-y-0.5">
-                                    <div class="text-white/40 text-xs text-center py-4">请先设置Token或解析分享链接</div>
-                                </div>
-                                <div class="mt-2 pt-2 border-t border-white/10 flex justify-between">
-                                    <span class="text-white/40 text-[10px]" id="driveStatus"></span>
-                                    <button class="glass-btn px-2 py-1 rounded text-white text-[10px] cursor-pointer" onclick="refreshDriveFiles()">刷新</button>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-1 flex-nowrap">
 
                         <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer hidden" title="选集" id="episodeBtn" onclick="toggleEpisodeMenu()">
+                            <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0 hidden" title="选集" id="episodeBtn" onclick="toggleEpisodeMenu()">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M4 6h4v2H4zm0 5h4v2H4zm0 5h4v2H4zm6-10h10v2H10zm0 5h10v2H10zm0 5h10v2H10z"/>
                                 </svg>
@@ -507,9 +486,9 @@
                                 <div class="flex items-center justify-between mb-2">
                                     <h3 class="text-white text-sm font-semibold">选集</h3>
                                     <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleEpisodeMenu()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor">
-                                            <use href="#icon-close"/>
-                                        </svg>
+                                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                      </svg>
                                     </button>
                                 </div>
                                 <div id="simpleEpisodeList" class="space-y-1 max-h-[9rem] overflow-y-auto"></div>
@@ -521,18 +500,18 @@
                         </div>
 
                         <div class="relative">
-                            <button class="glass-btn p-2.5 rounded-lg text-white/80 hover:text-white cursor-pointer" title="设置" onclick="toggleSettings()">
-                                <svg class="w-4 h-4" fill="currentColor">
-                                    <use href="#icon-settings"/>
-                                </svg>
+                            <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer flex-shrink-0" title="设置" onclick="toggleSettings()">
+                              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                              </svg>
                             </button>
                             <div id="settingsPanel" class="settings-panel hidden">
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="text-white text-sm font-semibold">设置</h3>
                                     <button class="glass-btn p-1 rounded-lg text-white/80 hover:text-white cursor-pointer" onclick="toggleSettings()">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor">
-                                            <use href="#icon-close"/>
-                                        </svg>
+                                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                      </svg>
                                     </button>
                                 </div>
                                 <div class="space-y-3">
@@ -549,7 +528,7 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="text-white/70 text-xs mb-1.5 block">固定资源（789官源/建安官源）</label>
+                                        <label class="text-white/70 text-xs mb-1.5 block">固定资源(采集/量子/无尽/百度/猫眼/非凡/金鹰/卧龙/魔都)</label>
                                         <div class="flex items-center gap-2">
                                             <button class="glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs cursor-pointer" onclick="toggleFixedSources()">
                                                 <span id="fixedSourcesLabel">已开启</span>
@@ -591,7 +570,7 @@
                                         <input type="checkbox" class="w-4 h-4 rounded" checked>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-white/70 text-xs">使用代理（降低速度）</span>
+                                        <span class="text-white/70 text-xs">使用代理(可能不稳定)</span>
                                         <input type="checkbox" id="proxySwitch" class="w-4 h-4 rounded" onchange="toggleProxy()">
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
@@ -615,7 +594,7 @@
                                             <input type="text" id="jsonApiUrlInput" placeholder="输入JSON接口URL" class="flex-1 glass-btn px-2 py-1 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
                                             <button class="glass-btn px-2 py-1 rounded-lg text-white text-xs cursor-pointer" onclick="addJsonApi()">添加</button>
                                         </div>
-                                        <p class="text-white/40 text-[10px] mt-1">仅保存URL，不做解析处理</p>
+                                        <p class="text-white/40 text-[10px] mt-1">仅保存URL,不做解析处理</p>
                                     </div>
                                     <div class="pt-2 border-t border-white/10">
                                         <button class="w-full glass-btn px-2.5 py-1.5 rounded-lg text-emerald-400 text-xs cursor-pointer flex items-center justify-center gap-2 hover:bg-emerald-500/20" onclick="toggleDrivePanel()">
@@ -640,11 +619,11 @@
                         <div class="h-6 w-px bg-white/30"></div>
 
                         <div class="relative">
-                            <button class="glass-btn px-2.5 py-2.5 rounded-xl text-white/80 hover:text-white cursor-pointer flex items-center gap-1.5" onclick="toggleSpeedMenu()">
-                                <svg class="w-3.5 h-3.5" fill="currentColor">
-                                    <use href="#icon-speed"/>
-                                </svg>
-                                <span class="text-xs font-medium" id="speedLabel">1x</span>
+                            <button class="glass-btn px-2.5 py-2.5 rounded-xl text-white/80 hover:text-white cursor-pointer flex items-center gap-1.5 whitespace-nowrap" onclick="toggleSpeedMenu()">
+                              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
+                              </svg>
+                              <span class="text-xs font-medium" id="speedLabel">1x</span>
                             </button>
                             <div id="speedMenu" class="speed-menu hidden">
                                 <button class="w-full px-3 py-1.5 text-left text-white/80 hover:text-white hover:bg-white/10 cursor-pointer text-xs rounded" onclick="setSpeed(0.5)">0.5x</button>
@@ -687,13 +666,13 @@
         // 当前加载URL追踪
         let currentLoadingUrl = null;
 
-        // canplay处理函数引用（用于移除监听器）
+        // canplay处理函数引用(用于移除监听器)
         let onCanPlayHandler = null;
 
-        // 当前AbortController（用于取消fetch请求）
+        // 当前AbortController(用于取消fetch请求)
         let currentAbortController = null;
 
-        // 当前播放的真实URL（用于错误提示）
+        // 当前播放的真实URL(用于错误提示)
         let currentPlayingUrl = null;
         let currentResolvedVideoUrl = null;
 
@@ -711,15 +690,15 @@
         }
 
         video.addEventListener('play', () => {
-            isPlaying = true;
-            playPauseIcon.innerHTML = '<use href="#icon-pause"/>';
-            // 视频开始播放时关闭选集弹窗
-            document.getElementById('episodeMenu').classList.add('hidden');
+          isPlaying = true;
+          playPauseIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+          // 视频开始播放时关闭选集弹窗
+          document.getElementById('episodeMenu').classList.add('hidden');
         });
 
         video.addEventListener('pause', () => {
-            isPlaying = false;
-            playPauseIcon.innerHTML = '<use href="#icon-play"/>';
+          isPlaying = false;
+          playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
         });
 
         video.addEventListener('timeupdate', () => {
@@ -734,7 +713,7 @@
 
         // 视频加载错误处理
         video.addEventListener('error', () => {
-            // 如果正在清空资源，不显示错误弹窗
+            // 如果正在清空资源,不显示错误弹窗
             if (isClearingResources) {
                 console.log('清空资源过程中忽略视频错误');
                 loadingIndicator.classList.add('hidden');
@@ -750,10 +729,10 @@
                         message = '视频加载被中止';
                         break;
                     case 2:
-                        message = '网络错误：视频服务器拒绝了请求（可能是防盗链或CORS限制）';
+                        message = '网络错误:视频服务器拒绝了请求(可能是防盗链或CORS限制)';
                         break;
                     case 3:
-                        message = '视频解码错误：格式不支持';
+                        message = '视频解码错误:格式不支持';
                         break;
                     case 4:
                         message = '视频格式不支持或地址无效';
@@ -761,9 +740,9 @@
                 }
             }
             console.error('Video error:', error);
-            // 使用当前播放URL而不是video.src（HLS模式下video.src可能不准确）
+            // 使用当前播放URL而不是video.src(HLS模式下video.src可能不准确)
             const displayUrl = currentPlayingUrl || video.src;
-            // 静默处理视频错误，不弹出弹窗
+            // 静默处理视频错误,不弹出弹窗
             console.log('视频错误:', message, '地址:', displayUrl);
             // showAlert(message + '\n\n当前地址: ' + displayUrl, '视频错误'); // 已禁用视频错误弹窗
         });
@@ -773,11 +752,11 @@
         });
 
         video.addEventListener('ended', () => {
-            isPlaying = false;
-            playPauseIcon.innerHTML = '<use href="#icon-play"/>';
-            video.classList.add('hidden');
-            document.querySelector('.video-placeholder').classList.remove('hidden');
-            isVideoStarted = false;
+          isPlaying = false;
+          playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+          video.classList.add('hidden');
+          document.querySelector('.video-placeholder').classList.remove('hidden');
+          isVideoStarted = false;
 
             // 自动播放下一集
             const autoPlayNextCheckbox = document.querySelector('input[type="checkbox"]');
@@ -789,7 +768,7 @@
                         // 顺序播放
                         nextIndex = currentVideoIndex + 1;
                         if (nextIndex >= videoList.length) {
-                            console.log('已经是最后一集，顺序播放结束');
+                            console.log('已经是最后一集,顺序播放结束');
                             return;
                         }
                         break;
@@ -822,7 +801,7 @@
             video.currentTime = percent * video.duration;
         }
 
-        // 全屏：强制在视频窗口内全屏，不弹系统播放器
+        // 全屏:强制在视频窗口内全屏,不弹系统播放器
         async function toggleFullscreen() {
             const videoEl = document.getElementById('video');
             if (!videoEl) return;
@@ -836,7 +815,7 @@
                 }
             } catch (e) {
                 console.warn('全屏切换失败:', e);
-                // 兜底：用video自身全屏
+                // 兜底:用video自身全屏
                 try { videoEl.webkitEnterFullscreen(); } catch(e2) {}
             }
         }
@@ -844,16 +823,16 @@
         function toggleSettings() {
             const isHidden = settingsPanel.classList.contains('hidden');
             if (isHidden) {
-                // 以 video-card（整个播放器容器）为中心
+                // 以 video-card(整个播放器容器)为中心
                 const videoCard = document.querySelector('.video-card');
                 const settingsPanelEl = document.getElementById('settingsPanel');
                 const panelWidth = 256;
                 
-                // 计算 video-card 的宽度，并找到其中心点
+                // 计算 video-card 的宽度,并找到其中心点
                 const videoCardWidth = videoCard.offsetWidth;
                 const videoCardRect = videoCard.getBoundingClientRect();
                 
-                // 获取 settingsPanel 的父元素（settings 按钮的 relative 容器）
+                // 获取 settingsPanel 的父元素(settings 按钮的 relative 容器)
                 const settingsBtn = document.querySelector('button[onclick="toggleSettings()"]');
                 const parentRect = settingsBtn.parentElement.getBoundingClientRect();
                 
@@ -878,7 +857,7 @@
             const speedMenuEl = document.getElementById('speedMenu');
             const isHidden = speedMenuEl.classList.contains('hidden');
             if (isHidden) {
-                // 紧贴倍速按键上方，左边框对齐
+                // 紧贴倍速按键上方,左边框对齐
                 const speedBtn = document.querySelector('button[onclick="toggleSpeedMenu()"]');
                 const parentRect = speedBtn.parentElement.getBoundingClientRect();
                 const btnRect = speedBtn.getBoundingClientRect();
@@ -932,15 +911,15 @@
             try {
                 // 如果是 power34play 类型的短链接
                 if (url.includes('power34play.vip/share/')) {
-                    // 由于浏览器CORS限制，前端无法直接获取302后的真实地址
-                    // 这里尝试通过 fetch 获取（可能会因CORS失败）
+                    // 由于浏览器CORS限制,前端无法直接获取302后的真实地址
+                    // 这里尝试通过 fetch 获取(可能会因CORS失败)
                     const response = await fetch(url, {
                         method: 'HEAD',
                         redirect: 'manual',
                         mode: 'no-cors'
                     });
                     
-                    // 如果能获取到Location头，返回真实地址
+                    // 如果能获取到Location头,返回真实地址
                     const realUrl = response.headers.get('Location');
                     if (realUrl) {
                         return realUrl;
@@ -953,7 +932,7 @@
             }
         }
 
-        // 解析TXT格式内容（如用户提供的格式）
+        // 解析TXT格式内容(如用户提供的格式)
         function parseTXTContent(content) {
             const lines = content.split('\n');
             const newChannels = [];
@@ -964,12 +943,12 @@
                 if (!line) return;
                 
                 // 检测分组标题
-                if (line.includes('：') || line.includes(':')) {
-                    currentGroup = line.split(/[：:]/)[0].trim();
+                if (line.includes(':') || line.includes(':')) {
+                    currentGroup = line.split(/[::]/)[0].trim();
                     return;
                 }
                 
-                // 解析 $ 分隔的格式：名称$链接
+                // 解析 $ 分隔的格式:名称$链接
                 if (line.includes('$')) {
                     const parts = line.split('$');
                     if (parts.length >= 2) {
@@ -996,16 +975,16 @@
                 // 添加到视频列表
                 videoList.push(url);
                 
-                // 如果是链接，尝试解析
+                // 如果是链接,尝试解析
                 if (url.startsWith('http')) {
-                    // 尝试解析真实地址（异步）
+                    // 尝试解析真实地址(异步)
                     resolveRedirect(url).then(realUrl => {
                         const index = videoList.indexOf(url);
                         if (index > -1 && realUrl !== url) {
                             videoList[index] = realUrl;
                         }
                     }).catch(() => {
-                        // 解析失败，保留原链接
+                        // 解析失败,保留原链接
                     });
                 }
                 
@@ -1013,7 +992,7 @@
                 updateEpisodeBtn();
                 renderCategorizedList();
                 
-                // 如果是第一个视频，自动加载
+                // 如果是第一个视频,自动加载
                 if (videoList.length === 1) {
                     loadVideo(0);
                 }
@@ -1024,7 +1003,7 @@
 
         // 清空所有资源
         async function clearAllResources() {
-            if (await showConfirm('确定要清空所有资源吗？此操作不可撤销。', '清空资源')) {
+            if (await showConfirm('确定要清空所有资源吗？此操作不可撤销.', '清空资源')) {
                 isClearingResources = true; // 标记正在清空资源
                 videoList = [];
                 categorizedChannels = {};
@@ -1038,25 +1017,10 @@
                 document.querySelector('.video-placeholder').classList.remove('hidden');
                 isVideoStarted = false;
                 isPlaying = false;
-                playPauseIcon.innerHTML = '<use href="#icon-play"/>';
                 
                 // 重置UI
+                playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
                 updateEpisodeBtn();
-                renderCategorizedList();
-                
-                // 关闭设置弹窗
-                document.getElementById('settingsPanel').classList.add('hidden');
-                
-                // 延迟重置标记
-                setTimeout(() => {
-                    isClearingResources = false;
-                }, 1000);
-            }
-        }
-
-        // 页面加载时初始化
-        window.addEventListener('DOMContentLoaded', () => {
-            updateEpisodeBtn();
             renderEpisodeList();
             loadParsersFromStorage();
             loadJsonApisFromStorage();
@@ -1065,7 +1029,8 @@
             if (videoList.length > 0) {
                 video.src = videoList[0];
             }
-        });
+            }
+        }
 
         function handleFileUpload(input) {
             const file = input.files[0];
@@ -1079,11 +1044,11 @@
                 if (file.name.endsWith('.m3u') || file.name.endsWith('.m3u8')) {
                     parseM3UContent(content);
                 } else if (file.name.endsWith('.txt')) {
-                    // 尝试解析为M3U格式，如果失败则解析为简单文本格式
+                    // 尝试解析为M3U格式,如果失败则解析为简单文本格式
                     if (content.includes('#EXTM3U')) {
                         parseM3UContent(content);
                     } else {
-                        // 解析为简单文本格式（如用户提供的格式）
+                        // 解析为简单文本格式(如用户提供的格式)
                         const channels = parseTXTContent(content);
                         if (channels.length > 0) {
                             // 将解析的频道添加到第一个分类
@@ -1149,12 +1114,12 @@
             if (categoryList) categoryList.innerHTML = '';
             if (channelList) channelList.innerHTML = '';
             
-            // 如果有分类，显示双行模式
+            // 如果有分类,显示双行模式
             if (categories.length > 0) {
                 if (simpleList) simpleList.classList.add('hidden');
                 if (categorizedList) categorizedList.classList.remove('hidden');
                 
-                // 渲染左侧分类列表（带滑动删除）
+                // 渲染左侧分类列表(带滑动删除)
                 categories.forEach((group, index) => {
                     const categoryWrapper = document.createElement('div');
                     categoryWrapper.className = 'relative mb-1 overflow-hidden';
@@ -1217,7 +1182,7 @@
                     categoryWrapper.addEventListener('touchend', handleTouchEnd);
                     categoryWrapper.addEventListener('touchcancel', handleTouchEnd);
                     
-                    // 鼠标事件支持（桌面端）
+                    // 鼠标事件支持(桌面端)
                     categoryWrapper.addEventListener('mousedown', (e) => {
                         startX = e.clientX;
                         currentX = startX;
@@ -1251,13 +1216,13 @@
                         }
                     });
                      
-                     categoryWrapper.addEventListener('mouseleave', () => {
-                        if (isSwiping) {
-                            isSwiping = false;
-                            categoryBtn.style.transition = 'transform 0.3s ease';
-                            categoryBtn.style.transform = 'translateX(0)';
-                            deleteLayer.style.opacity = 0;
-                        }
+                    categoryWrapper.addEventListener('mouseleave', () => {
+                      if (isSwiping) {
+                        isSwiping = false;
+                        categoryBtn.style.transition = 'transform 0.3s ease';
+                        categoryBtn.style.transform = 'translateX(0)';
+                        deleteLayer.style.opacity = 0;
+                      }
                     });
 
                     categoryBtn.onclick = () => {
@@ -1280,7 +1245,7 @@
                     categoryList.appendChild(categoryWrapper);
                 });
                 
-                // 渲染右侧频道列表（带长按删除）
+                // 渲染右侧频道列表(带长按删除)
                 categories.forEach((group, groupIndex) => {
                     const channels = categorizedChannels[group];
                     
@@ -1320,7 +1285,7 @@
                                 btn.classList.remove('scale-95');
                                 btn.classList.add('bg-red-500/50');
                                 
-                                // 震动反馈（如果支持）
+                                // 震动反馈(如果支持)
                                 if (navigator.vibrate) {
                                     navigator.vibrate(200);
                                 }
@@ -1331,7 +1296,7 @@
                                     }
                                     btn.classList.remove('bg-red-500/50');
                                 }, 100);
-                            }, 1500); // 1.5秒长按（更合理的时间）
+                            }, 1500); // 1.5秒长按(更合理的时间)
                         };
                         
                         const cancelLongPress = () => {
@@ -1376,7 +1341,7 @@
                     channelList.appendChild(sectionDiv);
                 });
             } else {
-                // 无分类，显示单行模式
+                // 无分类,显示单行模式
                 if (simpleList) simpleList.classList.remove('hidden');
                 if (categorizedList) categorizedList.classList.add('hidden');
                 
@@ -1443,10 +1408,10 @@
                     btn.addEventListener('touchmove', cancelLongPress);
                     btn.addEventListener('touchcancel', cancelLongPress);
                     
-btn.addEventListener('mousedown', startLongPress);
+                    btn.addEventListener('mousedown', startLongPress);
                     btn.addEventListener('mouseup', (e) => {
-                        cancelLongPress();
-                        handleClick(e);
+                      cancelLongPress();
+                      handleClick(e);
                     });
                     btn.addEventListener('mouseleave', cancelLongPress);
                     btn.addEventListener('mousemove', cancelLongPress);
@@ -1498,14 +1463,13 @@ btn.addEventListener('mousedown', startLongPress);
             updateEpisodeBtn();
         }
 
-        
-            function updateEpisodeBtn() {
-            const episodeBtn = document.getElementById('episodeBtn');
-            if (videoList.length > 0) {
-                episodeBtn.classList.remove('hidden');
-            } else {
-                episodeBtn.classList.add('hidden');
-            }
+        function updateEpisodeBtn() {
+          const episodeBtn = document.getElementById('episodeBtn');
+          if (videoList.length > 0) {
+            episodeBtn.classList.remove('hidden');
+          } else {
+            episodeBtn.classList.add('hidden');
+          }
         }
 
         function renderEpisodeList() {
@@ -1578,7 +1542,7 @@ btn.addEventListener('mousedown', startLongPress);
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
-                    // 如果提供了abortController，检查是否已取消
+                    // 如果提供了abortController,检查是否已取消
                     if (abortController && abortController.signal.aborted) {
                         throw new Error('请求已被取消');
                     }
@@ -1586,7 +1550,7 @@ btn.addEventListener('mousedown', startLongPress);
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-                    // 如果提供了abortController，监听其取消信号
+                    // 如果提供了abortController,监听其取消信号
                     if (abortController) {
                         const abortHandler = () => {
                             clearTimeout(timeoutId);
@@ -1628,12 +1592,12 @@ btn.addEventListener('mousedown', startLongPress);
                     lastError = error;
                     console.warn(`请求失败 (尝试 ${attempt}/${maxRetries}):`, error.message);
 
-                    // 如果是取消请求，直接抛出
+                    // 如果是取消请求,直接抛出
                     if (error.name === 'AbortError' && abortController && abortController.signal.aborted) {
                         throw error;
                     }
 
-                    // 如果是网络错误，可以重试
+                    // 如果是网络错误,可以重试
                     if (attempt < maxRetries) {
                         // 指数退避策略
                         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
@@ -1643,7 +1607,7 @@ btn.addEventListener('mousedown', startLongPress);
                 }
             }
 
-            throw new Error(`请求失败，已重试 ${maxRetries} 次。最后错误: ${lastError.message}`);
+            throw new Error(`请求失败,已重试 ${maxRetries} 次.最后错误: ${lastError.message}`);
         }
 
         // 从解析接口响应中提取真实播放地址
@@ -1664,7 +1628,7 @@ btn.addEventListener('mousedown', startLongPress);
 
                     // 递归查找URL的辅助函数
                     function findUrl(obj, depth = 0) {
-                        // 限制递归深度，防止无限循环
+                        // 限制递归深度,防止无限循环
                         if (depth > 5) return null;
 
                         if (typeof obj === 'string') {
@@ -1686,7 +1650,7 @@ btn.addEventListener('mousedown', startLongPress);
                                 }
                             }
 
-                            // 如果没有找到，递归搜索
+                            // 如果没有找到,递归搜索
                             for (const key in obj) {
                                 const result = findUrl(obj[key], depth + 1);
                                 if (result) return result;
@@ -1711,7 +1675,7 @@ btn.addEventListener('mousedown', startLongPress);
                         return url;
                     }
                 } catch (e) {
-                    console.log('JSON解析失败，尝试其他方式:', e.message);
+                    console.log('JSON解析失败,尝试其他方式:', e.message);
                 }
             }
 
@@ -1777,7 +1741,7 @@ btn.addEventListener('mousedown', startLongPress);
 
             // 1. 首先检查是否为直链
             if (isDirectVideoUrl(url)) {
-                console.log('检测到直链，直接播放:', url);
+                console.log('检测到直链,直接播放:', url);
                 return url;
             }
 
@@ -1793,8 +1757,8 @@ btn.addEventListener('mousedown', startLongPress);
                     console.log('没有解析接口但地址是直链可播放:', url);
                     return url;
                 }
-                console.warn('没有可用的解析接口，无法解析非直链地址');
-                throw new Error(`无法播放：当前地址需要解析，但未配置解析接口。请在设置中添加解析接口。\n\n地址: ${url}`);
+                console.warn('没有可用的解析接口,无法解析非直链地址');
+                throw new Error(`无法播放:当前地址需要解析,但未配置解析接口.请在设置中添加解析接口.\n\n地址: ${url}`);
             }
 
             console.log(`准备使用 ${customParsers.length} 个解析接口进行解析`);
@@ -1813,13 +1777,13 @@ btn.addEventListener('mousedown', startLongPress);
                     }
 
                     layer++;
-                    console.log(`第 ${layer} 层解析，使用接口:`, parser);
+                    console.log(`第 ${layer} 层解析,使用接口:`, parser);
 
                     // 构建解析请求URL
                     const parseUrl = parser + encodeURIComponent(currentUrl);
                     console.log(`解析请求URL:`, parseUrl);
 
-                    // 使用重试机制请求解析接口，传入abortController
+                    // 使用重试机制请求解析接口,传入abortController
                     const responseText = await fetchWithRetry(parseUrl, {}, 3, 10000, abortController);
 
                     // 检查是否已取消
@@ -1848,21 +1812,21 @@ btn.addEventListener('mousedown', startLongPress);
 
                         // 检查提取的URL是否需要继续解析
                         if (isDirectVideoUrl(realUrl)) {
-                            console.log('解析完成，获得真实地址:', realUrl);
+                            console.log('解析完成,获得真实地址:', realUrl);
                             return realUrl;
                         } else if (layer >= maxLayers) {
-                            console.warn(`已达到最大解析层数 (${maxLayers})，但地址仍不是直链:`, realUrl);
-                            // 返回这个地址，让播放器尝试
+                            console.warn(`已达到最大解析层数 (${maxLayers}),但地址仍不是直链:`, realUrl);
+                            // 返回这个地址,让播放器尝试
                             return realUrl;
                         } else {
                             console.log('需要继续解析下一层:', realUrl);
                             currentUrl = realUrl;
                         }
                     } else {
-                        console.log(`接口 ${parser} 未能提取有效地址，尝试下一个解析接口`);
+                        console.log(`接口 ${parser} 未能提取有效地址,尝试下一个解析接口`);
                     }
                 } catch (error) {
-                    // 如果是取消请求，直接抛出
+                    // 如果是取消请求,直接抛出
                     if (error.name === 'AbortError' || error.message.includes('已被取消')) {
                         throw error;
                     }
@@ -1884,13 +1848,13 @@ btn.addEventListener('mousedown', startLongPress);
                 results: parserResults
             });
 
-            // 5. 如果所有自定义解析接口都失败，尝试使用最后一个有效的URL
+            // 5. 如果所有自定义解析接口都失败,尝试使用最后一个有效的URL
             if (lastValidUrl) {
-                console.log('所有解析接口执行完毕，使用最后一个有效地址:', lastValidUrl);
+                console.log('所有解析接口执行完毕,使用最后一个有效地址:', lastValidUrl);
                 return lastValidUrl;
             }
 
-            // 6. 如果没有有效地址，抛出详细错误
+            // 6. 如果没有有效地址,抛出详细错误
             const errorDetails = parserResults.map(r => {
                 if (r.success) {
                     return `✓ ${r.parser} → ${r.url}`;
@@ -1899,16 +1863,16 @@ btn.addEventListener('mousedown', startLongPress);
                 }
             }).join('\n');
 
-            throw new Error(`所有解析接口均失败，无法获取有效的播放地址。\n\n原始地址: ${url}\n\n解析详情:\n${errorDetails}`);
+            throw new Error(`所有解析接口均失败,无法获取有效的播放地址.\n\n原始地址: ${url}\n\n解析详情:\n${errorDetails}`);
         }
 
         function loadVideo(index) {
             if (index >= 0 && index < videoList.length) {
                 currentVideoIndex = index;
                 const originalUrl = videoList[index];
-                console.log('点击列表资源，原始地址:', originalUrl);
+                console.log('点击列表资源,原始地址:', originalUrl);
 
-                // 判断是否为播放页面URL（非直接视频流）
+                // 判断是否为播放页面URL(非直接视频流)
                 const isPlayPage = (originalUrl.match(/\/play\/[a-zA-Z0-9]+$/i) ||
                                    originalUrl.includes('/share/')) &&
                                    !originalUrl.includes('.m3u8') &&
@@ -1916,7 +1880,7 @@ btn.addEventListener('mousedown', startLongPress);
                                    !originalUrl.includes('.ts');
 
                 if (isPlayPage) {
-                    // 对于播放页面，尝试使用iframe或者跳转
+                    // 对于播放页面,尝试使用iframe或者跳转
                     const iframeContainer = document.createElement('div');
                     iframeContainer.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:100;display:flex;flex-direction:column;';
 
@@ -1951,7 +1915,7 @@ btn.addEventListener('mousedown', startLongPress);
                 video.pause();
                 video.src = '';
 
-                // 先隐藏video，等待加载成功
+                // 先隐藏video,等待加载成功
                 video.classList.add('hidden');
                 document.querySelector('.video-placeholder').classList.remove('hidden');
 
@@ -1977,14 +1941,14 @@ btn.addEventListener('mousedown', startLongPress);
                 loadingIndicator.classList.remove('hidden');
 
                 // 异步解析视频地址
-                                // m3u8/mp4通过代理域名播放（绕过外网限制）
+                // m3u8/mp4通过代理域名播放(仅在代理开启时)
                 const isDirectStream = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.ts') || originalUrl.includes('.flv');
-                const proxyPlayUrl = isDirectStream ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
+                const proxyPlayUrl = (useProxyEnabled && isDirectStream) ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
                 parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
                         // 检查是否已被新的请求替换
                         if (currentLoadingUrl !== originalUrl) {
-                            console.log('请求已被替换，忽略旧结果:', originalUrl);
+                            console.log('请求已被替换,忽略旧结果:', originalUrl);
                             return;
                         }
                         console.log('解析后的真实地址:', realUrl);
@@ -1994,7 +1958,7 @@ btn.addEventListener('mousedown', startLongPress);
                     .catch(async error => {
                         // 检查是否已被新的请求替换或取消
                         if (currentLoadingUrl !== originalUrl) {
-                            console.log('请求已被替换，忽略错误:', originalUrl);
+                            console.log('请求已被替换,忽略错误:', originalUrl);
                             return;
                         }
                         if (error.name === 'AbortError' || error.message.includes('已被取消')) {
@@ -2014,13 +1978,13 @@ btn.addEventListener('mousedown', startLongPress);
         // 使用真实URL加载视频
         function loadVideoByUrl(videoUrl) {
             currentResolvedVideoUrl = videoUrl;
-            // 记录当前播放URL（用于错误提示）
+            // 记录当前播放URL(用于错误提示)
             currentPlayingUrl = videoUrl;
 
             // 再次检查是否为直链
             if (!isDirectVideoUrl(videoUrl)) {
                 console.warn('loadVideoByUrl接收到非直链地址:', videoUrl);
-                // 继续尝试播放，可能会失败
+                // 继续尝试播放,可能会失败
             }
 
             // 判断是否为 M3U8
@@ -2095,7 +2059,7 @@ btn.addEventListener('mousedown', startLongPress);
             const episodeMenu = document.getElementById('episodeMenu');
             const isHidden = episodeMenu.classList.contains('hidden');
             if (isHidden) {
-                // 以 video-card（整个播放器容器）为中心
+                // 以 video-card(整个播放器容器)为中心
                 const videoCard = document.querySelector('.video-card');
                 const panelWidth = 256; // 16rem
                 const videoCardWidth = videoCard.offsetWidth;
@@ -2225,7 +2189,7 @@ btn.addEventListener('mousedown', startLongPress);
                     settingsPanel.classList.add('hidden');
                     speedMenu.classList.add('hidden');
                     document.getElementById('episodeMenu').classList.add('hidden');
-                    document.getElementById('searchPanel').classList.add('hidden');
+                    closeSearchPanel();
                     break;
             }
         });
@@ -2378,7 +2342,6 @@ btn.addEventListener('mousedown', startLongPress);
 
         function toggleSearchPanel() {
             const searchPanel = document.getElementById('searchPanel');
-            const searchBtn = document.querySelector('button[onclick="toggleSearchPanel()"]');
             const isHidden = searchPanel.classList.contains('hidden');
             if (isHidden) {
                 searchPanel.classList.remove('hidden');
@@ -2386,15 +2349,22 @@ btn.addEventListener('mousedown', startLongPress);
                 document.getElementById('speedMenu').classList.add('hidden');
                 document.getElementById('episodeMenu').classList.add('hidden');
             } else {
-                searchPanel.classList.add('hidden');
-                if (searchBtn) searchBtn.style.display = '';
+                closeSearchPanel();
             }
         }
+        
+        // 统一关闭搜索面板并恢复搜索按钮
+        function closeSearchPanel() {
+            const searchPanel = document.getElementById('searchPanel');
+            const searchBtn = document.getElementById('searchBtn');
+            searchPanel.classList.add('hidden');
+            if (searchBtn) searchBtn.style.display = '';
+        }
 
-        // 源标签切换（智能搜索模式下只有一个平台）
+        // 源标签切换(智能搜索模式下只有一个平台)
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('source-tab')) {
-                // 更新标签样式（虽然只有一个平台，但保持切换功能）
+                // 更新标签样式(虽然只有一个平台,但保持切换功能)
                 document.querySelectorAll('.source-tab').forEach(tab => {
                     tab.classList.remove('active', 'text-white');
                     tab.classList.add('text-white/70');
@@ -2404,7 +2374,7 @@ btn.addEventListener('mousedown', startLongPress);
             }
         });
 
-        // 自定义弹窗系统（替代原生 alert / confirm）
+        // 自定义弹窗系统(替代原生 alert / confirm)
         let modalResolver = null;
 
         function closeCustomModal(result = false) {
@@ -2468,17 +2438,17 @@ btn.addEventListener('mousedown', startLongPress);
 
         // 智能搜索系统
         const PROXY_LIST = [
-            null,
-            'https://fragrant-snow-ea12.3764.workers.dev/?url=',
-            'https://vbox.ccwu.cc/?url='
+          null,
+          'https://vbox.ltd/?url='
         ];
         const PROXY_TOKEN = '199114';
-        const TIMEOUT_MS = 10000;
-        const SEARCH_TIMEOUT_MS = 3000; // 从1500升到3000
+        const TIMEOUT_MS = 15000;
+        const SEARCH_TIMEOUT_MS = 8000;
         const DISCOVER_CACHE_TTL = 10 * 60 * 1000;
-        const SEARCH_CONCURRENCY = 12; // 从10提高到12
+        const SEARCH_CONCURRENCY = 12;
+        const FAST_SEARCH_LIMIT = 5;
         
-        // 测试接口可用性（快速验证）
+        // 测试接口可用性(快速验证)
         async function testInterfaceSpeed(interfaceUrl) {
             const testUrl = buildSearchUrl(interfaceUrl, 'test');
             try {
@@ -2500,10 +2470,10 @@ btn.addEventListener('mousedown', startLongPress);
             }
         }
 
-        // 智能过滤并排序接口：快的和能返回数据的优先
+        // 智能过滤并排序接口:快的和能返回数据的优先
         async function getBestSearchInterfaces(searchInterfaces) {
             const orderedInterfaces = sortSearchInterfacesByPriority(searchInterfaces);
-            // 只测试前8个接口，减少验证时间
+            // 只测试前8个接口,减少验证时间
             const interfacesToTest = orderedInterfaces.slice(0, Math.min(8, orderedInterfaces.length));
             
             const tests = await Promise.all(
@@ -2513,7 +2483,7 @@ btn.addEventListener('mousedown', startLongPress);
                 }))
             );
             
-            // 可用性：能成功请求 -> 能返回数据 -> 速度快
+            // 可用性:能成功请求 -> 能返回数据 -> 速度快
             const sorted = tests.sort((a, b) => {
                 if (a.success !== b.success) return b.success ? 1 : -1;
                 if (a.hasData !== b.hasData) return b.hasData ? 1 : -1;
@@ -2530,14 +2500,14 @@ btn.addEventListener('mousedown', startLongPress);
         let cachedSearchInterfacesTime = 0;
         let currentProxyIndex = 0;
 
-        // 代理开关：从 localStorage 读取设置（默认关闭，提高速度）
-        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== 'false';
+        // 代理开关:从 localStorage 读取设置(默认关闭,因为代理服务器可能不稳定)
+        let useProxyEnabled = localStorage.getItem('useProxyEnabled') === 'true';
         function toggleProxy() {
             useProxyEnabled = !useProxyEnabled;
             localStorage.setItem('useProxyEnabled', useProxyEnabled);
             updateProxySwitchUI();
             console.log('代理开关:', useProxyEnabled ? '开启' : '关闭');
-            // 清除接口缓存，因为代理设置改变后搜索结果可能不同
+            // 清除接口缓存,因为代理设置改变后搜索结果可能不同
             cachedSearchInterfaces = null;
         }
         function updateProxySwitchUI() {
@@ -2548,41 +2518,156 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         const SAVED_API_URLS = [
-            'http://154.219.117.232:9981/jacloudapi.php/provide/vod/',
-            'https://www.caiji.cyou/api.php/provide/vod/'
+            'http://caiji.dyttzyapi.com/api.php/provide/vod/',
+            'https://cj.lziapi.com/api.php/provide/vod/',
+            'https://api.wujinapi.com/api.php/provide/vod/',
+            'https://api.apibdzy.com/api.php/provide/vod/',
+            'https://api.maoyanapi.top/api.php/provide/vod/',
+            'https://cj.ffzyapi.com/api.php/provide/vod/',
+            'https://jyzyapi.com/api.php/provide/vod/',
+            'https://wolongzyw.com/api.php/provide/vod/',
+            'https://www.mdzyapi.com/api.php/provide/vod/'
         ];
         
-        // 搜索接口URL -> 平台名称映射，从订阅JSON的 name/title/key 字段自动提取
+        // 搜索接口URL -> 平台名称映射,从订阅JSON的 name/title/key 字段自动提取
         const SEARCH_INTERFACE_NAME_MAP = {};
         const SEARCH_INTERFACE_DETAIL_MAP = {};
 
         // 手动添加固定接口的平台名称映射
-        SEARCH_INTERFACE_NAME_MAP['http://154.219.117.232:9981/jacloudapi.php/provide/vod/?ac=list'] = '789官源';
-        SEARCH_INTERFACE_NAME_MAP['https://www.caiji.cyou/api.php/provide/vod/?ac=list'] = '建安官源';
+        SEARCH_INTERFACE_NAME_MAP['http://caiji.dyttzyapi.com/api.php/provide/vod/?ac=list'] = '采集资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.lziapi.com/api.php/provide/vod/?ac=list'] = '量子资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.wujinapi.com/api.php/provide/vod/?ac=list'] = '无尽资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.apibdzy.com/api.php/provide/vod/?ac=list'] = '百度资源';
+        SEARCH_INTERFACE_NAME_MAP['https://api.maoyanapi.top/api.php/provide/vod/?ac=list'] = '猫眼资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.ffzyapi.com/api.php/provide/vod/?ac=list'] = '非凡资源';
+        SEARCH_INTERFACE_NAME_MAP['https://jyzyapi.com/api.php/provide/vod/?ac=list'] = '金鹰资源';
+        SEARCH_INTERFACE_NAME_MAP['https://wolongzyw.com/api.php/provide/vod/?ac=list'] = '卧龙资源';
+        SEARCH_INTERFACE_NAME_MAP['https://www.mdzyapi.com/api.php/provide/vod/?ac=list'] = '魔都资源';
+        SEARCH_INTERFACE_NAME_MAP['https://cj.rycjapi.com/api.php/provide/vod/?ac=list'] = '如意资源';
 
         // ===== 网盘聚合搜索接口 =====
-        // 这些是网盘资源站，采用苹果CMS标准接口格式，搜索结果返回vod_url可直接播放
+        // 使用网盘聚合搜索引擎API,搜索各大网盘的资源分享链接
+        // 16个网盘爬虫源配置(对应uz影视的Pan_xxx.js)
+        // 采用玩偶模板站统一HTML结构,通过XPath爬取搜索结果
         const CLOUD_DRIVE_SEARCH_API = [
-            { url: 'http://wogg.xxooo.cf/api.php/provide/vod/at/xml/?ac=list&wd=', name: '玩偶云盘', type: 'cms' },
-            { url: 'http://feimao888.fun/api.php/provide/vod/at/xml/?ac=list&wd=', name: '蜡笔云盘', type: 'cms' },
-            { url: 'https://tv.yydsys.top/api.php/provide/vod/at/xml/?ac=list&wd=', name: '多多云盘', type: 'cms' },
-            { url: 'https://sd.sduc.site/api.php/provide/vod/at/xml/?ac=list&wd=', name: '闪电云盘', type: 'cms' },
-            { url: 'https://oog.nxog.eu.org/api.php/provide/vod/at/xml/?ac=list&wd=', name: '欧歌云盘', type: 'cms' },
-            { url: 'http://2xiaopan.fun/api.php/provide/vod/at/xml/?ac=list&wd=', name: '二小云盘', type: 'cms' },
-            { url: 'http://www.miqk.cc/api.php/provide/vod/at/xml/?ac=list&wd=', name: '至臻云盘', type: 'cms' },
-            { url: 'http://103.45.162.207:20720/api.php/provide/vod/at/xml/?ac=list&wd=', name: '虎斑云盘', type: 'cms' },
-            { url: 'http://xsayang.fun:12512/api.php/provide/vod/at/xml/?ac=list&wd=', name: '小斑云盘', type: 'cms' },
-            { url: 'https://www.91panta.cn/api.php/provide/vod/', name: '盘Ta云盘', type: 'cms_url' },
-            { url: 'https://www.leijing.xyz/api.php/provide/vod/', name: '雷鲸云盘', type: 'cms_url' },
-            { url: 'https://www.nanf.cc/api.php/provide/vod/', name: '南风云盘', type: 'cms_url' },
-            { url: 'https://pan.funletu.com/api.php/provide/vod/', name: '趣盘', type: 'cms_url' },
-            { url: 'https://4ktop.com/api.php/provide/vod/', name: '4KTop云盘', type: 'cms_url' },
-            { url: 'https://libvio.mov/api.php/provide/vod/', name: 'LibVio云盘', type: 'cms_url' },
-            { url: 'https://666.666291.xyz/api.php/provide/vod/', name: '木偶云盘', type: 'cms_url' }
+            // 玩偶模板站(统一HTML结构,searchname/searchid/searchpic通用)
+            { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()',
+              detailxl: '//div[contains(@class,"module-heading")]/text()' },
+            { url: 'http://feimao888.fun', name: '蜡笔云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://tv.yydsys.top', name: '多多云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://sd.sduc.site', name: '闪电云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'http://2xiaopan.fun', name: '二小云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://oog.nxog.eu.org', name: '欧歌云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'http://www.miqk.cc', name: '至臻云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'http://103.45.162.207:20720', name: '虎斑云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'http://xsayang.fun:12512', name: '小斑云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://www.91panta.cn', name: '盘Ta云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://www.leijing.xyz', name: '雷鲸云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://www.nanf.cc', name: '南风云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://pan.funletu.com', name: '趣盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://4ktop.com', name: '4KTop云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://libvio.mov', name: 'LibVio云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' },
+            { url: 'https://666.666291.xyz', name: '木偶云盘', type: 'crawler',
+              searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href',
+              searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src',
+              searchstarr: '//div[contains(@class,"module-search-item")]//span[contains(@class,"video-serial")]/text()',
+              detaillist: '//div[contains(@class,"module-row-info")]//p/text()' }
         ];
 
-        // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
-        const PRIORITY_SEARCH_KEYWORDS = ['zhanyuan', '站源', 'zy', 'zanyuan', '战源', '资源', '资源站', '资源源']; // 扩展关键词，包括可能的变体
+        // 优先搜索的平台关键词:命中这些名称/URL的平台会排在最前面搜索和展示
+        const PRIORITY_SEARCH_KEYWORDS = ['zhanyuan', '站源', 'zy', 'zanyuan', '战源', '资源', '资源站', '资源源']; // 扩展关键词,包括可能的变体
 
         function isPrioritySearchInterface(url) {
             const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
@@ -2646,11 +2731,11 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function fetchFastWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
-            const proxyCandidates = [PROXY_LIST[1], PROXY_LIST[2]].filter(Boolean);
+            const proxyCandidates = [PROXY_LIST[1]].filter(Boolean);
             let lastError = null;
 
             for (const proxyBase of proxyCandidates) {
-                const proxiedUrl = proxyBase + encodeURIComponent(url) + `&token=${encodeURIComponent(PROXY_TOKEN)}`;
+                const proxiedUrl = proxyBase + encodeURIComponent(url) + '&token=' + PROXY_TOKEN;
                 try {
                     const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
                     if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
@@ -2665,21 +2750,20 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function fetchForSearch(url) {
-            // 优先走代理
+            // 如果启用了代理,优先走代理,失败时回退到直连
             if (useProxyEnabled) {
-                return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
+                try {
+                    return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
+                } catch (proxyError) {
+                    console.log('代理失败,尝试直连:', proxyError.message);
+                    return await fetchDirect(url, SEARCH_TIMEOUT_MS);
+                }
             }
-            // 关闭代理时也先走代理再直连
-            try {
-                return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
-            } catch (proxyError) {
-                console.log('代理失败，尝试直连:', proxyError.message);
-                const response = await fetchDirect(url, SEARCH_TIMEOUT_MS);
-                return response;
-            }
+            // 关闭代理时直接走直连
+            return await fetchDirect(url, SEARCH_TIMEOUT_MS);
         }
 
-        // 从URL中提取接口名称（优先使用订阅里的平台名称）
+        // 从URL中提取接口名称(优先使用订阅里的平台名称)
         function extractInterfaceName(url) {
             if (!url) return '接口';
             if (SEARCH_INTERFACE_NAME_MAP[url]) return SEARCH_INTERFACE_NAME_MAP[url];
@@ -2707,7 +2791,7 @@ btn.addEventListener('mousedown', startLongPress);
             if (label) label.textContent = newVal === 'false' ? '已关闭' : '已开启';
         }
 
-        // 初始化固定源开关UI（放在addEventListener前）
+        // 初始化固定源开关UI(放在addEventListener前)
         (function initFixedSourcesUI() {
             const label = document.getElementById('fixedSourcesLabel');
             if (label) {
@@ -2716,7 +2800,7 @@ btn.addEventListener('mousedown', startLongPress);
             }
         })();
 
-        // 检查是否为搜索接口（支持 wd/key/keyword/search/query 多种关键词参数）
+        // 检查是否为搜索接口(支持 wd/key/keyword/search/query 多种关键词参数)
         function isSearchInterface(url) {
             if (!url) return false;
             return /(\?|&)(wd|key|keyword|search|query)=/i.test(String(url));
@@ -2737,23 +2821,23 @@ btn.addEventListener('mousedown', startLongPress);
                 .replace(/["'<>]+$/g, '')
                 .trim();
 
-            // 已经有关键词参数，直接作为搜索接口
+            // 已经有关键词参数,直接作为搜索接口
             if (isSearchInterface(u)) return u;
 
-            // 已经有 ac 参数但缺少关键词，补 wd=
+            // 已经有 ac 参数但缺少关键词,补 wd=
             if (/[?&]ac=/i.test(u)) {
                 // 强制改为 videolist 并加上 wd= (ac=detail 不返回数据)
                 const withVideoList = u.replace(/ac=[^&]*/i, 'ac=videolist');
                 return `${withVideoList}${withVideoList.includes('?') ? '&' : '?'}wd=`;
             }
 
-            // 常见苹果CMS基础API，补成 list 搜索接口
+            // 常见苹果CMS基础API,补成 list 搜索接口
             // 例如 http://xxx/api.php/provide/vod => http://xxx/api.php/provide/vod/?ac=list&wd=
             const clean = u.replace(/\/+$/, '');
             return `${clean}/?ac=list&wd=`;
         }
 
-        // 构建搜索URL（兼容 wd/key/keyword/search/query）
+        // 构建搜索URL(兼容 wd/key/keyword/search/query)
         function buildSearchUrl(interfaceUrl, keyword) {
             const kw = encodeURIComponent(keyword || '');
             let u = String(interfaceUrl || '').trim();
@@ -2780,18 +2864,18 @@ btn.addEventListener('mousedown', startLongPress);
             return `${u}${u.includes('?') ? '&' : '?'}wd=${kw}`;
         }
 
-        // 带代理的fetch（用于获取接口详情页和视频详情）
+        // 带代理的fetch(用于获取接口详情页和视频详情)
         async function fetchWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
             try {
                 const response = await fetchDirect(url, timeout);
                 return response;
             } catch (directError) {
-                console.log('直连失败，走双代理:', directError.message);
+                console.log('直连失败,走双代理:', directError.message);
             }
-            const proxyCandidates = [PROXY_LIST[1], PROXY_LIST[2]].filter(Boolean);
+            const proxyCandidates = [PROXY_LIST[1]].filter(Boolean);
             let lastError = null;
             for (const proxyBase of proxyCandidates) {
-                const proxiedUrl = proxyBase + encodeURIComponent(url) + `&token=${encodeURIComponent(PROXY_TOKEN)}`;
+                const proxiedUrl = proxyBase + encodeURIComponent(url) + '&token=' + PROXY_TOKEN;
                 try {
                     const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
                     if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
@@ -2804,7 +2888,7 @@ btn.addEventListener('mousedown', startLongPress);
             throw lastError || new Error('所有代理请求失败');
         }
 
-        // 从订阅JSON/文本中发现搜索接口：支持 api/url/link/vod_api/player_api 等字段
+        // 从订阅JSON/文本中发现搜索接口:支持 api/url/link/vod_api/player_api 等字段
         async function discoverSearchInterfaces(baseUrls) {
             const sourceUrls = Array.isArray(baseUrls) ? baseUrls : [];
             const cacheKey = JSON.stringify(sourceUrls);
@@ -2841,7 +2925,7 @@ btn.addEventListener('mousedown', startLongPress);
                 if (depth > 8 || value == null) return;
 
                 if (typeof value === 'string') {
-                    // 字符串本身可能就是API，也可能里面包含多个URL
+                    // 字符串本身可能就是API,也可能里面包含多个URL
                     addCandidate(value, parentName);
                     const urls = value.match(/https?:\/\/[^\s"'<>\\]+/g) || [];
                     urls.forEach(u => addCandidate(u, parentName));
@@ -2855,16 +2939,16 @@ btn.addEventListener('mousedown', startLongPress);
 
                 if (typeof value === 'object') {
                     const currentName = value.name || value.title || value.key || value.site_name || value.group || value.desc || parentName;
-                    // 兼容“影视源.json”里的 apiyuan：searchurl/detailurl 是可直接对接的苹果CMS接口
+                    // 兼容“影视源.json”里的 apiyuan:searchurl/detailurl 是可直接对接的苹果CMS接口
                     if (value.searchurl || value.searchUrl || value.websearchurl) {
                         const directSearchUrl = value.searchurl || value.searchUrl;
                         if (directSearchUrl) addCandidate(directSearchUrl, currentName, value.detailurl || value.detailUrl || '');
                     }
-                    // 优先采集常见接口字段，并把当前对象的平台名绑定到接口
+                    // 优先采集常见接口字段,并把当前对象的平台名绑定到接口
                     ['api', 'url', 'link', 'vod_api', 'player_api', 'search', 'searchUrl', 'search_url', 'parse', 'ext'].forEach(key => {
                         if (value[key]) collectDeep(value[key], depth + 1, currentName);
                     });
-                    // 再兜底递归所有字段，兼容嵌套订阅
+                    // 再兜底递归所有字段,兼容嵌套订阅
                     Object.keys(value).forEach(key => collectDeep(value[key], depth + 1, currentName));
                 }
             };
@@ -2878,7 +2962,7 @@ btn.addEventListener('mousedown', startLongPress);
                     try {
                         content = await fetchWithProxy(url);
                     } catch (e) {
-                        console.warn('订阅地址代理失败，尝试直连:', url, e.message);
+                        console.warn('订阅地址代理失败,尝试直连:', url, e.message);
                         content = await fetchDirect(url, 5000);
                     }
 
@@ -2886,7 +2970,7 @@ btn.addEventListener('mousedown', startLongPress);
                     const allUrls = content.match(/https?:\/\/[^\s"'<>\\]+/g) || [];
                     allUrls.forEach(addCandidate);
 
-                    // B. 按 JSON 解析，深度提取 api/url/link 等字段
+                    // B. 按 JSON 解析,深度提取 api/url/link 等字段
                     try {
                         const parsed = JSON.parse(content);
                         collectDeep(parsed, 0, extractInterfaceName(url));
@@ -2901,7 +2985,7 @@ btn.addEventListener('mousedown', startLongPress);
                             }
                         }
                     } catch (jsonError) {
-                        console.warn('订阅内容不是标准JSON，已按文本提取URL:', url);
+                        console.warn('订阅内容不是标准JSON,已按文本提取URL:', url);
                     }
                 } catch (error) {
                     console.error(`发现接口失败: ${url}`, error);
@@ -2910,7 +2994,7 @@ btn.addEventListener('mousedown', startLongPress);
 
             const deduped = sortSearchInterfacesByPriority([...new Set(searchInterfaces.filter(Boolean))]);
             
-            // 调试：检查是否有zhanyuan接口被发现
+            // 调试:检查是否有zhanyuan接口被发现
             const zhanyuanInterfaces = deduped.filter(url => {
                 const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
                 const urlText = url.toLowerCase();
@@ -2919,10 +3003,10 @@ btn.addEventListener('mousedown', startLongPress);
             if (zhanyuanInterfaces.length > 0) {
                 console.log('发现 zhanyuan 接口:', zhanyuanInterfaces);
             } else {
-                console.log('未发现 zhanyuan 接口，所有接口:', deduped.slice(0, 10).map(url => ({url, name: SEARCH_INTERFACE_NAME_MAP[url]})));
+                console.log('未发现 zhanyuan 接口,所有接口:', deduped.slice(0, 10).map(url => ({url, name: SEARCH_INTERFACE_NAME_MAP[url]})));
             }
             
-            // 调试：打印名称映射情况
+            // 调试:打印名称映射情况
             console.log('SEARCH_INTERFACE_NAME_MAP 映射统计:', Object.keys(SEARCH_INTERFACE_NAME_MAP).length);
             if (Object.keys(SEARCH_INTERFACE_NAME_MAP).length > 0) {
                 console.log('名称映射前3个:', Object.entries(SEARCH_INTERFACE_NAME_MAP).slice(0, 3));
@@ -2968,7 +3052,7 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         // 执行搜索操作
-        // 极速搜索：只搜前几个接口，秒出结果
+        // 极速搜索:只搜前几个接口,秒出结果
         async function fastSearch(keyword, searchInterfaces) {
             const orderedInterfaces = sortSearchInterfacesByPriority(searchInterfaces);
             const fastInterfaces = orderedInterfaces.slice(0, FAST_SEARCH_LIMIT);
@@ -2985,14 +3069,12 @@ btn.addEventListener('mousedown', startLongPress);
 
                     if (data.length > 0) {
                         const detailUrl = SEARCH_INTERFACE_DETAIL_MAP[interfaceUrl] || '';
-                        if (detailUrl) {
-                            data.forEach(item => {
-                                if (item && typeof item === 'object') {
-                                    item._detailurl = detailUrl;
-                                    item._sourceInterfaceUrl = interfaceUrl;
-                                }
-                            });
-                        }
+                        data.forEach(item => {
+                            if (item && typeof item === 'object') {
+                                if (detailUrl) item._detailurl = detailUrl;
+                                item._sourceInterfaceUrl = interfaceUrl;
+                            }
+                        });
                         return {
                             interfaceName: interfaceName,
                             interfaceUrl: interfaceUrl,
@@ -3010,7 +3092,7 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function search(keyword, searchInterfaces, onPartialResult = null) {
-            // 简化的搜索函数，不再智能验证，由主流程控制
+            // 简化的搜索函数,不再智能验证,由主流程控制
             const taskResults = await runWithConcurrency(searchInterfaces, SEARCH_CONCURRENCY, async (interfaceUrl) => {
                 const interfaceName = extractInterfaceName(interfaceUrl);
                 if (!interfaceName) return null;
@@ -3024,14 +3106,12 @@ btn.addEventListener('mousedown', startLongPress);
 
                     if (data.length > 0) {
                         const detailUrl = SEARCH_INTERFACE_DETAIL_MAP[interfaceUrl] || '';
-                        if (detailUrl) {
-                            data.forEach(item => {
-                                if (item && typeof item === 'object') {
-                                    item._detailurl = detailUrl;
-                                    item._sourceInterfaceUrl = interfaceUrl;
-                                }
-                            });
-                        }
+                        data.forEach(item => {
+                            if (item && typeof item === 'object') {
+                                if (detailUrl) item._detailurl = detailUrl;
+                                item._sourceInterfaceUrl = interfaceUrl;
+                            }
+                        });
                         const result = {
                             interfaceName: interfaceName,
                             interfaceUrl: interfaceUrl,
@@ -3055,12 +3135,12 @@ btn.addEventListener('mousedown', startLongPress);
         function normalizePlatformName(name) {
             let s = String(name || '').trim();
             if (!s) return '';
-            // 只保留中文、英文、数字、常见分隔符，不要过滤掉所有特殊符号
+            // 只保留中文、英文、数字、常见分隔符,不要过滤掉所有特殊符号
             s = s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, ''); // 移除 emoji
             s = s.replace(/[\u200B-\u200D\uFEFF]/g, ''); // 移除零宽字符
             s = s.replace(/\s+/g, ' ').trim();
             if (!s) return '';
-            // 如果包含竖线、点、横线等常见分隔符，保留它们
+            // 如果包含竖线、点、横线等常见分隔符,保留它们
             const hasUsefulChar = /[\u4e00-\u9fa5a-zA-Z0-9]/.test(s);
             if (!hasUsefulChar) return '';
             return s;
@@ -3117,11 +3197,11 @@ btn.addEventListener('mousedown', startLongPress);
                     return s;
                 }
             }
-            // 如果所有候选都无效，从接口URL生成友好名称
+            // 如果所有候选都无效,从接口URL生成友好名称
             if (result && result.interfaceUrl) {
                 try {
                     const url = new URL(result.interfaceUrl);
-                    // 用整个hostname显示（如 api.yutu.com 而非 api）
+                    // 用整个hostname显示(如 api.yutu.com 而非 api)
                     const host = url.hostname.replace(/^www\./,"");
                     const parts = host.split('.');
                     if (parts.length >= 2) {
@@ -3150,7 +3230,7 @@ btn.addEventListener('mousedown', startLongPress);
             });
         }
 
-        // 显示搜索结果：平台名称横向展示，下面显示当前平台对应资源，左右滑动切换平台
+        // 显示搜索结果:平台名称横向展示,下面显示当前平台对应资源,左右滑动切换平台
         function displaySmartSearchResults(results) {
             const container = document.getElementById('searchResultsContainer');
             const tabs = document.getElementById('sourceTabs');
@@ -3201,9 +3281,20 @@ btn.addEventListener('mousedown', startLongPress);
                         <div class="text-white/50 text-[10px] truncate">${item.vod_remarks || item.remarks || ''}${(item.vod_remarks || item.remarks) && (item.type_name || item.type) ? ' · ' : ''}${item.type_name || item.type || ''}</div>
                     `;
                     resultBtn.onclick = () => {
-                        const vodId = item.vod_id || item.id || (item._detailPageUrl || '');
+                        // 对于网盘聚合源 item(_driveType 标记),vod_id 可能为空,用 vod_name 或 _cloudIndex 作为 fallback
+                        const hasDriveMarker = !!(item._driveType && item._fileId);
+                        let vodId = item.vod_id || item.id || item._fileId || (item._detailPageUrl || '');
+                        if ((!vodId || hasDriveMarker) && item._cloudIndex !== undefined) {
+                            vodId = '_cloud_' + item._cloudIndex;
+                        }
+                        if (!vodId && hasDriveMarker) {
+                            vodId = item.vod_name || item.name || item.title || ('cloud_' + itemIndex);
+                        }
                         if (vodId) {
                             loadVideoDetail(vodId, String(index));
+                        } else {
+                            const fbId = item.vod_name || item.name || item.title || '';
+                            if (fbId) loadVideoDetail(fbId, String(index));
                         }
                     };
                     panel.appendChild(resultBtn);
@@ -3214,7 +3305,7 @@ btn.addEventListener('mousedown', startLongPress);
 
             const summary = document.createElement('div');
             summary.className = 'text-white/40 text-[10px] text-center py-1';
-            summary.textContent = `共 ${results.length} 个平台 / ${totalCount} 条结果，横向滑动上方平台名称切换`;
+            summary.textContent = `共 ${results.length} 个平台 / ${totalCount} 条结果,横向滑动上方平台名称切换`;
             container.appendChild(summary);
         }
         function renderSearchResultsRealtime(results, isSearching = true) {
@@ -3223,12 +3314,15 @@ btn.addEventListener('mousedown', startLongPress);
             const summary = document.getElementById('searchResultsContainer')?.lastElementChild;
             if (summary && summary.className.includes('text-center')) {
                 summary.textContent = isSearching
-                    ? `${summary.textContent}，其他平台继续搜索中...`
-                    : summary.textContent.replace('，其他平台继续搜索中...', '');
+                    ? `${summary.textContent},其他平台继续搜索中...`
+                    : summary.textContent.replace(',其他平台继续搜索中...', '');
             }
         }
 
-        // 轮训搜索所有源（智能搜索） - 新版优化流程
+        // 缓存最后一次完整搜索结果(含所有流程,如网盘聚合源等)
+        let _cachedSearchResults = [];
+
+        // 轮训搜索所有源(智能搜索) - 新版优化流程
         async function searchAllSources() {
             const keyword = document.getElementById('searchInput').value.trim();
             if (!keyword) {
@@ -3238,7 +3332,7 @@ btn.addEventListener('mousedown', startLongPress);
             // 自动打开搜索面板
             const panel = document.getElementById('searchPanel');
             panel.classList.remove('hidden');
-            const searchBtn = document.querySelector('button[onclick="toggleSearchPanel()"]');
+            const searchBtn = document.getElementById('searchBtn');
             if (searchBtn) searchBtn.style.display = 'none';
 
             const loadingEl = document.getElementById('searchLoading');
@@ -3272,14 +3366,14 @@ btn.addEventListener('mousedown', startLongPress);
                 const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
                 console.log(`发现 ${searchInterfaces.length} 个搜索接口`);
 
-                // 网盘聚合源单独在流程4.5中处理，不混入普通searchInterfaces
+                // 网盘聚合源单独在流程4.5中处理,不混入普通searchInterfaces
 
                 if (searchInterfaces.length === 0) {
                     container.innerHTML = '<div class="text-white/40 text-xs text-center py-2">未发现搜索接口</div>';
                     return;
                 }
 
-                // 提取zhanyuan接口（优先级最高）
+                // 提取zhanyuan接口(优先级最高)
                 const zhanyuanInterfaces = searchInterfaces.filter(url => {
                     const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
                     const urlText = url.toLowerCase();
@@ -3287,7 +3381,7 @@ btn.addEventListener('mousedown', startLongPress);
                 });
                 console.log(`发现 ${zhanyuanInterfaces.length} 个zhanyuan接口`);
 
-                // 收集zhanyuan爬虫源（从订阅JSON的zhanyuan字段）
+                // 收集zhanyuan爬虫源(从订阅JSON的zhanyuan字段)
                 let zhanyuanCrawlers = [];
                 try {
                     for (const u of [...SAVED_API_URLS, ...jsonApis]) {
@@ -3304,7 +3398,7 @@ btn.addEventListener('mousedown', startLongPress);
                     console.warn('获取zhanyuan爬虫源失败:', e.message);
                 }
 
-                // 提取前8个切片资源接口（不足8个用zhanyuan补）
+                // 提取前8个切片资源接口(不足8个用zhanyuan补)
                 const apiInterfaces = searchInterfaces.filter(url => {
                     const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
                     const urlText = url.toLowerCase();
@@ -3317,13 +3411,13 @@ btn.addEventListener('mousedown', startLongPress);
                 }
                 console.log('流程2切片资源接口:', topSliceInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
                 
-                // 固定平台开关（从localStorage读取，默认开启）
+                // 固定平台开关(从localStorage读取,默认开启)
                 const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
                 
-                // 提取固定平台接口（根据开关决定是否搜索）
+                // 提取固定平台接口(根据开关决定是否搜索)
                 const fixedPlatformInterfaces = useFixedSources ? searchInterfaces.slice(0, Math.min(2, searchInterfaces.length)) : [];
                 
-                // 其他接口（排除前两个和zhanyuan）
+                // 其他接口(排除前两个和zhanyuan)
                 const otherInterfaces = searchInterfaces.slice(2).filter(url => !zhanyuanInterfaces.includes(url));
 
                 // 同时执行三个搜索流程
@@ -3349,7 +3443,7 @@ btn.addEventListener('mousedown', startLongPress);
                             }
                         });
                         await Promise.allSettled(tasks);
-                        console.log(`流程1完成，找到 ${fixedResults.length} 个固定平台结果`);
+                        console.log(`流程1完成,找到 ${fixedResults.length} 个固定平台结果`);
                     })(),
 
                     // 流程2: 同时搜索前8个zhanyuan接口
@@ -3373,7 +3467,7 @@ btn.addEventListener('mousedown', startLongPress);
                             }
                         });
                         await Promise.allSettled(tasks);
-                        console.log(`流程2完成，找到 ${sliceResults.length} 个结果`);
+                        console.log(`流程2完成,找到 ${sliceResults.length} 个结果`);
                     })(),
 
                     // 流程3: 分批搜索其他接口
@@ -3401,11 +3495,11 @@ btn.addEventListener('mousedown', startLongPress);
                                 }
                             });
                             await Promise.allSettled(tasks);
-                            console.log(`第${Math.floor(i/batchSize)+1}批完成，找到 ${batchResults.length} 个结果`);
+                            console.log(`第${Math.floor(i/batchSize)+1}批完成,找到 ${batchResults.length} 个结果`);
                             
-                            // 如果前几批已经找到足够结果，可以提前结束
+                            // 如果前几批已经找到足够结果,可以提前结束
                             if (allResults.length >= 8 && i > batchSize * 2) {
-                                console.log('已找到足够结果，提前结束流程3');
+                                console.log('已找到足够结果,提前结束流程3');
                                 break;
                             }
                         }
@@ -3427,83 +3521,94 @@ btn.addEventListener('mousedown', startLongPress);
                                 }
                             });
                             displayResultsBatch();
-                            console.log('流程4完成，找到', crawlerResults.length, '个爬虫结果');
+                            console.log('流程4完成,找到', crawlerResults.length, '个爬虫结果');
                         })()
                     );
                 }
 
-                // 流程4.5: 16个网盘聚合源搜索（8个并发一批，结果合并到"☁️ 网盘资源"Tab）
+                // 流程4.5: 16个网盘爬虫搜索(像uz影视一样爬取网页,提取网盘分享链接)
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘聚合搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，8并发');
+                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源,8并发');
                             const allItems = [];
                             const mergedKey = 'clouddrive-aggr:pan';
-                            for (let i = 0; i < CLOUD_DRIVE_SEARCH_API.length; i += 8) {
-                                const batch = CLOUD_DRIVE_SEARCH_API.slice(i, i + 8);
+
+                            // 8个一批并发
+                            for (let bi = 0; bi < CLOUD_DRIVE_SEARCH_API.length; bi += 8) {
+                                const batch = CLOUD_DRIVE_SEARCH_API.slice(bi, bi + 8);
                                 const tasks = batch.map(async (apiDef) => {
                                     try {
-                                        let searchUrl;
-                                        if (apiDef.type === 'cms') {
-                                            searchUrl = apiDef.url + encodeURIComponent(keyword);
-                                        } else {
-                                            searchUrl = apiDef.url + '?ac=videolist&wd=' + encodeURIComponent(keyword);
-                                        }
-                                        // 用fetchDirect直连（不走代理，避免代理全部封了）
-                                        const respText = await fetchDirect(searchUrl, 8000).catch(() => null);
-                                        if (!respText || respText.length < 10) return [];
-                                        let items = [];
-                                        if (respText.trim().startsWith('{')) {
-                                            const json = JSON.parse(respText);
-                                            const list = json.data || json.list || (Array.isArray(json) ? json : []);
-                                            const arr = Array.isArray(list) ? list : (list.list || []);
-                                            arr.forEach(d => {
-                                                if (d && typeof d === 'object' && (d.vod_name || d.name || d.title)) {
-                                                    items.push({
-                                                        vod_id: d.vod_id || d.id || '', vod_name: d.vod_name || d.name || d.title || '',
-                                                        vod_remarks: d.vod_remarks || d.remarks || d.type_name || (d.note || ''),
-                                                        vod_pic: d.vod_pic || d.pic || '', vod_url: d.vod_url || d.url || d.play_url || '',
-                                                        _driveType: apiDef.name, _fileId: d.vod_id || d.id || '', _isVideo: true
-                                                    });
-                                                }
-                                            });
-                                        } else if (respText.includes('<') && respText.includes('xml')) {
-                                            const itemsRaw = respText.match(/<video[^>]*>[\s\S]*?<\/video>/g) || [];
-                                            itemsRaw.forEach(vxml => {
-                                                const g = (tag) => { var m = vxml.match(new RegExp('<' + tag + '[^>]*>([^<]*)<')); return m ? m[1].trim() : ''; };
-                                                const name = g('name') || g('title');
-                                                if (name) items.push({
-                                                    vod_id: g('id'), vod_name: name, vod_remarks: g('note') || g('type') || '',
-                                                    vod_pic: g('pic') || g('img') || '', vod_url: g('url') || '',
-                                                    _driveType: apiDef.name, _fileId: g('id'), _isVideo: true
+                                        const baseUrl = apiDef.url.replace(/\/+$/, '');
+                                        const searchPath = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
+                                        const fullUrl = baseUrl + (searchPath.startsWith('/') ? '' : '/') + searchPath + encodeURIComponent(keyword);
+                                        const resp = await fetchDirect(fullUrl, 8000).catch(() => {% raw %}null{% endraw %});
+                                        if (!resp || resp.length < 100) return [];
+
+                                        const parser = new DOMParser();
+                                        const doc = parser.parseFromString(resp, 'text/html');
+
+                                        const items = [];
+                                        // 通用XPath提取(玩偶模板站)
+                                        const searchContainers = doc.querySelectorAll('.module-search-item');
+                                        searchContainers.forEach(container => {
+                                            const link = container.querySelector('.video-serial');
+                                            const img = container.querySelector('img');
+                                            const title = link?.getAttribute('title') || link?.textContent || '';
+                                            const href = link?.getAttribute('href') || '';
+                                            const pic = img?.getAttribute('data-src') || img?.getAttribute('src') || '';
+                                            const remarksEl = container.querySelector('.module-search-item-tag, .video-serial');
+                                            const remarks = remarksEl?.textContent?.replace(title, '').trim() || '';
+                                            if (title) {
+                                                const absUrl = href.startsWith('http') ? href : baseUrl + (href.startsWith('/') ? '' : '/') + href;
+                                                items.push({
+                                                    vod_id: absUrl,
+                                                    vod_name: title.trim(),
+                                                    vod_remarks: remarks || '',
+                                                    vod_pic: pic || '',
+                                                    vod_url: '',
+                                                    _detailPageUrl: absUrl,
+                                                    _driveType: apiDef.name,
+                                                    _panSource: apiDef,
+                                                    _isVideo: true
                                                 });
-                                            });
-                                        }
+                                            }
+                                        });
                                         return items;
-                                    } catch(e) { return []; }
+                                    } catch(e) {
+                                        return [];
+                                    }
                                 });
-                                const batchResults = await Promise.allSettled(tasks);
-                                batchResults.forEach(r => { if (r.status === 'fulfilled') allItems.push(...r.value); });
+
+                                const results = await Promise.allSettled(tasks);
+                                results.forEach(r => {
+                                    if (r.status === 'fulfilled' && r.value.length > 0) {
+                                        allItems.push(...r.value);
+                                    }
+                                });
+
+                                // 有结果立即展示
                                 if (allItems.length > 0) {
-                                    // 有结果立即刷新展示
-                                    var idx = cloudResults.findIndex(r => r.interfaceUrl === mergedKey);
-                                    if (idx >= 0) cloudResults.splice(idx, 1);
-                                    if (pushResult({ interfaceUrl: mergedKey, interfaceName: '☁️ 网盘资源', data: [...allItems] })) displayResultsBatch();
+                                    const key = mergedKey;
+                                    if (!seenPlatforms.has(key)) seenPlatforms.add(key);
+                                    // 移除旧数据再添加
+                                    var idx = allResults.findIndex(r => r.interfaceUrl === key);
+                                    if (idx >= 0) allResults.splice(idx, 1);
+                                    allResults.push({ interfaceUrl: key, interfaceName: '☁️ 网盘资源', data: [...allItems] });
+                                    displayResultsBatch();
                                 }
                             }
+
                             if (allItems.length > 0) {
-                                var idx = cloudResults.findIndex(r => r.interfaceUrl === mergedKey);
-                                if (idx >= 0) cloudResults.splice(idx, 1);
-                                if (pushResult({ interfaceUrl: mergedKey, interfaceName: '☁️ 网盘资源', data: [...allItems] })) displayResultsBatch();
-                                console.log('流程4.5完成，共', allItems.length, '个网盘资源结果');
+                                console.log('流程4.5完成,共', allItems.length, '个网盘资源');
                             } else {
-                                console.log('流程4.5完成，无结果');
+                                console.log('流程4.5完成,无结果');
                             }
                         })()
                     );
                 }
 
-                // 流程5: 网盘搜索（扫描所有已登录网盘中匹配关键词的文件）
+                // 流程5: 网盘搜索(扫描所有已登录网盘中匹配关键词的文件)
                 const driveTokens = loadDriveTokens();
                 const activeDrives = Object.entries(driveTokens).filter(([,v]) => v);
                 if (activeDrives.length > 0) {
@@ -3543,8 +3648,9 @@ btn.addEventListener('mousedown', startLongPress);
                 ]);
 
                 // 显示最终结果
-                console.log(`全部搜索完成，总共找到 ${allResults.length} 个平台的结果`);
+                console.log(`全部搜索完成,总共找到 ${allResults.length} 个平台的结果`);
                 displaySmartSearchResults(allResults);
+                _cachedSearchResults = allResults;
 
             } catch (error) {
                 console.error('智能搜索失败:', error);
@@ -3568,14 +3674,12 @@ btn.addEventListener('mousedown', startLongPress);
 
                 if (data.length > 0) {
                     const detailUrl = SEARCH_INTERFACE_DETAIL_MAP[interfaceUrl] || '';
-                    if (detailUrl) {
-                        data.forEach(item => {
-                            if (item && typeof item === 'object') {
-                                item._detailurl = detailUrl;
-                                item._sourceInterfaceUrl = interfaceUrl;
-                            }
-                        });
-                    }
+                    data.forEach(item => {
+                        if (item && typeof item === 'object') {
+                            if (detailUrl) item._detailurl = detailUrl;
+                            item._sourceInterfaceUrl = interfaceUrl;
+                        }
+                    });
                     return {
                         interfaceName: interfaceName,
                         interfaceUrl: interfaceUrl,
@@ -3589,7 +3693,7 @@ btn.addEventListener('mousedown', startLongPress);
             return null;
         }
 
-        // 加载视频详情（支持智能搜索）
+        // 加载视频详情(支持智能搜索)
         async function loadVideoDetail(vodId, sourceKey) {
             const loadingEl = document.getElementById('searchLoading');
             const container = document.getElementById('searchResultsContainer');
@@ -3597,65 +3701,57 @@ btn.addEventListener('mousedown', startLongPress);
             loadingEl.classList.remove('hidden');
 
             try {
-                // 按索引直接查找（从展示面板点击）
+                // 按索引直接查找(从展示面板点击)
                 if (sourceKey && /^\d+$/.test(sourceKey)) {
                     const resultIndex = parseInt(sourceKey);
-                    const tabs = document.getElementById('sourceTabs');
-                    const activeTab = tabs ? tabs.querySelector('.active') : null;
                     
-                    // 从当前显示的results中获取 - 需要重新搜索
-                    const keyword = document.getElementById('searchInput').value.trim();
-                    if (!keyword) {
-                        throw new Error('搜索关键词不能为空');
-                    }
-
-                    const searchInterfaces = await discoverSearchInterfaces([...SAVED_API_URLS, ...jsonApis]);
-                    const results = await search(keyword, searchInterfaces);
-                    
-                    let zhanyuanCrawlers = [];
-                    try {
-                        for (const u of [...SAVED_API_URLS, ...jsonApis]) {
-                            const content = await fetchDirect(u, 5000).catch(() => null);
-                            if (content) {
-                                const parsed = JSON.parse(content);
-                                if (parsed.zhanyuan && Array.isArray(parsed.zhanyuan)) {
-                                    zhanyuanCrawlers = parsed.zhanyuan.filter(z => z.searchUrl);
-                                }
-                            }
-                        }
-                    } catch (e) {}
-                    const crawlerResults = zhanyuanCrawlers.length > 0 ? await searchZhanyuanAll(keyword, zhanyuanCrawlers) : [];
-                    
-                    // 合并结果，保持与展示顺序一致
-                    const allResults = sortSearchResultsByPriority(results.concat(crawlerResults));
+                    // 优先使用缓存的搜索结果(包含网盘聚合源等所有流程)
+                    const allResults = (_cachedSearchResults && _cachedSearchResults.length > 0) ? _cachedSearchResults : [];
                     
                     const result = allResults[resultIndex];
                     if (!result) {
                         throw new Error('未找到该平台的数据');
                     }
 
-                    let item = result.data.find(d => (d.vod_id === vodId || d.id === vodId));
+                    let item = result.data.find(d => (String(d.vod_id) === String(vodId) || String(d.id) === String(vodId) || String('_cloud_' + d._cloudIndex) === String(vodId)));
                     if (!item) {
-                        throw new Error('未找到该视频的详情');
+                        // 如果按 vodId 找不到,尝试用 vod_name 匹配(网盘聚合源 vod_id 可能为空字符串)
+                        item = result.data.find(d => (d.vod_name || d.name || d.title || '') === vodId);
+                    }
+                    if (!item) {
+                        // 最后兜底:取第一个 item(网盘聚合源进入此分支)
+                        item = result.data[0];
+                        if (!item) throw new Error('未找到该视频的详情');
                     }
 
-                    // 如果是网盘聚合源结果（流程4.5搜出的），直接用vod_url播放
+                    // 如果是盘搜结果(_cloudIndex >= 0),直接用vod_url播放
+                    if (item._cloudIndex !== undefined && item.vod_url) {
+                        const playUrl = item.vod_url;
+                        videoList = [playUrl];
+                        currentVideoIndex = 0;
+                        closeSearchPanel();
+                        loadingEl.classList.add('hidden');
+                        loadVideo(0);
+                        return;
+                    }
+
+                    // 如果是网盘聚合源结果(流程4.5搜出的),直接用vod_url播放
                     if (item._driveType && item._fileId) {
                         const panName = item._driveType;
-                        // 检查是否是网盘聚合源结果（_driveType是网盘站名，如"玩偶云盘"）
+                        // 检查是否是网盘聚合源结果(_driveType是网盘站名,如"玩偶云盘")
                         const isPanAggr = CLOUD_DRIVE_SEARCH_API.some(a => a.name === panName);
                         if (isPanAggr) {
-                            // 网盘聚合源搜索结果，vod_url就是这个站点的播放地址，直接播放
+                            // 网盘聚合源搜索结果,vod_url就是这个站点的播放地址,直接播放
                             const playUrl = item.vod_url || item.play_url || item.video_url || '';
                             if (playUrl) {
                                 videoList = [playUrl];
                                 currentVideoIndex = 0;
-                                document.getElementById('searchPanel').classList.add('hidden');
+                                closeSearchPanel();
                                 loadingEl.classList.add('hidden');
                                 loadVideo(0);
                                 return;
                             }
-                            // 如果没vod_url，尝试通过vod_id获取详情
+                            // 如果没vod_url,尝试通过vod_id获取详情
                             if (item.vod_id) {
                                 const detailUrl = item._sourceInterfaceUrl || SEARCH_INTERFACE_DETAIL_MAP[item._sourceInterfaceUrl] || '';
                                 if (detailUrl) {
@@ -3669,7 +3765,7 @@ btn.addEventListener('mousedown', startLongPress);
                                                 videoList = [rUrl];
                                                 currentVideoIndex = 0;
                                                 loadVideo(0);
-                                                document.getElementById('searchPanel').classList.add('hidden');
+                                                closeSearchPanel();
                                                 loadingEl.classList.add('hidden');
                                                 return;
                                             }
@@ -3682,12 +3778,12 @@ btn.addEventListener('mousedown', startLongPress);
                             return;
                         }
 
-                        // 以下是真正的网盘文件播放（阿里云盘/夸克/百度等，需要Token）
-                        document.getElementById('searchPanel').classList.add('hidden');
+                        // 以下是真正的网盘文件播放(阿里云盘/夸克/百度等,需要Token)
+                        const dt = item._driveType;
+                        closeSearchPanel();
                         loadingEl.classList.add('hidden');
                         // 设置网盘状态
                         driveState.type = dt;
-                        driveState.token = getTokenForType(dt);
                         const savedDriveTokens = loadDriveTokens();
                         const token = savedDriveTokens[dt];
                         if (token) {
@@ -3705,7 +3801,30 @@ btn.addEventListener('mousedown', startLongPress);
                         return;
                     }
 
-                    // 如果是爬虫源，走爬虫详情获取播放地址
+                    // 如果是网盘爬虫源(流程4.5),走爬虫详情获取网盘分享链接
+                    if (item._panSource && item._detailPageUrl) {
+                        const episodes = await crawlZhanyuanDetail(item, item._panSource);
+                        if (episodes.length > 0) {
+                            videoList = [];
+                            categorizedChannels = {};
+                            episodes.forEach(ep => {
+                                if (ep.url.startsWith('http')) {
+                                    videoList.push(ep.url);
+                                }
+                            });
+                            if (videoList.length > 0) {
+                                currentVideoIndex = 0;
+                                closeSearchPanel();
+                                loadVideo(0);
+                                loadingEl.classList.add('hidden');
+                                await showAlert('已加载《' + (item.vod_name || '') + '》' + videoList.length + '个网盘分享链接', '加载完成');
+                                return;
+                            }
+                        }
+                        throw new Error('获取网盘播放地址失败');
+                    }
+
+                    // 如果是爬虫源,走爬虫详情获取播放地址
                     if (item._zhanyuanItem && item._detailPageUrl) {
                         const episodes = await crawlZhanyuanDetail(item, item._zhanyuanItem);
                         if (episodes.length > 0) {
@@ -3718,7 +3837,7 @@ btn.addEventListener('mousedown', startLongPress);
                             });
                             if (videoList.length > 0) {
                                 currentVideoIndex = 0;
-                                document.getElementById('searchPanel').classList.add('hidden');
+                                closeSearchPanel();
                                 loadVideo(0);
                                 loadingEl.classList.add('hidden');
                                 await showAlert('已加载《' + (item.vod_name || '') + '》共' + videoList.length + '集', '加载完成');
@@ -3728,7 +3847,7 @@ btn.addEventListener('mousedown', startLongPress);
                         throw new Error('爬虫获取播放地址失败');
                     }
 
-                    // 如果搜索接口只返回基础信息，则使用 detailurl + vod_id 获取详情
+                    // 如果搜索接口只返回基础信息,则使用 detailurl + vod_id 获取详情
                     let playlist = item.vod_play_url || item.vod_url || item.play_url || item.video_url || '';
 
                     if (!playlist && (item._detailurl || item._sourceInterfaceUrl) && (item.vod_id || item.id)) {
@@ -3744,7 +3863,7 @@ btn.addEventListener('mousedown', startLongPress);
                         }
                     }
 
-                    // 如果是m3u8直链但没有vod_play_url，直接播放
+                    // 如果是m3u8直链但没有vod_play_url,直接播放
                     if (!playlist) {
                         const vodUrls = [item.vod_url || item.play_url || item.video_url || ''].filter(Boolean);
                         if (vodUrls.length > 0 && vodUrls[0].startsWith('http')) {
@@ -3752,7 +3871,7 @@ btn.addEventListener('mousedown', startLongPress);
                             categorizedChannels = {};
                             videoList.push(vodUrls[0]);
                             currentVideoIndex = 0;
-                            document.getElementById('searchPanel').classList.add('hidden');
+                            closeSearchPanel();
                             loadVideo(0);
                             loadingEl.classList.add('hidden');
                             return;
@@ -3765,7 +3884,7 @@ btn.addEventListener('mousedown', startLongPress);
                         videoList = [];
                         categorizedChannels = {};
 
-                        // 解析播放地址格式：标题$URL#标题$URL...
+                        // 解析播放地址格式:标题$URL#标题$URL...
                         const episodes = playlist.split('#');
                         const channels = [];
 
@@ -3797,7 +3916,7 @@ btn.addEventListener('mousedown', startLongPress);
                             loadVideo(0);
 
                             // 关闭搜索面板
-                            document.getElementById('searchPanel').classList.add('hidden');
+                            closeSearchPanel();
 
                             // 显示成功提示
                             await showAlert(`已加载《${item.vod_name}》共${channels.length}集`, '加载完成');
@@ -3817,7 +3936,7 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         /* ================ zhanyuan网页爬虫引擎 ================ */
-        // 注入DOMParser兼容（某些浏览器无DOMParser）
+        // 注入DOMParser兼容(某些浏览器无DOMParser)
         const SAFE_DOMParser = typeof DOMParser !== 'undefined' ? DOMParser : class {
             parseFromString(str, type) {
                 const doc = document.implementation.createHTMLDocument('');
@@ -3847,17 +3966,17 @@ btn.addEventListener('mousedown', startLongPress);
             return results;
         }
 
-        // 将 XPath 字符串中 &&& 替换为 "（适配 zhanyuan 的转义写法）
+        // 将 XPath 字符串中 &&& 替换为 "(适配 zhanyuan 的转义写法)
         function fixXPath(expr) {
             if (!expr) return '';
             return String(expr).replace(/&&&/g, '"').replace(/&apos;/g, "'").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
         }
 
-        // 执行爬虫搜索：返回 [{title, url, desc, pic}]
+        // 执行爬虫搜索:返回 [{title, url, desc, pic}]
         async function crawlZhanyuanSite(zhanyuanItem, keyword) {
             const name = zhanyuanItem.name || '未知';
             const searchUrl = zhanyuanItem.websearchurl || zhanyuanItem.searchUrl || '';
-            // 如果websearchurl为空，自动构造默认搜索URL
+            // 如果websearchurl为空,自动构造默认搜索URL
             if (!searchUrl) {
                 // 尝试常见CMS搜索路径
                 if (zhanyuanItem.searchUrl) {
@@ -3877,7 +3996,7 @@ btn.addEventListener('mousedown', startLongPress);
                 const parser = new SAFE_DOMParser();
                 const doc = parser.parseFromString(html, 'text/xml');
 
-                // 如果是RSS格式（有 <rss> 或 <feed>）
+                // 如果是RSS格式(有 <rss> 或 <feed>)
                 const isRSS = doc.querySelector('rss') || doc.querySelector('feed') || doc.querySelector('item');
                 if (isRSS) {
                     const items = doc.querySelectorAll('item, entry');
@@ -3947,7 +4066,7 @@ btn.addEventListener('mousedown', startLongPress);
 
                 let episodes = [];
 
-                // 方案1：从detaillist里提取
+                // 方案1:从detaillist里提取
                 if (dlXP) {
                     const containers = document.evaluate(dlXP, doc, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
                     for (let ci = 0; ci < containers.snapshotLength; ci++) {
@@ -3973,7 +4092,7 @@ btn.addEventListener('mousedown', startLongPress);
             }
         }
 
-        // 总的zhanyuan搜索入口：并发爬取所有zhanyuan源
+        // 总的zhanyuan搜索入口:并发爬取所有zhanyuan源
         async function searchZhanyuanAll(keyword, zhanyuanList) {
             const allResults = [];
             const tasks = zhanyuanList.map(async (zyItem) => {
@@ -4013,7 +4132,7 @@ btn.addEventListener('mousedown', startLongPress);
         });
 
         /* ==================== 网盘播放模块 ==================== */
-        // 自定义API请求(支持POST/headers/body)，底层复用已有代理逻辑
+        // 自定义API请求(支持POST/headers/body),底层复用已有代理逻辑
         async function apiFetch(url, options = {}) {
             const method = options.method || 'GET';
             const body = options.body || null;
@@ -4029,7 +4148,7 @@ btn.addEventListener('mousedown', startLongPress);
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 return await resp.text();
             } catch(e) {
-                // 如果直连失败，尝试用代理转发GET方式的请求(仅适用于GET)
+                // 如果直连失败,尝试用代理转发GET方式的请求(仅适用于GET)
                 if (method === 'GET' || !options.forcePost) {
                     return await fetchWithProxy(url, 15000);
                 }
@@ -4182,7 +4301,7 @@ btn.addEventListener('mousedown', startLongPress);
 
         function renderTokenList() {
             const container = document.getElementById('driveTokenList');
-            if (!container) return; // 旧ID已移除，跳过渲染
+            if (!container) return; // 旧ID已移除,跳过渲染
             const tokens = loadDriveTokens();
             const entries = Object.entries(tokens).filter(([,v]) => v);
             if (!entries.length) {
@@ -4251,7 +4370,7 @@ btn.addEventListener('mousedown', startLongPress);
                 const m2 = url.match(/\/s\/([a-zA-Z0-9_-]+)/);
                 if (m2) shareId = m2[1];
             }
-            const pwdMatch = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[：:]\s*([a-zA-Z0-9]{4})/);
+            const pwdMatch = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[::]\s*([a-zA-Z0-9]{4})/);
             if (pwdMatch) sharePwd = pwdMatch[1];
 
             if (!shareId) { showAlert('无法识别该分享链接格式', '错误'); return; }
@@ -4269,7 +4388,7 @@ btn.addEventListener('mousedown', startLongPress);
                     await browseShareFiles(type, shareId, sharePwd, t);
                 } catch(e) {
                     console.error('获取分享Token失败:', e);
-                    showAlert('获取分享Token失败，请检查Token或分享链接', '错误');
+                    showAlert('获取分享Token失败,请检查Token或分享链接', '错误');
                 }
             }
         }
@@ -4326,115 +4445,12 @@ btn.addEventListener('mousedown', startLongPress);
         }
 
         async function openDriveBrowser() {
-            driveState.type = document.getElementById('driveTypeSelect').value;
-            driveState.token = getTokenForType(driveState.type);
-            if (!driveState.token) {
-                showAlert('请先设置 ' + DRIVE_CONFIGS[driveState.type].name + ' 的Token', '提示');
-                return;
-            }
-            // 显示驱动浏览器按钮并打开面板
-            const btn = document.getElementById('driveBrowserBtn');
-            btn.style.display = 'block';
-            const panel = document.getElementById('driveBrowserPanel');
-            panel.classList.remove('hidden');
-            document.getElementById('driveBrowserTitle').textContent = DRIVE_CONFIGS[driveState.type].name;
-            renderBreadcrumb();
-            await loadDriveFiles('root');
+            // 设置面板里的"浏览"按钮,改为直接打开设置面板的网盘管理
+            toggleDrivePanel();
+            openDriveBrowserFromPanel();
         }
 
-        function toggleDriveBrowser() { document.getElementById('driveBrowserPanel').classList.toggle('hidden'); }
-
-        function renderBreadcrumb() {
-            const bc = document.getElementById('driveBreadcrumb');
-            const path = driveState.currentPath;
-            bc.innerHTML = path.map((p, i) => {
-                const isLast = i === path.length - 1;
-                const sep = i > 0 ? '<span class="sep">›</span>' : '';
-                const style = isLast ? 'color:rgba(255,255,255,0.9);font-weight:600' : '';
-                return sep + '<span onclick="navigateDrivePath(' + i + ')" style="' + style + '">' + p.name + '</span>';
-            }).join('');
-        }
-
-        function renderDriveFiles(files) {
-            const container = document.getElementById('driveFileList');
-            if (!files || !files.length) {
-                container.innerHTML = '<div class="text-white/40 text-xs text-center py-4">空目录</div>';
-                return;
-            }
-            container.innerHTML = files.map(f => {
-                let icon = '📄'; let cls = 'other';
-                if (f.isFolder) { icon = '📁'; cls = 'folder'; }
-                else if (f.isVideo) { icon = '🎬'; cls = 'video'; }
-                else if (/\.(jpg|png|gif|webp|svg)$/i.test(f.name)) { icon = '🖼️'; }
-                else if (/\.(mp3|flac|wav|aac)$/i.test(f.name)) { icon = '🎵'; }
-                else if (/\.(zip|rar|7z|tar|gz)$/i.test(f.name)) { icon = '📦'; }
-                const sizeStr = f.size ? (f.size > 1073741824 ? (f.size/1073741824).toFixed(1)+'GB' : f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 1024 ? (f.size/1024).toFixed(0)+'KB' : f.size+'B') : '';
-                const nameClean = (f.name||'').replace(/'/g, "\\'");
-                return `<div class="drive-file-item ${cls}" onclick="handleDriveFileClick('${f.id}',${f.isFolder},${f.isVideo},'${nameClean}')">
-                    <span class="drive-file-icon">${icon}</span>
-                    <span class="drive-file-name" title="${nameClean}">${nameClean}</span>
-                    <span class="drive-file-size">${sizeStr}</span>
-                </div>`;
-            }).join('');
-        }
-
-        async function loadDriveFiles(parentFileId) {
-            const container = document.getElementById('driveFileList');
-            container.innerHTML = '<div class="text-white/40 text-xs text-center py-4">加载中...</div>';
-            const cfg = DRIVE_CONFIGS[driveState.type];
-            const token = driveState.token;
-            try {
-                let resp, data;
-                if (driveState.type === 'alipan') {
-                    if (!driveState.driveId && driveState.shareId) {
-                        await browseShareFiles(driveState.type, driveState.shareId, driveState.sharePwd, token);
-                        return;
-                    }
-                    if (!driveState.driveId) {
-                        const infoResp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', { headers: cfg.getAuthHeader(token) });
-                        const info = JSON.parse(infoResp);
-                        driveState.driveId = info.default_drive_id || info.resource_drive_id;
-                    }
-                    const body = cfg.listBody(driveState.driveId, parentFileId);
-                    resp = await apiFetch(cfg.listUrl, {
-                        method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(token) }
-                    });
-                } else if (driveState.type === 'quark') {
-                    const url = cfg.listUrl + '?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=' + (parentFileId || '0') + '&_page=1&_size=100&_sort=file_type:asc,updated_at:desc';
-                    resp = await apiFetch(url, { headers: cfg.getAuthHeader(token) });
-                } else if (driveState.type === 'baidu') {
-                    resp = await apiFetch(cfg.listUrl + '?dir=' + encodeURIComponent(parentFileId || '/') + '&order=name&desc=0', { headers: cfg.getAuthHeader(token) });
-                } else {
-                    container.innerHTML = '<div class="text-white/40 text-xs text-center py-4">该网盘暂不支持直接浏览</div>';
-                    return;
-                }
-                data = JSON.parse(resp);
-                renderDriveFiles(cfg.extractList(data));
-            } catch(e) {
-                console.error('加载文件列表失败:', e);
-                container.innerHTML = '<div class="text-red-400 text-xs text-center py-4">加载失败: ' + e.message + '</div>';
-            }
-        }
-
-        function navigateDrivePath(index) {
-            driveState.currentPath = driveState.currentPath.slice(0, index + 1);
-            renderBreadcrumb();
-            loadDriveFiles(driveState.currentPath[driveState.currentPath.length - 1].id);
-        }
-
-        async function handleDriveFileClick(fileId, isFolder, isVideo, fileName) {
-            if (isFolder) {
-                driveState.currentPath.push({ id: fileId, name: fileName });
-                renderBreadcrumb();
-                await loadDriveFiles(fileId);
-            } else if (isVideo) {
-                await getDriveVideoUrl(fileId, fileName);
-            } else {
-                showAlert('该文件不是视频格式', '提示');
-            }
-        }
-
-        // 核心：通过网盘获取视频播放地址并播放
+        // 核心:通过网盘获取视频播放地址并播放
         async function resolveDrivePlay(dtype, dtkn, dId, fId, fName, closePanel) {
             const cfg = DRIVE_CONFIGS[dtype];
             if (!cfg) { showAlert('不支持的网盘类型', '错误'); return; }
@@ -4473,7 +4489,7 @@ btn.addEventListener('mousedown', startLongPress);
                     videoList = [playUrl];
                     currentVideoIndex = 0;
                     loadVideo(0);
-                    if (closePanel !== false) toggleDriveBrowser();
+                    if (closePanel !== false) toggleDrivePanel();
                     showAlert(`正在播放: ${fName}`, '成功');
                 } else {
                     showAlert('无法获取播放地址', '播放失败');
@@ -4492,12 +4508,7 @@ btn.addEventListener('mousedown', startLongPress);
             await resolveDrivePlay(dtype, dtkn, dId, fId, fName, false);
         }
 
-        function refreshDriveFiles() {
-            const target = driveState.currentPath[driveState.currentPath.length - 1];
-            if (target) loadDriveFiles(target.id);
-        }
-
-        // 网盘搜索（在网盘中搜索匹配文件名的文件）
+        // 网盘搜索(在网盘中搜索匹配文件名的文件)
         async function searchCloudDrive(driveType, token, keyword) {
             const cfg = DRIVE_CONFIGS[driveType];
             if (!cfg || !cfg.listUrl) return { data: [] };
@@ -4517,7 +4528,7 @@ btn.addEventListener('mousedown', startLongPress);
                     } catch(e) {}
                     if (!driveId) return { data: [] };
                     
-                    // 阿里云盘搜索API：用adrive/v2/file/search
+                    // 阿里云盘搜索API:用adrive/v2/file/search
                     const searchBody = JSON.stringify({
                         drive_id: driveId,
                         query: 'name match "' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"',
@@ -4543,7 +4554,7 @@ btn.addEventListener('mousedown', startLongPress);
                         _isVideo: f.category === 'video' || /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.name)
                     }));
                 } else if (driveType === 'quark') {
-                    // 夸克通过文件列表+前端过滤（夸克没有公开的全文搜索API）
+                    // 夸克通过文件列表+前端过滤(夸克没有公开的全文搜索API)
                     const url = cfg.listUrl + '?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=100&_sort=file_type:asc,updated_at:desc';
                     const resp = await apiFetch(url, { headers: cfg.getAuthHeader(token) });
                     const data = JSON.parse(resp);
@@ -4660,7 +4671,7 @@ btn.addEventListener('mousedown', startLongPress);
                     document.getElementById("driveTypeSelect2").value = t;
                     driveState.token = getTokenForType(t);
                     document.getElementById("driveStatusPanel").textContent = "解析中...";
-                    var p = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/) || [null,null];
+                    var p = url.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || url.match(/提取码[::]\s*([a-zA-Z0-9]{4})/) || [null,null];
                     driveState.shareId = m[1]; driveState.sharePwd = p[1];
                     driveState.currentPath = [{id:"root",name:"分享文件"}];
                     await browseShareFiles(t, m[1], p[1], driveState.token || "");
@@ -4739,6 +4750,20 @@ btn.addEventListener('mousedown', startLongPress);
         renderTokenList();
         onDriveTypeChange();
         console.log('☁️ 网盘播放模块已就绪, 支持: 阿里云盘/夸克/百度/UC/123/139');
+
+        // 窗口大小改变时重新计算搜索面板位置
+        window.addEventListener('resize', function() {
+            const searchPanel = document.getElementById('searchPanel');
+            if (!searchPanel.classList.contains('hidden')) {
+                const searchBtn = document.getElementById('searchBtn');
+                const panelWidth = 256; // 16rem = 256px
+                const btnRect = searchBtn.getBoundingClientRect();
+                const leftPosition = (window.innerWidth - panelWidth) / 2;
+                
+                searchPanel.style.left = leftPosition + 'px';
+                searchPanel.style.bottom = (window.innerHeight - btnRect.top) + 8 + 'px';
+            }
+        });
     </script>
 
     <!-- 网盘管理弹窗 -->
@@ -4750,7 +4775,9 @@ btn.addEventListener('mousedown', startLongPress);
                     网盘管理
                 </h3>
                 <button class="glass-btn p-1.5 rounded-lg text-white/60 hover:text-white cursor-pointer" onclick="toggleDrivePanel()">
-                    <svg class="w-4 h-4" fill="currentColor"><use href="#icon-close"/></svg>
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
                 </button>
             </div>
             <div class="p-4 space-y-4 overflow-y-auto" style="max-height: calc(85vh - 55px);">
