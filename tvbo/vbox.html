@@ -103,6 +103,21 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
         }
 
+        /* 强制视频在页面内播放，不弹出系统全屏播放器 */
+        video::-webkit-media-controls {
+            z-index: 2147483647 !important;
+        }
+        video::-webkit-media-controls-start-playback-button {
+            display: none !important;
+        }
+        video::-webkit-full-page-media {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
         .settings-panel {
             background: hsla(var(--theme-hue), 40%, 15%, 0.95);
             backdrop-filter: blur(40px);
@@ -384,7 +399,7 @@
                     </div>
                 </div>
 
-                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5">
+                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5-playsinline" x5-video-player-fullscreen="false" x5-video-orientation="portraint" disablePictureInPicture preload="metadata">
                   <source src="" type="video/mp4">
                 </video>
 
@@ -442,7 +457,7 @@
                                 <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/>
                             </svg>
                         </button>
-                        <div id="searchPanel" class="settings-panel hidden fixed" style="width: 16rem; max-height: 14rem; left: 50%; transform: translateX(-50%); bottom: 4.5rem;">
+                        <div id="searchPanel" class="hidden" style="position: fixed; width: 16rem; max-height: 14rem; right: auto; z-index: 100; background: hsla(var(--theme-hue), 40%, 15%, 0.95); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.12); border-radius: 1rem; padding: 0.875rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);">
                             <div class="flex items-center justify-between mb-2">
                                 <div class="flex items-center gap-2">
                                     <h3 class="text-white text-sm font-semibold">搜索</h3>
@@ -685,7 +700,24 @@
                     document.querySelector('.video-placeholder').classList.add('hidden');
                     isVideoStarted = true;
                 }
-                video.play();
+                // iOS/微信 强制内嵌播放
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                video.setAttribute('x5-playsinline', '');
+                video.playsInline = true;
+                video.webkitPlaysInline = true;
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        // 微信X5: 播放成功后确保覆盖层始终存在
+                        if (isWechat()) setTimeout(ensureX5Overlay, 50);
+                    }).catch(err => {
+                        if (err.name === 'NotAllowedError') {
+                            video.muted = true;
+                            video.play().then(() => { video.muted = false; if (isWechat()) setTimeout(ensureX5Overlay, 50); }).catch(() => {});
+                        }
+                    });
+                }
             }
         }
 
@@ -801,21 +833,25 @@
             video.currentTime = percent * video.duration;
         }
 
-        // 全屏：强制在视频窗口内全屏，不弹系统播放器
+        // 全屏：使用全屏API，兼容iOS Safari和微信X5
         async function toggleFullscreen() {
+            const container = document.querySelector('.video-card');
             const videoEl = document.getElementById('video');
             if (!videoEl) return;
             try {
-                if (document.fullscreenElement || document.webkitFullscreenElement) {
-                    if (document.exitFullscreen) document.exitFullscreen();
-                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+                if (isFullscreen) {
+                    if (document.exitFullscreen) await document.exitFullscreen();
+                    else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
                 } else {
-                    if (videoEl.requestFullscreen) await videoEl.requestFullscreen();
-                    else if (videoEl.webkitRequestFullscreen) await videoEl.webkitRequestFullscreen();
+                    // 优先对视频容器请求全屏（而不是video本身），浏览器更兼容
+                    const target = container || videoEl;
+                    if (target.requestFullscreen) await target.requestFullscreen({ navigationUI: 'hide' });
+                    else if (target.webkitRequestFullscreen) await target.webkitRequestFullscreen();
+                    else if (videoEl.webkitEnterFullscreen) videoEl.webkitEnterFullscreen();
                 }
             } catch (e) {
                 console.warn('全屏切换失败:', e);
-                // 兜底：用video自身全屏
                 try { videoEl.webkitEnterFullscreen(); } catch(e2) {}
             }
         }
@@ -888,6 +924,57 @@
 
         // 播放模式: 'sequence' = 顺序, 'loop' = 循环, 'random' = 随机
         let playMode = 'sequence';
+
+        // ===== 微信X5内核阻止系统播放器弹窗 =====
+        // X5内核只要触摸到<video>标签就会自动弹出系统播放器，无法通过属性完全阻止。
+        // 方案：在video上方覆盖一层透明touch拦截层，所有点击/触摸通过JS手动控制播放
+        let x5Overlay = null;
+        let x5Blocked = false;
+
+        function isWechat() {
+            return /micromessenger/i.test(navigator.userAgent);
+        }
+
+        function ensureX5Overlay() {
+            if (!isWechat()) return;
+            if (x5Overlay && x5Overlay.parentNode) return;
+            const videoCard = document.querySelector('.video-card .relative.bg-black');
+            if (!videoCard) return;
+            // 避免重复创建
+            if (document.getElementById('x5-touch-blocker')) return;
+            x5Overlay = document.createElement('div');
+            x5Overlay.id = 'x5-touch-blocker';
+            x5Overlay.style.cssText = 'position:absolute;inset:0;z-index:999;background:transparent;';
+            x5Overlay.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePlay();
+            }, { passive: false });
+            x5Overlay.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+            x5Overlay.addEventListener('click', (e) => {
+                e.stopPropagation();
+                togglePlay();
+            });
+            // 也拦截播放中的触摸事件
+            videoCard.style.position = 'relative';
+            videoCard.appendChild(x5Overlay);
+            // 将video移到覆盖层下面
+            const videoEl = document.getElementById('video');
+            if (videoEl) videoEl.style.zIndex = '1';
+            console.log('微信X5触摸拦截层已启用');
+        }
+        // 页面加载完自动创建拦截层
+        if (isWechat()) {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(ensureX5Overlay, 200);
+            });
+            // 如果DOMContentLoaded已过，直接创建
+            if (document.readyState !== 'loading') {
+                setTimeout(ensureX5Overlay, 200);
+            }
+        }
+
+        // 主题切换函数
 
         // 主题切换函数
         function updateTheme(hue) {
@@ -1021,14 +1108,14 @@
                 // 重置UI
                 playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
                 updateEpisodeBtn();
-            renderEpisodeList();
-            loadParsersFromStorage();
-            loadJsonApisFromStorage();
-            updateProxySwitchUI(); // 初始化代理开关UI
-            // 自动加载第一个视频
-            if (videoList.length > 0) {
-                video.src = videoList[0];
-            }
+                renderEpisodeList();
+                loadParsersFromStorage();
+                loadJsonApisFromStorage();
+                updateProxySwitchUI(); // 初始化代理开关UI
+                // 自动加载第一个视频
+                if (videoList.length > 0) {
+                    video.src = videoList[0];
+                }
             }
         }
 
@@ -1478,39 +1565,28 @@
 
         // HLS 实例
 
-        // 判断是否为视频直链
+        // 判断是否为视频直链（严格模式，防止把播放页URL误判为直链）
         function isDirectVideoUrl(url) {
             if (!url || typeof url !== 'string') {
                 return false;
             }
 
-            const lowerUrl = url.toLowerCase();
+            const lowerUrl = url.toLowerCase().trim();
 
-            // 1. 检查是否包含常见视频扩展名
-            const videoExtensions = [
-                '.m3u8', '.m3u', '.mp4', '.flv', '.webm', '.mkv', '.avi', '.mov',
-                '.ts', '.mts', '.m2ts', '.f4v', '.wmv', '.rm', '.rmvb', '.asf',
-                '.divx', '.xvid', '.3gp', '.3g2', '.ogv', '.ogm', '.mpg', '.mpeg',
-                '.mpe', '.mp1', '.mp2', '.mpv', '.m4v', '.m4p'
-            ];
+            // 1. 优先匹配明确的可播放视频扩展名（必须出现在URL末尾或带query参数）
+            const hasDirectExtension = /\.(m3u8|m3u|mp4|flv|ts|webm|mkv)(\?|$|#)/i.test(lowerUrl);
 
-            const hasVideoExtension = videoExtensions.some(ext => lowerUrl.includes(ext));
+            // 2. RTMP/RTSP 流协议
+            const isStreamProtocol = /^rtm(ps?|p):\/\//i.test(lowerUrl);
 
-            const isStreamProtocol = lowerUrl.startsWith('rtmp://') ||
-                                    lowerUrl.startsWith('rtsp://') ||
-                                    lowerUrl.startsWith('rtmps://') ||
-                                    lowerUrl.startsWith('rtp://') ||
-                                    lowerUrl.includes('live/') ||
-                                    lowerUrl.includes('stream/') ||
-                                    lowerUrl.includes('/hls/');
+            // 3. 明确的CDN/视频域名开头的流
+            const isCdnStream = /https?:\/\/[^\/]+\/[^\/]+\.(m3u8|mp4|flv|ts)(\?|$)/i.test(lowerUrl);
 
-            const isCdnPattern = /https?:\/\/[a-z0-9\-]+(\.(?:cdn|stream|video|media|vod|edge|cache)[a-z0-9\-]*)*\.[a-z]{2,}(?::\d+)?\/.+\.(?:m3u8|mp4|flv|ts)/i.test(lowerUrl);
+            // 4. 排除播放页面URL（含 /play/ /detail/ /vod/ /share/ 等关键词且有页面结构的URL）
+            const isPlayPage = /\/play\/|\/detail\/|\/vod\/|\/share\/|\/watch\//i.test(lowerUrl);
+            if (isPlayPage && !hasDirectExtension) return false;
 
-            const hasVideoParams = lowerUrl.includes('m3u8') ||
-                                  lowerUrl.includes('stream') ||
-                                  (lowerUrl.includes('play') && (lowerUrl.includes('.mp4') || lowerUrl.includes('.flv')));
-
-            return hasVideoExtension || isStreamProtocol || isCdnPattern || hasVideoParams;
+            return hasDirectExtension || isStreamProtocol || isCdnStream;
         }
 
         // 校验URL合法性
@@ -1768,10 +1844,9 @@
             let lastValidUrl = null;
             const parserResults = [];
 
-            // 4. 依次调用自定义解析接口
+            // 4. 依次调用自定义解析接口（走代理优先）
             for (const parser of customParsers) {
                 try {
-                    // 检查是否已取消
                     if (abortController && abortController.signal.aborted) {
                         throw new Error('解析请求已被取消');
                     }
@@ -1779,12 +1854,25 @@
                     layer++;
                     console.log(`第 ${layer} 层解析，使用接口:`, parser);
 
-                    // 构建解析请求URL
-                    const parseUrl = parser + encodeURIComponent(currentUrl);
+                    // 构建解析请求URL — 兼容各种拼接方式
+                    let parseUrl;
+                    if (parser.includes('?') && !parser.endsWith('=') && !parser.endsWith('?') && !parser.endsWith('&')) {
+                        // 已有参数但末尾没有=，用&拼接
+                        parseUrl = parser + '&url=' + encodeURIComponent(currentUrl);
+                    } else if (parser.endsWith('=') || parser.endsWith('?') || parser.endsWith('&') || parser.endsWith('/')) {
+                        // 标准拼接
+                        parseUrl = parser + encodeURIComponent(currentUrl);
+                    } else {
+                        // 其他情况补 /?url=
+                        parseUrl = parser + (parser.includes('?') ? '&' : '?') + 'url=' + encodeURIComponent(currentUrl);
+                    }
                     console.log(`解析请求URL:`, parseUrl);
 
-                    // 使用重试机制请求解析接口，传入abortController
-                    const responseText = await fetchWithRetry(parseUrl, {}, 3, 10000, abortController);
+                    // 使用 fetchForSearch（走代理优先→失败直连），复用搜索的网络策略
+                    const responseText = await fetchForSearch(parseUrl);
+                    if (!responseText || !responseText.trim()) {
+                        throw new Error('解析接口返回空响应');
+                    }
 
                     // 检查是否已取消
                     if (abortController && abortController.signal.aborted) {
@@ -2009,8 +2097,18 @@
                     document.querySelector('.video-placeholder').classList.add('hidden');
                     isVideoStarted = true;
                     loadingIndicator.classList.add('hidden');
+                    // 强制内嵌播放
+                    video.setAttribute('playsinline', '');
+                    video.setAttribute('webkit-playsinline', '');
+                    video.setAttribute('x5-playsinline', '');
+                    video.playsInline = true;
+                    video.webkitPlaysInline = true;
                     video.play().catch(err => {
                         console.log('播放被阻止:', err);
+                        if (err.name === 'NotAllowedError') {
+                            video.muted = true;
+                            video.play().then(() => { setTimeout(() => { video.muted = false; }, 100); }).catch(() => {});
+                        }
                     });
                 });
 
@@ -2043,8 +2141,18 @@
                     document.querySelector('.video-placeholder').classList.add('hidden');
                     isVideoStarted = true;
                     loadingIndicator.classList.add('hidden');
+                    // 强制内嵌播放
+                    video.setAttribute('playsinline', '');
+                    video.setAttribute('webkit-playsinline', '');
+                    video.setAttribute('x5-playsinline', '');
+                    video.playsInline = true;
+                    video.webkitPlaysInline = true;
                     video.play().catch(err => {
                         console.log('播放被阻止:', err);
+                        if (err.name === 'NotAllowedError') {
+                            video.muted = true;
+                            video.play().then(() => { setTimeout(() => { video.muted = false; }, 100); }).catch(() => {});
+                        }
                     });
                     // 移除监听器
                     video.removeEventListener('canplay', onCanPlayHandler);
@@ -2344,6 +2452,17 @@
             const searchPanel = document.getElementById('searchPanel');
             const isHidden = searchPanel.classList.contains('hidden');
             if (isHidden) {
+                // fixed定位，相对于浏览器窗口居中
+                const panelW = 256;
+                const searchBtn = document.getElementById('searchBtn');
+                const btnRect = searchBtn.getBoundingClientRect();
+                // 水平居中于按钮上方
+                const leftPos = Math.max(8, btnRect.left + btnRect.width/2 - panelW/2);
+                const bottomPos = window.innerHeight - btnRect.top + 10;
+                searchPanel.style.left = leftPos + 'px';
+                searchPanel.style.bottom = bottomPos + 'px';
+                searchPanel.style.top = 'auto';
+                searchPanel.style.right = 'auto';
                 searchPanel.classList.remove('hidden');
                 document.getElementById('settingsPanel').classList.add('hidden');
                 document.getElementById('speedMenu').classList.add('hidden');
@@ -2446,62 +2565,19 @@
         const SEARCH_TIMEOUT_MS = 8000;
         const DISCOVER_CACHE_TTL = 10 * 60 * 1000;
         const SEARCH_CONCURRENCY = 12;
-        const FAST_SEARCH_LIMIT = 5;
         
-        // 测试接口可用性（快速验证）
-        async function testInterfaceSpeed(interfaceUrl) {
-            const testUrl = buildSearchUrl(interfaceUrl, 'test');
-            try {
-                const startTime = Date.now();
-                const responseText = await fetchForSearch(testUrl);
-                const parseTime = Date.now() - startTime;
-                const data = parseResponseData(responseText);
-                return {
-                    success: true,
-                    speed: parseTime,
-                    hasData: data.length > 0
-                };
-            } catch (error) {
-                return {
-                    success: false,
-                    speed: 999999,
-                    hasData: false
-                };
-            }
-        }
-
-        // 智能过滤并排序接口：快的和能返回数据的优先
-        async function getBestSearchInterfaces(searchInterfaces) {
-            const orderedInterfaces = sortSearchInterfacesByPriority(searchInterfaces);
-            // 只测试前8个接口，减少验证时间
-            const interfacesToTest = orderedInterfaces.slice(0, Math.min(8, orderedInterfaces.length));
-            
-            const tests = await Promise.all(
-                interfacesToTest.map(async (url) => ({
-                    url,
-                    ...(await testInterfaceSpeed(url))
-                }))
-            );
-            
-            // 可用性：能成功请求 -> 能返回数据 -> 速度快
-            const sorted = tests.sort((a, b) => {
-                if (a.success !== b.success) return b.success ? 1 : -1;
-                if (a.hasData !== b.hasData) return b.hasData ? 1 : -1;
-                return a.speed - b.speed;
-            });
-            
-            return sorted
-                .filter(result => result.success) // 只保留成功的
-                .map(result => result.url)
-                .concat(orderedInterfaces.slice(8)); // 后面没测试的接在后面
-        }
         let cachedSearchInterfaces = null;
         let cachedSearchInterfacesKey = '';
         let cachedSearchInterfacesTime = 0;
         let currentProxyIndex = 0;
 
-        // 代理开关：从 localStorage 读取设置（默认关闭，因为代理服务器可能不稳定）
-        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== 'false';
+        // 代理开关：从 localStorage 读取设置（默认开启）
+        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== null ? localStorage.getItem('useProxyEnabled') === 'true' : true;
+        // 页面初始化时将复选框状态同步为默认值
+        (function initProxyUI() {
+            const sw = document.getElementById('proxySwitch');
+            if (sw) sw.checked = useProxyEnabled;
+        })();
         function toggleProxy() {
             useProxyEnabled = !useProxyEnabled;
             localStorage.setItem('useProxyEnabled', useProxyEnabled);
@@ -2683,16 +2759,14 @@
         }
 
         async function fetchForSearch(url) {
-            // 如果启用了代理，优先走代理，失败时回退到直连
+            // 优先走代理，失败时回退到直连（无论代理开关如何都先尝试代理）
             if (useProxyEnabled) {
                 try {
                     return await fetchFastWithProxy(url, SEARCH_TIMEOUT_MS);
                 } catch (proxyError) {
                     console.log('代理失败，尝试直连:', proxyError.message);
-                    return await fetchDirect(url, SEARCH_TIMEOUT_MS);
                 }
             }
-            // 关闭代理时直接走直连
             return await fetchDirect(url, SEARCH_TIMEOUT_MS);
         }
 
@@ -2797,28 +2871,21 @@
             return `${u}${u.includes('?') ? '&' : '?'}wd=${kw}`;
         }
 
-        // 带代理的fetch（用于获取接口详情页和视频详情）
+        // 带代理的fetch（用于获取接口详情页和视频详情，代理优先→失败直连）
         async function fetchWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
-            try {
-                const response = await fetchDirect(url, timeout);
-                return response;
-            } catch (directError) {
-                console.log('直连失败，走双代理:', directError.message);
-            }
-            const proxyCandidates = [PROXY_LIST[1]].filter(Boolean);
-            let lastError = null;
-            for (const proxyBase of proxyCandidates) {
-                const proxiedUrl = proxyBase + encodeURIComponent(url) + '&token=' + PROXY_TOKEN;
+            if (useProxyEnabled) {
                 try {
-                    const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
-                    if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
-                    return await response.text();
-                } catch (error) {
-                    lastError = error;
-                    console.warn('fetchWithProxy代理失败:', proxyBase, error.message);
+                    const proxyCandidates = [PROXY_LIST[1]].filter(Boolean);
+                    for (const proxyBase of proxyCandidates) {
+                        const proxiedUrl = proxyBase + encodeURIComponent(url) + '&token=' + PROXY_TOKEN;
+                        const response = await fetchWithTimeout(proxiedUrl, {}, timeout);
+                        if (response.ok) return await response.text();
+                    }
+                } catch (e) {
+                    console.log('fetchWithProxy代理失败，尝试直连:', e.message);
                 }
             }
-            throw lastError || new Error('所有代理请求失败');
+            return await fetchDirect(url, timeout);
         }
 
         // 从订阅JSON/文本中发现搜索接口：支持 api/url/link/vod_api/player_api 等字段
@@ -3282,15 +3349,23 @@
             const allResults = [];
             const seenPlatforms = new Set();
             let isFirstDisplay = true;
+            let displayTimer = null;
 
-            // 显示结果的函数
+            // 显示结果的函数（带节流，避免频繁重绘）
             const displayResultsBatch = () => {
                 if (allResults.length > 0) {
                     if (isFirstDisplay) {
                         container.innerHTML = '';
                         isFirstDisplay = false;
+                        displaySmartSearchResults(allResults);
+                    } else {
+                        // 节流：300ms内多次调用只重绘一次
+                        if (displayTimer) clearTimeout(displayTimer);
+                        displayTimer = setTimeout(() => {
+                            displaySmartSearchResults(allResults);
+                            displayTimer = null;
+                        }, 300);
                     }
-                    displaySmartSearchResults(allResults);
                 }
             };
 
@@ -3335,101 +3410,126 @@
                 // 固定平台开关（从localStorage读取，默认开启）
                 const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
                 
-                // 前8个作为切片资源接口（同时并发搜索）
-                const topSliceInterfaces = searchInterfaces.slice(0, Math.min(8, searchInterfaces.length));
-                const fixedPlatformInterfaces = useFixedSources ? topSliceInterfaces : [];
+                // 前8个作为切片资源接口
+                const allSliceInterfaces = searchInterfaces.slice(0, Math.min(8, searchInterfaces.length));
+                // 前4个优先展示
+                const firstSliceInterfaces = allSliceInterfaces.slice(0, 4);
+                // 后4个延迟搜索
+                const laterSliceInterfaces = allSliceInterfaces.slice(4, 8);
                 
                 // 其他接口（排除前8个和zhanyuan）
                 const otherInterfaces = searchInterfaces.slice(8).filter(url => !zhanyuanInterfaces.includes(url));
 
-                // 同时执行三个搜索流程
+                // 记录流程1已经搜过的接口，流程2跳过重复
+                const searchedInFlow1 = new Set();
+
+                // 同时执行多个搜索流程
                 const promises = [
-                    // 流程1: 搜索8个切片资源接口
+                    // 流程1: 前4个优先搜+展示，2秒后搜后4个
                     (async () => {
-                        console.log('流程1: 搜索', fixedPlatformInterfaces.length, '个切片资源接入');
-                        const fixedResults = [];
-                        const tasks = fixedPlatformInterfaces.map(async (interfaceUrl) => {
+                        console.log('流程1: 搜索前4个优先接口');
+                        // 第1批：前4个同时并发
+                        const firstTasks = firstSliceInterfaces.map(async (interfaceUrl) => {
                             try {
                                 const result = await searchSingleInterface(interfaceUrl, keyword);
                                 if (result) {
-                                    fixedResults.push(result);
+                                    searchedInFlow1.add(interfaceUrl);
                                     const key = result.interfaceUrl || result.interfaceName;
                                     if (!seenPlatforms.has(key)) {
                                         seenPlatforms.add(key);
                                         allResults.push(result);
                                         displayResultsBatch();
                                     }
+                                    return result;
                                 }
                             } catch (error) {
-                                console.warn(`切片资源搜索失败: ${interfaceUrl}`, error);
+                                console.warn(`优先接口搜索失败: ${interfaceUrl}`, error);
                             }
+                            return null;
                         });
-                        await Promise.allSettled(tasks);
-                        console.log(`流程1完成,找到 ${fixedResults.length} 个切片资源结果`);
-                    })(),
+                        const firstResults = await Promise.allSettled(firstTasks);
+                        const firstCount = firstResults.filter(r => r.status === 'fulfilled' && r.value).length;
+                        console.log('流程1第1批完成，找到', firstCount, '个结果');
 
-                    // 流程2: 同时搜索前8个zhanyuan接口
-                    (async () => {
-                        console.log(`流程2: 搜索${topSliceInterfaces.length}个切片资源接口`);
-                        const sliceResults = [];
-                        const tasks = topSliceInterfaces.map(async (interfaceUrl) => {
-                            try {
-                                const result = await searchSingleInterface(interfaceUrl, keyword);
-                                if (result) {
-                                    sliceResults.push(result);
-                                    const key = result.interfaceUrl || result.interfaceName;
-                                    if (!seenPlatforms.has(key)) {
-                                        seenPlatforms.add(key);
-                                        allResults.push(result);
-                                        displayResultsBatch();
-                                    }
-                                }
-                            } catch (error) {
-                                console.warn(`zhanyuan接口搜索失败: ${interfaceUrl}`, error);
-                            }
-                        });
-                        await Promise.allSettled(tasks);
-                        console.log(`流程2完成，找到 ${sliceResults.length} 个结果`);
-                    })(),
+                        // 停顿2秒后再搜后4个
+                        await new Promise(resolve => setTimeout(resolve, 2000));
 
-                    // 流程3: 分批搜索剩余采集源
-                    (async () => {
-                        console.log(`流程3: 分批搜索${otherInterfaces.length}个剩余采集源`);
-                        // 每批8个接口
-                        const batchSize = 8;
-                        for (let i = 0; i < otherInterfaces.length; i += batchSize) {
-                            const batch = otherInterfaces.slice(i, i + batchSize);
-                            const batchResults = [];
-                            const tasks = batch.map(async (interfaceUrl) => {
+                        if (laterSliceInterfaces.length > 0) {
+                            console.log('流程1: 搜索后4个接口');
+                            const laterTasks = laterSliceInterfaces.map(async (interfaceUrl) => {
                                 try {
                                     const result = await searchSingleInterface(interfaceUrl, keyword);
                                     if (result) {
-                                        batchResults.push(result);
+                                        searchedInFlow1.add(interfaceUrl);
                                         const key = result.interfaceUrl || result.interfaceName;
                                         if (!seenPlatforms.has(key)) {
                                             seenPlatforms.add(key);
                                             allResults.push(result);
                                             displayResultsBatch();
                                         }
+                                        return result;
                                     }
                                 } catch (error) {
-                                    console.warn(`其他接口搜索失败: ${interfaceUrl}`, error);
+                                    console.warn(`后续接口搜索失败: ${interfaceUrl}`, error);
                                 }
+                                return null;
+                            });
+                            const laterResults = await Promise.allSettled(laterTasks);
+                            const laterCount = laterResults.filter(r => r.status === 'fulfilled' && r.value).length;
+                            console.log('流程1第2批完成，找到', laterCount, '个结果');
+                        }
+                        console.log('流程1全部完成');
+                    })(),
+
+                    // 流程2+3: 跳过流程1已搜过的，剩余每批5个并发
+                    (async () => {
+                        // 等待流程1第1批完成（给 searchedInFlow1 填充时间）
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // 找出流程1已搜过的接口
+                        const flow1Done = [...searchedInFlow1];
+                        // 前8个中去掉流程1搜过的 = 剩余的切片接口
+                        const remainingSlice = allSliceInterfaces.filter(url => !searchedInFlow1.has(url));
+                        // 所有待搜接口 = 剩余切片 + 其他接口
+                        const allRemaining = [...remainingSlice, ...otherInterfaces].filter(url => !zhanyuanInterfaces.includes(url));
+                        
+                        if (allRemaining.length === 0) {
+                            console.log('流程2: 无剩余接口需要搜索');
+                            return;
+                        }
+                        
+                        console.log('流程2: 搜索', allRemaining.length, '个剩余接口，每批5个并发');
+                        for (let i = 0; i < allRemaining.length; i += 5) {
+                            const batch = allRemaining.slice(i, i + 5);
+                            const tasks = batch.map(async (interfaceUrl) => {
+                                try {
+                                    const result = await searchSingleInterface(interfaceUrl, keyword);
+                                    if (result) {
+                                        const key = result.interfaceUrl || result.interfaceName;
+                                        if (!seenPlatforms.has(key)) {
+                                            seenPlatforms.add(key);
+                                            allResults.push(result);
+                                            displayResultsBatch();
+                                        }
+                                        return result;
+                                    }
+                                } catch (error) {
+                                    console.warn(`剩余接口搜索失败: ${interfaceUrl}`, error);
+                                }
+                                return null;
                             });
                             await Promise.allSettled(tasks);
-                            console.log(`第${Math.floor(i/batchSize)+1}批完成，找到 ${batchResults.length} 个结果`);
+                            console.log(`第${Math.floor(i/5)+1}批完成`);
                             
-                            // 如果前几批已经找到足够结果，可以提前结束
-                            if (allResults.length >= 8 && i > batchSize * 2) {
-                                console.log('已找到足够结果，提前结束流程3');
+                            // 如果结果足够多，提前结束
+                            if (allResults.length >= 8 && i > 10) {
+                                console.log('已找到足够结果，提前结束流程2');
                                 break;
                             }
                         }
-                        console.log('流程3全部完成');
+                        console.log('流程2全部完成');
                     })()
                 ];
-
-                // 流程4: 爬虫搜索zhanyuan网页源
                 if (zhanyuanCrawlers.length > 0) {
                     promises.push(
                         (async () => {
@@ -3448,22 +3548,20 @@
                     );
                 }
 
-                // 流程4.5: 16个网盘爬虫搜索（每站独立Tab，代理失败降级直连）
+                // 流程4.5: 16个网盘爬虫搜索（每站独立搜索，间隔1秒）
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，5并发');
-                            // 8个一批并发
-                            for (let bi = 0; bi < CLOUD_DRIVE_SEARCH_API.length; bi += 5) {
-                                const batch = CLOUD_DRIVE_SEARCH_API.slice(bi, bi + 5);
-                                const tasks = batch.map(async (apiDef) => {
-                                    if (apiDef.type !== 'crawler') return null;
+                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，每站间隔1秒');
+                            for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
+                                try {
+                                    if (apiDef.type !== 'crawler') continue;
                                     const baseUrl = apiDef.url.replace(/\/+$/, '');
                                     const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
                                     const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + encodeURIComponent(keyword);
                                     let text = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
                                     if (!text) text = await fetchDirect(fullUrl, 6000).catch(() => null);
-                                    if (!text || text.length < 100) return null;
+                                    if (!text || text.length < 100) continue;
                                     const parser = new DOMParser();
                                     const doc = parser.parseFromString(text, 'text/html');
                                     const items = [];
@@ -3477,23 +3575,24 @@
                                             if (!href.startsWith('http')) absUrl = baseUrl + (href.startsWith('/') ? '' : '/') + href;
                                             items.push({
                                                 vod_id: absUrl, vod_name: title.trim(), vod_pic: img?.getAttribute('data-src') || '',
-                                                _detailPageUrl: absUrl, _panSource: apiDef, _isVideo: true
+                                                _detailPageUrl: absUrl, _panSource: apiDef, _isVideo: true,
+                                                _panAggrSource: apiDef  // 标记为流程4.5网盘聚合源结果
                                             });
                                         }
                                     });
-                                    return { name: apiDef.name, items };
-                                });
-                                const results = await Promise.allSettled(tasks);
-                                results.forEach((r, ti) => {
-                                    if (r.status === 'fulfilled' && r.value && r.value.items.length > 0) {
-                                        const key = 'cloud-pan:' + r.value.name;
+                                    if (items.length > 0) {
+                                        const key = 'cloud-pan:' + apiDef.name;
                                         if (!seenPlatforms.has(key)) {
                                             seenPlatforms.add(key);
-                                            allResults.push({ interfaceUrl: key, interfaceName: r.value.name, data: r.value.items });
+                                            allResults.push({ interfaceUrl: key, interfaceName: apiDef.name, data: items });
                                             displayResultsBatch();
                                         }
                                     }
-                                });
+                                } catch (error) {
+                                    console.warn('网盘爬虫搜索失败:', apiDef.name, error.message);
+                                }
+                                // 每站间隔1秒，避免被限流
+                                await new Promise(resolve => setTimeout(resolve, 1000));
                             }
                             console.log('流程4.5完成');
                         })()
@@ -3533,10 +3632,10 @@
                     );
                 }
 
-                // 等待所有流程完成或超时
+                // 等待所有流程完成或超时（25秒，因为流程4.5每站间隔1秒共需16秒+）
                 await Promise.race([
                     Promise.allSettled(promises),
-                    new Promise(resolve => setTimeout(resolve, 15000)) // 15秒超时
+                    new Promise(resolve => setTimeout(resolve, 25000))
                 ]);
 
                 // 显示最终结果
@@ -3690,6 +3789,162 @@
                         } else {
                             showAlert('未找到' + DRIVE_CONFIGS[dt]?.name + '的Token', '提示');
                         }
+                        return;
+                    }
+
+                    // 如果是流程4.5网盘聚合源结果（_panAggrSource标记）
+                    // 这类站点的详情页包含网盘分享链接，需要：
+                    // 1. 爬详情页提取分享链接
+                    // 2. 识别分享链接属于哪个网盘
+                    // 3. 用对应网盘的Token去获取播放直链
+                    if (item._panAggrSource) {
+                        const detailUrl = item.vod_id || item._detailPageUrl || '';
+                        if (detailUrl) {
+                            try {
+                                loadingEl.textContent = '正在获取分享链接...';
+                                const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + PROXY_TOKEN;
+                                const resp = await fetchWithTimeout(proxyUrl, {}, 15000);
+                                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                                const html = await resp.text();
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                
+                                // 提取详情页中的分享链接（玩偶云盘等站点的.module-row-info p 文本）
+                                const shareLinks = [];
+                                // 方式1: 查找.module-row-info结构
+                                doc.querySelectorAll('.module-row-info p').forEach(p => {
+                                    const text = p.textContent.trim();
+                                    if (text.startsWith('http')) shareLinks.push(text);
+                                });
+                                // 方式2: 查找所有含网盘域名的链接
+                                const panDomains = ['aliyundrive.com','alipan.com','pan.quark.cn','pan.baidu.com','pan.xunlei.com','115.com','123pan.com','uc.cn','cloud.189.cn','pikpak.com'];
+                                doc.querySelectorAll('a[href]').forEach(a => {
+                                    const href = a.href;
+                                    if (panDomains.some(d => href.includes(d))) {
+                                        shareLinks.push(href);
+                                    }
+                                });
+                                // 方式3: 从页面文本中提取分享URL
+                                if (shareLinks.length === 0) {
+                                    const bodyText = doc.body?.textContent || '';
+                                    const shareRegex = /https?:\/\/(?:www\.)?(?:aliyundrive\.com|alipan\.com|pan\.quark\.cn|pan\.baidu\.com|115\.com|123pan\.\w+|uc\.cn|cloud\.189\.cn|pikpak\.com)\/s\/[^\s"'<>]+/gi;
+                                    const matches = bodyText.match(shareRegex);
+                                    if (matches) matches.forEach(u => shareLinks.push(u));
+                                }
+
+                                console.log('提取到分享链接:', shareLinks);
+                                
+                                if (shareLinks.length === 0) {
+                                    // 没有分享链接，可能是直链站，走之前的video/iframe提取逻辑
+                                    let playUrl = '';
+                                    const videoTag = doc.querySelector('video source') || doc.querySelector('video');
+                                    if (videoTag) playUrl = videoTag.getAttribute('src') || '';
+                                    if (!playUrl) {
+                                        const iframe = doc.querySelector('iframe');
+                                        if (iframe) playUrl = iframe.getAttribute('src') || '';
+                                    }
+                                    if (!playUrl) {
+                                        const bodyText = doc.body?.textContent || '';
+                                        const m3u8Match = bodyText.match(/https?:\/\/[^\s"'<>]+\.(m3u8|mp4)[^\s"'<>]*/i);
+                                        if (m3u8Match) playUrl = m3u8Match[0];
+                                    }
+                                    if (!playUrl) {
+                                        const allUrls = html.match(/https?:\/\/[^\s"'<>]+\.(m3u8|mp4|flv|ts)[^\s"'<>]*/gi);
+                                        if (allUrls && allUrls.length > 0) playUrl = allUrls[0];
+                                    }
+                                    if (playUrl) {
+                                        videoList = [playUrl]; currentVideoIndex = 0;
+                                        closeSearchPanel(); loadVideo(0); loadingEl.classList.add('hidden');
+                                        return;
+                                    }
+                                    throw new Error('未找到分享链接');
+                                }
+
+                                // 对每个分享链接，尝试用已保存的Token解析播放
+                                const savedDriveTokens = loadDriveTokens();
+                                loadingEl.textContent = '正在解析分享链接...';
+                                
+                                for (const shareUrl of shareLinks) {
+                                    try {
+                                        // 识别网盘类型
+                                        let driveType = '';
+                                        if (/aliyundrive\.com|alipan\.com/i.test(shareUrl)) driveType = 'alipan';
+                                        else if (/pan\.quark\.cn/i.test(shareUrl)) driveType = 'quark';
+                                        else if (/pan\.baidu\.com/i.test(shareUrl)) driveType = 'baidu';
+                                        else if (/115\.com/i.test(shareUrl)) driveType = '115';
+                                        else if (/123pan/i.test(shareUrl)) driveType = '123pan';
+                                        else if (/uc\.cn/i.test(shareUrl)) driveType = 'uc';
+                                        else if (/cloud\.189\.cn/i.test(shareUrl)) driveType = '189';
+                                        else if (/pikpak/i.test(shareUrl)) driveType = 'pikpak';
+                                        
+                                        if (!driveType) continue; // 不认识的网盘跳过
+                                        
+                                        const token = savedDriveTokens[driveType];
+                                        if (!token) continue; // 没有Token跳过
+                                        
+                                        loadingEl.textContent = `正在用${DRIVE_CONFIGS[driveType]?.name || driveType}播放...`;
+                                        
+                                        // 解析分享链接
+                                        const shareIdMatch = shareUrl.match(/\/s\/([a-zA-Z0-9_\-]+)/i);
+                                        if (!shareIdMatch) continue;
+                                        const shareId = shareIdMatch[1];
+                                        const pwdMatch = shareUrl.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || shareUrl.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/);
+                                        const sharePwd = pwdMatch ? pwdMatch[1] : '';
+                                        
+                                        // 调用resolveShareUrlWithUrl获取文件列表(已有函数)
+                                        driveState.type = driveType;
+                                        driveState.token = token;
+                                        driveState.shareId = shareId;
+                                        driveState.sharePwd = sharePwd;
+                                        driveState.currentPath = [{id:'root',name:'分享文件'}];
+                                        
+                                        loadingEl.textContent = '浏览分享文件...';
+                                        await browseShareFiles(driveType, shareId, sharePwd, token || '');
+                                        
+                                        // 在文件列表中找第一个视频文件播放
+                                        const fileListPanel = document.getElementById('driveFileListPanel');
+                                        // 通过驱动配置获取文件列表
+                                        const cfg = DRIVE_CONFIGS[driveType];
+                                        let files = [];
+                                        try {
+                                            const respData = await apiFetch(
+                                                driveType === 'alipan' 
+                                                    ? (cfg.listUrl + '?share_id=' + shareId + '&parent_file_id=root&limit=100')
+                                                    : cfg.listUrl + '?share_id=' + shareId + '&parent_file_id=root',
+                                                { headers: cfg.getAuthHeader(token) }
+                                            );
+                                            const parsed = JSON.parse(respData);
+                                            files = cfg.extractList ? cfg.extractList(parsed) : (parsed.items || parsed.data || parsed.list || []);
+                                        } catch(e) {
+                                            console.warn('获取分享文件列表失败:', e);
+                                            continue;
+                                        }
+                                        
+                                        // 找第一个视频文件
+                                        const videoFile = files.find(f => f.isVideo) || files.find(f => /\.(mp4|m3u8|mkv|avi|mov|flv|ts|webm)$/i.test(f.name));
+                                        if (videoFile) {
+                                            loadingEl.textContent = '获取播放地址...';
+                                            await resolveDrivePlay(driveType, token, null, videoFile.id, videoFile.name || '视频', false);
+                                            loadingEl.classList.add('hidden');
+                                            closeSearchPanel();
+                                            return;
+                                        }
+                                    } catch(e) {
+                                        console.warn('分享链接解析失败:', shareUrl, e.message);
+                                        continue;
+                                    }
+                                }
+                                
+                                throw new Error('所有分享链接均无法播放（可能是未添加对应网盘的Token）');
+                            } catch (e) {
+                                console.warn('网盘聚合源获取详情失败:', e.message);
+                                showAlert('无法播放: ' + e.message, '播放失败');
+                                loadingEl.classList.add('hidden');
+                                return;
+                            }
+                        }
+                        showAlert('该网盘源无法获取播放地址', '播放失败');
+                        loadingEl.classList.add('hidden');
                         return;
                     }
 
