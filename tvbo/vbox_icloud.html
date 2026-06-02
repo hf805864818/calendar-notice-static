@@ -3347,17 +3347,18 @@
                 // 固定平台开关（从localStorage读取，默认开启）
                 const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
                 
-                // 提取固定平台接口（根据开关决定是否搜索）
-                const fixedPlatformInterfaces = useFixedSources ? searchInterfaces.slice(0, Math.min(2, searchInterfaces.length)) : [];
+                // 前8个作为切片资源接口（同时并发搜索）
+                const topSliceInterfaces = searchInterfaces.slice(0, Math.min(8, searchInterfaces.length));
+                const fixedPlatformInterfaces = useFixedSources ? topSliceInterfaces : [];
                 
-                // 其他接口（排除前两个和zhanyuan）
-                const otherInterfaces = searchInterfaces.slice(2).filter(url => !zhanyuanInterfaces.includes(url));
+                // 其他接口（排除前8个和zhanyuan）
+                const otherInterfaces = searchInterfaces.slice(8).filter(url => !zhanyuanInterfaces.includes(url));
 
                 // 同时执行三个搜索流程
                 const promises = [
-                    // 流程1: 立即搜索2个固定平台
+                    // 流程1: 搜索8个切片资源接口
                     (async () => {
-                        console.log('流程1: 搜索2个固定平台');
+                        console.log('流程1: 搜索', fixedPlatformInterfaces.length, '个切片资源接入');
                         const fixedResults = [];
                         const tasks = fixedPlatformInterfaces.map(async (interfaceUrl) => {
                             try {
@@ -3372,11 +3373,11 @@
                                     }
                                 }
                             } catch (error) {
-                                console.warn(`固定平台搜索失败: ${interfaceUrl}`, error);
+                                console.warn(`切片资源搜索失败: ${interfaceUrl}`, error);
                             }
                         });
                         await Promise.allSettled(tasks);
-                        console.log(`流程1完成，找到 ${fixedResults.length} 个固定平台结果`);
+                        console.log(`流程1完成,找到 ${fixedResults.length} 个切片资源结果`);
                     })(),
 
                     // 流程2: 同时搜索前8个zhanyuan接口
