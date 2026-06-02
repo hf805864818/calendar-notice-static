@@ -588,6 +588,13 @@
                                         <span class="text-white/70 text-xs">使用代理（可能不稳定）</span>
                                         <input type="checkbox" id="proxySwitch" class="w-4 h-4 rounded" onchange="toggleProxy()">
                                     </div>
+                                    <div class="flex items-center justify-between pt-1">
+                                        <span class="text-white/70 text-xs">详情爬取(测试用)</span>
+                                        <div class="flex items-center gap-1.5">
+                                            <span id="detailCrawlLabel" class="text-white/40 text-[10px]">已关闭</span>
+                                            <input type="checkbox" id="detailCrawlSwitch" class="w-4 h-4 rounded" onchange="toggleDetailCrawl()">
+                                        </div>
+                                    </div>
                                     <div class="pt-2 border-t border-white/10">
                                         <label class="text-white/70 text-xs mb-1.5 block">解析接口</label>
                                         <div id="parserList" class="space-y-1 mb-2 max-h-[4rem] overflow-y-auto">
@@ -1858,13 +1865,13 @@
                     let parseUrl;
                     if (parser.includes('?') && !parser.endsWith('=') && !parser.endsWith('?') && !parser.endsWith('&')) {
                         // 已有参数但末尾没有=，用&拼接
-                        parseUrl = parser + '&url=' + encodeURIComponent(currentUrl);
+                        parseUrl = parser + '&url=' + currentUrl;
                     } else if (parser.endsWith('=') || parser.endsWith('?') || parser.endsWith('&') || parser.endsWith('/')) {
                         // 标准拼接
-                        parseUrl = parser + encodeURIComponent(currentUrl);
+                        parseUrl = parser + currentUrl;
                     } else {
                         // 其他情况补 /?url=
-                        parseUrl = parser + (parser.includes('?') ? '&' : '?') + 'url=' + encodeURIComponent(currentUrl);
+                        parseUrl = parser + (parser.includes('?') ? '&' : '?') + 'url=' + currentUrl;
                     }
                     console.log(`解析请求URL:`, parseUrl);
 
@@ -2622,109 +2629,75 @@
         SEARCH_INTERFACE_NAME_MAP['https://cj.rycjapi.com/api.php/provide/vod/?ac=list'] = '如意资源';
 
         // ===== 网盘聚合搜索接口 =====
-        // 使用网盘聚合搜索引擎API，搜索各大网盘的资源分享链接
-        // 16个网盘爬虫站，每个站独立配置搜索URL和选择器
+        // 搜索URL已逐个实测验证，站点状态标记:
+        // ✅ 可用 | ❌ 站点失效/CF防护 | ⚠️ 可能可用但需代理
+        // 详情页爬取开关：开启后搜索时会爬取每个结果的详情页，识别分享链接对应的网盘类型并展示
+        // （会慢一些，但方便测试和调试）
+        let enableDetailCrawl = localStorage.getItem('enableDetailCrawl') === 'true';
+        function toggleDetailCrawl() {
+            enableDetailCrawl = !enableDetailCrawl;
+            localStorage.setItem('enableDetailCrawl', enableDetailCrawl);
+            const label = document.getElementById('detailCrawlLabel');
+            if (label) label.textContent = enableDetailCrawl ? '已开启' : '已关闭';
+            console.log('详情爬取开关:', enableDetailCrawl ? '开启' : '关闭');
+        }
+        (function initDetailCrawlUI() {
+            const label = document.getElementById('detailCrawlLabel');
+            if (label) label.textContent = enableDetailCrawl ? '已开启' : '已关闭';
+        })();
+        
+        // 识别分享链接属于哪个网盘
+        function identifyPanType(shareUrl) {
+            if (/aliyundrive\.com|alipan\.com/i.test(shareUrl)) return '阿里云盘';
+            if (/pan\.quark\.cn/i.test(shareUrl)) return '夸克';
+            if (/pan\.baidu\.com/i.test(shareUrl)) return '百度';
+            if (/115\.com/i.test(shareUrl)) return '115';
+            if (/123pan/i.test(shareUrl)) return '123';
+            if (/uc\.cn/i.test(shareUrl)) return 'UC';
+            if (/cloud\.189\.cn/i.test(shareUrl)) return '天翼';
+            if (/pikpak/i.test(shareUrl)) return 'PikPak';
+            return '';
+        }
+
         const CLOUD_DRIVE_SEARCH_API = [
             { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial',
-              titleAttr: 'title',
-              linkSelector: '.video-serial',
-              linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '✅' },
             { url: 'http://feimao888.fun', name: '蜡笔云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://tv.yydsys.top', name: '多多云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://sd.sduc.site', name: '闪电云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'http://2xiaopan.fun', name: '二小云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://oog.nxog.eu.org', name: '欧歌云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'http://www.miqk.cc', name: '至臻云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/index.php/vod/search.html?wd=', status: '✅' },
             { url: 'http://103.45.162.207:20720', name: '虎斑云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/index.php/vod/search.html?wd=', status: '✅' },
             { url: 'http://xsayang.fun:12512', name: '小斑云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/index.php/vod/search.html?wd=', status: '✅' },
             { url: 'https://www.91panta.cn', name: '盘Ta云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '⚠️' },
             { url: 'https://www.leijing.xyz', name: '雷鲸云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://www.nanf.cc', name: '南风云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://pan.funletu.com', name: '趣盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://4ktop.com', name: '4KTop云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-card-item, .module-search-item, .vodlist__item, .stui-vodlist__item, .video-item',
-              titleSelector: 'a[href*="/voddetail/"] strong, .module-card-item-title a, .video-serial, .stui-vodlist__thumb',
-              titleAttr: 'title',
-              linkSelector: '.module-card-item-poster, a[href*="/voddetail/"], .video-serial, .stui-vodlist__thumb',
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '✅',
+              itemSelector: '.module-card-item, .module-search-item',
+              titleSelector: 'a[href*="/voddetail/"] strong, .module-card-item-title a, .video-serial',
+              titleAttr: '',
+              linkSelector: '.module-card-item-poster, a[href*="/voddetail/"]',
               linkAttr: 'href',
               imgAttr: 'data-original' },
             { url: 'https://libvio.mov', name: 'LibVio云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item, .stui-vodlist__item, .module-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' },
+              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://666.666291.xyz', name: '木偶云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=',
-              itemSelector: '.module-search-item',
-              titleSelector: '.video-serial', titleAttr: 'title',
-              linkSelector: '.video-serial', linkAttr: 'href',
-              imgAttr: 'data-src' }
+              searchUrl: '/index.php/vod/search.html?wd=', status: '✅' }
         ];
 
         // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
@@ -2898,7 +2871,7 @@
 
         // 构建搜索URL（兼容 wd/key/keyword/search/query）
         function buildSearchUrl(interfaceUrl, keyword) {
-            const kw = encodeURIComponent(keyword || '');
+            const kw = String(keyword || '');
             let u = String(interfaceUrl || '').trim();
 
             if (/[?&]wd=/i.test(u)) {
@@ -3329,9 +3302,12 @@
                     const resultBtn = document.createElement('div');
                     resultBtn.className = 'px-2 py-1.5 cursor-pointer hover:bg-white/10 border-t border-white/5';
                     const sourceTag = item._panAggrSource ? item._panAggrSource.name : (item._driveType ? (DRIVE_CONFIGS[item._driveType]?.name || item._driveType) : '');
+                    // 如果详情爬取识别到了具体网盘类型，优先显示
+                    const drillTag = item._drillPanType || '';
+                    const displayTag = drillTag || sourceTag;
                     resultBtn.innerHTML = `
                         <div class="text-white text-xs font-medium truncate flex items-center gap-1">
-                            ${sourceTag ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded flex-shrink-0">${sourceTag}</span>` : ''}
+                            ${displayTag ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded flex-shrink-0">${displayTag}</span>` : ''}
                             <span class="truncate">${deriveItemTitle(item, itemIndex)}</span>
                         </div>
                         <div class="text-white/50 text-[10px] truncate">${item.vod_remarks || item.remarks || ''}${(item.vod_remarks || item.remarks) && (item.type_name || item.type) ? ' · ' : ''}${item.type_name || item.type || ''}</div>
@@ -3614,7 +3590,7 @@
                                     if (apiDef.type !== 'crawler') continue;
                                     const baseUrl = apiDef.url.replace(/\/+$/, '');
                                     const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
-                                    const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + encodeURIComponent(keyword);
+                                    const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + keyword;
                                     let text = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
                                     if (!text) text = await fetchDirect(fullUrl, 6000).catch(() => null);
                                     if (!text || text.length < 100) continue;
@@ -3673,6 +3649,46 @@
                                     if (items.length > 0) {
                                         const key = 'cloud-pan:' + apiDef.name;
                                         if (!seenPlatforms.has(key)) {
+                                            // 如果开启了详情爬取开关，异步爬取每个结果的详情页识别网盘类型
+                                            if (enableDetailCrawl && items.length > 0) {
+                                                (async () => {
+                                                    for (const item of items) {
+                                                        const detailUrl = item.vod_id || '';
+                                                        if (!detailUrl) continue;
+                                                        try {
+                                                            const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + PROXY_TOKEN;
+                                                            const resp = await fetchWithTimeout(proxyUrl, {}, 10000);
+                                                            if (!resp.ok) continue;
+                                                            const html = await resp.text();
+                                                            const p = new DOMParser();
+                                                            const d = p.parseFromString(html, 'text/html');
+                                                            // 提取分享链接
+                                                            d.querySelectorAll('.module-row-info p').forEach(pEl => {
+                                                                const text = pEl.textContent.trim();
+                                                                if (text.startsWith('http')) {
+                                                                    const panType = identifyPanType(text);
+                                                                    if (panType) item._drillPanType = panType;
+                                                                }
+                                                            });
+                                                            if (!item._drillPanType) {
+                                                                const bodyText = d.body?.textContent || '';
+                                                                const shareRegex = /https?:\/\/(?:www\.)?(?:aliyundrive\.com|alipan\.com|pan\.quark\.cn|pan\.baidu\.com|115\.com|123pan\.\w+|uc\.cn|cloud\.189\.cn|pikpak\.com)\/s\/[^\s"'<>]+/gi;
+                                                                const matches = bodyText.match(shareRegex);
+                                                                if (matches) {
+                                                                    for (const su of matches) {
+                                                                        const pt = identifyPanType(su);
+                                                                        if (pt) { item._drillPanType = pt; break; }
+                                                                    }
+                                                                }
+                                                            }
+                                                        } catch(e) {}
+                                                        // 每爬一个结果稍作停顿
+                                                        await new Promise(r => setTimeout(r, 200));
+                                                    }
+                                                    // 重新渲染结果面板（更新网盘标签）
+                                                    displayResultsBatch();
+                                                })();
+                                            }
                                             seenPlatforms.add(key);
                                             allResults.push({ interfaceUrl: key, interfaceName: apiDef.name, data: items });
                                             displayResultsBatch();
@@ -3837,7 +3853,7 @@
                                 const detailUrl = item._sourceInterfaceUrl || SEARCH_INTERFACE_DETAIL_MAP[item._sourceInterfaceUrl] || '';
                                 if (detailUrl) {
                                     try {
-                                        const detailText = await fetchForSearch(detailUrl + encodeURIComponent(item.vod_id));
+                                        const detailText = await fetchForSearch(detailUrl + item.vod_id);
                                         const detailData = parseResponseData(detailText);
                                         if (detailData && detailData.length > 0) {
                                             const d = detailData[0];
@@ -3906,6 +3922,11 @@
                                     const text = p.textContent.trim();
                                     if (text.startsWith('http')) shareLinks.push(text);
                                 });
+                                // 方式2: 查找data-clipboard-text属性（4KTop等站点将分享链接存在此属性中）
+                                doc.querySelectorAll('[data-clipboard-text]').forEach(el => {
+                                    const text = el.getAttribute('data-clipboard-text') || '';
+                                    if (text.startsWith('http')) shareLinks.push(text);
+                                });
                                 // 方式2: 查找所有含网盘域名的链接
                                 const panDomains = ['aliyundrive.com','alipan.com','pan.quark.cn','pan.baidu.com','pan.xunlei.com','115.com','123pan.com','uc.cn','cloud.189.cn','pikpak.com'];
                                 doc.querySelectorAll('a[href]').forEach(a => {
@@ -3966,6 +3987,8 @@
                                         else if (/uc\.cn/i.test(shareUrl)) driveType = 'uc';
                                         else if (/cloud\.189\.cn/i.test(shareUrl)) driveType = '189';
                                         else if (/pikpak/i.test(shareUrl)) driveType = 'pikpak';
+                                        // 暂不支持的网盘跳过（无playUrl实现）
+                                        if (driveType === '189' || driveType === 'pikpak' || driveType === '123pan') continue;
                                         
                                         if (!driveType) continue;
                                         matchedAny = true;
@@ -3992,7 +4015,9 @@
                                             const videoFile = files.find(function(f) { return f.isVideo; }) || files.find(function(f) { return /\.(mp4|m3u8|mkv|avi|mov|flv|ts|webm)$/i.test(f.name || ''); });
                                             if (videoFile) {
                                                 loadingEl.textContent = '获取播放地址...';
-                                                await resolveDrivePlay(driveType, token, null, videoFile.id, videoFile.name || '视频', false);
+                                                // drive_id 从browseShareFiles中已设置到 driveState.driveId
+                                                const shareDriveId = driveState.driveId || '';
+                                                await resolveDrivePlay(driveType, token, shareDriveId, videoFile.id, videoFile.name || '视频', false);
                                                 loadingEl.classList.add('hidden');
                                                 closeSearchPanel();
                                                 return;
@@ -4072,7 +4097,7 @@
                     if (!playlist && (item._detailurl || item._sourceInterfaceUrl) && (item.vod_id || item.id)) {
                         const detailUrl = item._detailurl || (item._sourceInterfaceUrl ? item._sourceInterfaceUrl.replace(/\/[^\/]*\?.*$/, '/') + '?ac=detail&ids=' : '');
                         if (detailUrl) {
-                            const detailRequestUrl = detailUrl + encodeURIComponent(item.vod_id || item.id);
+                            const detailRequestUrl = detailUrl + (item.vod_id || item.id);
                             const detailText = await fetchWithProxy(detailRequestUrl, 5000);
                             const detailData = parseResponseData(detailText);
                             if (detailData && detailData.length > 0) {
@@ -4205,7 +4230,7 @@
             if (!searchUrl) return [];
 
             try {
-                const fullUrl = searchUrl + encodeURIComponent(keyword);
+                const fullUrl = searchUrl + keyword;
                 const proxyUrl = PROXY_LIST[1] + encodeURIComponent(fullUrl) + '&token=' + PROXY_TOKEN;
                 const response = await fetchWithTimeout(proxyUrl, {}, 5000);
                 if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -4380,8 +4405,8 @@
             alipan: {
                 name: '阿里云盘',
                 listUrl: 'https://api.aliyundrive.com/adrive/v3/file/list',
-                playUrl: 'https://open.aliyundrive.com/adrive/v1.0/openFile/getVideoPreviewPlayInfo',
-                downloadUrl: 'https://open.aliyundrive.com/adrive/v1.0/openFile/getDownloadUrl',
+                playUrl: 'https://api.aliyundrive.com/v2/file/get_video_preview_play_info',
+                downloadUrl: 'https://api.aliyundrive.com/v2/file/get_download_url',
                 shareTokenUrl: 'https://api.aliyundrive.com/v2/share_link/get_share_token',
                 shareAnonymousUrl: 'https://api.aliyundrive.com/adrive/v3/share_link/get_share_by_anonymous',
                 listMethod: 'POST',
@@ -4436,15 +4461,34 @@
                 driveIdField: null,
                 shareRegex: /pan\.baidu\.com\/s\/([a-zA-Z0-9_-]+)/
             },
-            uc: {
-                name: 'UC网盘',
-                listUrl: 'https://open-api-drive.uc.cn/file',
+            '115': {
+                name: '115网盘',
+                listUrl: 'https://webapi.115.com/files',
                 playUrl: null,
                 downloadUrl: null,
                 shareTokenUrl: null,
                 listMethod: 'GET',
+                listBody: null,
+                getAuthHeader: (token) => ({ 'Cookie': 'CID=' + token, 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)' }),
+                extractList: (data) => (data.data || data || []).map(f => ({
+                    id: f.fid || f.id, name: f.fname || f.name,
+                    type: f.fid_type === 0 ? 'folder' : 'file',
+                    isFolder: f.fid_type === 0,
+                    isVideo: /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.fname || f.name),
+                    size: f.fsize || f.size
+                })),
+                driveIdField: null,
+                shareRegex: /115\.com\/s\/([a-zA-Z0-9_-]+)/
+            },
+            uc: {
+                name: 'UC网盘',
+                listUrl: 'https://drive.uc.cn/file/list',
+                playUrl: 'https://drive.uc.cn/file/v2/play',
+                downloadUrl: null,
+                shareTokenUrl: null,
+                listMethod: 'GET',
                 listBody: (driveId, parentFileId) => null,
-                getAuthHeader: (token) => ({ 'Authorization': 'Bearer ' + token }),
+                getAuthHeader: (token) => token && token.includes('.') ? { 'Authorization': 'Bearer ' + token } : { 'Cookie': token },
                 extractList: (data) => ((data.data && data.data.list) || data.list || data.items || []).map(f => ({
                     id: f.file_id || f.fid || f.id, name: f.file_name || f.name,
                     type: (f.type === 'folder' || f.is_dir) ? 'folder' : 'file',
@@ -4647,12 +4691,26 @@
                         method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
                     });
                     const data = JSON.parse(resp);
-                    allFiles = (data.data && data.data.list || []).map(f => ({
+                    // 夸克分享详情返回share_token等信息
+                    const shareToken = data.data?.share_token || '';
+                    // 用share_token获取文件列表
+                    let listResp;
+                    if (shareToken) {
+                        listResp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail?share_id=' + shareId + '&pdir_fid=0&_page=1&_size=100', {
+                            headers: { 'Content-Type': 'application/json', 'Share-Token': shareToken, ...cfg.getAuthHeader(tokn) }
+                        });
+                    } else {
+                        listResp = resp; // 第一次请求已经返回了文件列表
+                    }
+                    const listData = typeof listResp === 'string' ? JSON.parse(listResp) : listResp;
+                    allFiles = (listData.data && listData.data.list || []).map(f => ({
                         id: f.fid, name: f.file_name || f.name, type: f.file ? 'file' : 'folder',
                         isFolder: !f.file,
                         isVideo: /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.file_name || f.name),
                         size: f.size
                     }));
+                    // 夸克不需要driveId，播放时用fid即可
+                    driveState.driveId = '';
                 } else {
                     loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">该网盘分享需手动输入路径</div>';
                     return [];
@@ -4676,36 +4734,153 @@
         async function resolveDrivePlay(dtype, dtkn, dId, fId, fName, closePanel) {
             const cfg = DRIVE_CONFIGS[dtype];
             if (!cfg) { showAlert('不支持的网盘类型', '错误'); return; }
+            if (!dtkn) { showAlert('未配置 ' + (cfg.name || dtype) + ' Token\n请在设置→☁️网盘管理中填写', '提示'); return; }
             let playUrl = null;
             try {
                 if (dtype === 'alipan') {
+                    // 阿里云盘：需要先用RefreshToken换access_token
+                    let accessToken = dtkn;
+                    try {
+                        const tokenResp = await fetch('https://api.aliyundrive.com/token/get_access_token', {
+                            method: 'POST',
+                            body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: dtkn }),
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        if (tokenResp.ok) {
+                            const tokenData = await tokenResp.json();
+                            if (tokenData.access_token) accessToken = tokenData.access_token;
+                        }
+                    } catch(e) {
+                        console.warn('换取access_token失败，直接使用原Token:', e.message);
+                    }
+                    
+                    const authHeaders = { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' };
+                    
+                    // 先用getVideoPreviewPlayInfo获取转码流
                     const body = JSON.stringify({ drive_id: dId, file_id: fId, category: 'live_transcoding', template_id: '' });
-                    const resp = await apiFetch(cfg.playUrl, {
-                        method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(dtkn) }
+                    let resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_video_preview_play_info', {
+                        method: 'POST', body, headers: authHeaders
                     });
-                    const data = JSON.parse(resp);
+                    let data = JSON.parse(resp);
                     const tasks = data.video_preview_play_info && data.video_preview_play_info.live_transcoding_task_list;
                     if (tasks && tasks.length > 0) {
                         const best = tasks.find(t => t.template_id === 'FHD') || tasks.find(t => t.template_id === 'HD') || tasks.find(t => t.template_id === 'SD') || tasks[0];
                         playUrl = best.url;
                     }
+                    // 降级：用getDownloadUrl获取直链
                     if (!playUrl) {
-                        const dlResp = await apiFetch(cfg.downloadUrl, {
-                            method: 'POST', body: JSON.stringify({ drive_id: dId, file_id: fId }),
-                            headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(dtkn) }
+                        resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_download_url', {
+                            method: 'POST', body: JSON.stringify({ drive_id: dId, file_id: fId, expire_sec: 14400 }),
+                            headers: authHeaders
                         });
-                        const dlD = JSON.parse(dlResp);
-                        playUrl = dlD.url || dlD.download_url;
+                        data = JSON.parse(resp);
+                        playUrl = data.url || data.download_url;
+                    }
+                    if (!playUrl && data.code === 'AccessTokenInvalid') {
+                        showAlert('阿里云盘Token已过期或无效\n请在设置→☁️网盘管理中重新获取RefreshToken', 'Token失效');
+                        return;
                     }
                 } else if (dtype === 'quark') {
+                    // 夸克播放：直接用fid请求play接口，不需要drive_id
+                    const playUrlEndpoint = cfg.playUrl || 'https://drive-pc.quark.cn/1/clouddrive/file/v2/play';
                     const params = new URLSearchParams({ fid: fId, pr: 'ucpro', fr: 'pc', uc_param_str: '' });
-                    const resp = await apiFetch(cfg.playUrl + '?' + params.toString(), { headers: cfg.getAuthHeader(dtkn) });
+                    const resp = await apiFetch(playUrlEndpoint + '?' + params.toString(), { headers: cfg.getAuthHeader(dtkn) });
                     const d = JSON.parse(resp);
-                    playUrl = d.data && d.data.play_url || d.play_url;
+                    playUrl = d.data?.play_url || d.play_url || '';
+                    if (!playUrl && d.data?.video_list) {
+                        const videos = d.data.video_list;
+                        const best = videos.find(v => v.code === 'fhd') || videos.find(v => v.code === 'hd') || videos.find(v => v.code === 'sd') || videos[0];
+                        if (best) playUrl = best.video_info?.url || best.url || '';
+                    }
+                    if (!playUrl && (d.status === 401 || d.code === 401)) {
+                        showAlert('夸克网盘Cookie已过期\n请重新获取Cookie后在设置中更新', 'Token失效');
+                        return;
+                    }
+                } else if (dtype === 'uc') {
+                    // UC网盘：优先用UC_Token(Open API)，降级用Cookie
+                    let ucToken = dtkn;
+                    // 判断用户填的是Token还是Cookie
+                    const isToken = dtkn.startsWith('UC_') || dtkn.includes('.');
+                    try {
+                        if (!isToken) {
+                            // Cookie方式：用UCCookie请求播放
+                            const playResp = await apiFetch('https://drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', {
+                                headers: { 'Cookie': dtkn }
+                            });
+                            const pd = JSON.parse(playResp);
+                            playUrl = pd.data?.play_url || pd.play_url || '';
+                            if (!playUrl && pd.data?.video_list) {
+                                const best = pd.data.video_list.find(v => v.code === 'fhd') || pd.data.video_list.find(v => v.code === 'hd') || pd.data.video_list[0];
+                                playUrl = best?.video_info?.url || best?.url || '';
+                            }
+                        } else {
+                            // UC Open API Token方式
+                            const playResp = await apiFetch('https://open-api-drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', {
+                                headers: { 'Authorization': 'Bearer ' + dtkn }
+                            });
+                            const pd = JSON.parse(playResp);
+                            playUrl = pd.data?.play_url || pd.play_url || '';
+                        }
+                        if (!playUrl && (pd?.status === 401 || pd?.code === 401)) {
+                            showAlert('UC网盘Token/Cookie已过期', 'Token失效');
+                            return;
+                        }
+                    } catch(e) {
+                        console.warn('UC网盘播放失败:', e.message);
+                    }
                 } else if (dtype === 'baidu') {
-                    const dlResp = await apiFetch(cfg.downloadUrl + '?app_id=250528&method=locatedownload&check_blue=1&path=' + encodeURIComponent(fId), { headers: cfg.getAuthHeader(dtkn) });
-                    const dlData = JSON.parse(dlResp);
-                    playUrl = dlData.url || (dlData.urls && dlData.urls[0] && dlData.urls[0].url);
+                    // 百度网盘：使用BDUSS通过pcs接口获取直链
+                    try {
+                        // 先尝试用bdstoken方式（需要先获取bdstoken）
+                        const bdstokenResp = await apiFetch('https://pan.baidu.com/api/getbdstoken?channel=chunlei&web=1&app_id=250528&clienttype=0', {
+                            headers: { 'Cookie': 'BDUSS=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
+                        });
+                        const bdData = JSON.parse(bdstokenResp);
+                        const bdstoken = bdData.data?.bdstoken || bdData.bdstoken || '';
+
+                        // 用filemetas获取文件信息
+                        const metaResp = await apiFetch('https://pan.baidu.com/api/filemetas?target=' + JSON.stringify([fId]) + '&dlink=1&bdstoken=' + bdstoken + '&channel=chunlei&web=1&app_id=250528&clienttype=0', {
+                            headers: { 'Cookie': 'BDUSS=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
+                        });
+                        const metaData = JSON.parse(metaResp);
+                        if (metaData?.data?.[0]?.dlink) {
+                            playUrl = metaData.data[0].dlink;
+                            // dlink需要加上bdstoken和User-Agent
+                            if (bdstoken) playUrl += '&bdstoken=' + bdstoken;
+                        }
+                    } catch(e) {
+                        console.warn('百度网盘播放失败:', e.message);
+                        // 降级：尝试pcs下载接口
+                        try {
+                            const dlResp = await apiFetch('https://pcs.baidu.com/rest/2.0/pcs/file?app_id=250528&method=download&path=/' + fName + '&ver=2&time=' + Date.now(), {
+                                headers: { 'Cookie': 'BDUSS=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
+                            });
+                            if (dlResp && dlResp.startsWith('http')) playUrl = dlResp;
+                        } catch(e2) {}
+                    }
+                } else if (dtype === '115') {
+                    // 115网盘：通过Cookie获取文件下载直链
+                    try {
+                        // 115的pickcode就是文件ID
+                        const playResp = await apiFetch('https://webapi.115.com/files/download?pickcode=' + fId, {
+                            headers: { 'Cookie': 'CID=' + dtkn, 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)' }
+                        });
+                        const pd = JSON.parse(playResp);
+                        playUrl = pd.file_url || pd.url || '';
+                        if (!playUrl) {
+                            // 降级：尝试video播放接口
+                            const vResp = await apiFetch('https://v.115.com/files/video?pickcode=' + fId, {
+                                headers: { 'Cookie': 'CID=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
+                            });
+                            const vd = JSON.parse(vResp);
+                            playUrl = vd.data?.play_url || vd.play_url || '';
+                        }
+                    } catch(e) {
+                        console.warn('115播放失败:', e.message);
+                    }
+                } else {
+                    showAlert('该网盘类型暂不支持播放', '提示');
+                    return;
                 }
                 if (playUrl) {
                     videoList = [playUrl];
@@ -4714,11 +4889,17 @@
                     if (closePanel !== false) toggleDrivePanel();
                     showAlert(`正在播放: ${fName}`, '成功');
                 } else {
-                    showAlert('无法获取播放地址', '播放失败');
+                    showAlert('无法获取播放地址\nToken可能已过期，请在设置中重新填写', '播放失败');
                 }
             } catch(e) {
                 console.error('获取播放地址失败:', e);
-                showAlert('获取播放地址失败: ' + e.message, '错误');
+                // 判断是否为Token过期
+                const msg = e.message || '';
+                if (msg.includes('401') || msg.includes('403') || msg.includes('AccessToken') || msg.includes('token') || msg.includes('Token')) {
+                    showAlert('Token已过期或无效\n请在设置→☁️网盘管理中重新获取\n\n错误: ' + msg.substring(0, 80), 'Token失效');
+                } else {
+                    showAlert('获取播放地址失败: ' + msg, '错误');
+                }
             }
         }
 
@@ -4794,7 +4975,7 @@
                         }));
                 } else if (driveType === 'baidu') {
                     // 百度网盘全文搜索
-                    const searchUrl = 'https://pan.baidu.com/api/search?key=' + encodeURIComponent(keyword) + '&order=time&desc=1&web=1&num=50';
+                    const searchUrl = 'https://pan.baidu.com/api/search?key=' + keyword + '&order=time&desc=1&web=1&num=50';
                     const resp = await apiFetch(searchUrl, { headers: cfg.getAuthHeader(token) });
                     const data = JSON.parse(resp);
                     files = (data.data || data.list || []).map(f => ({
@@ -4938,7 +5119,7 @@
                 } else if (driveState.type === "quark") {
                     resp = await apiFetch(cfg.listUrl+"?pr=ucpro&fr=pc&uc_param_str=&pdir_fid="+(parentFileId||"0")+"&_page=1&_size=100&_sort=file_type:asc,updated_at:desc", {headers:cfg.getAuthHeader(token)});
                 } else if (driveState.type === "baidu") {
-                    resp = await apiFetch(cfg.listUrl+"?dir="+encodeURIComponent(parentFileId||"/")+"&order=name&desc=0", {headers:cfg.getAuthHeader(token)});
+                    resp = await apiFetch(cfg.listUrl+"?dir="+parentFileId+"/"+"&order=name&desc=0", {headers:cfg.getAuthHeader(token)});
                 } else { container.innerHTML='<div class="text-white/40 text-xs text-center py-4">该网盘暂不支持</div>'; return; }
                 var files = cfg.extractList(JSON.parse(resp));
                 renderDriveFilesPanel(files);
@@ -5004,12 +5185,26 @@
             </div>
             <div class="p-4 space-y-4 overflow-y-auto" style="max-height: calc(85vh - 55px);">
                 <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-white/60 text-[11px]">获取Token</label>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <a href="javascript:;" onclick="window.open('https://aliyundrive.com')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 阿里云盘</a>
+                        <a href="javascript:;" onclick="window.open('https://pan.quark.cn')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 夸克网盘</a>
+                        <a href="javascript:;" onclick="window.open('https://pan.baidu.com')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 百度网盘</a>
+                        <a href="javascript:;" onclick="window.open('https://115.com')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 115网盘</a>
+                        <a href="javascript:;" onclick="window.open('https://drive.uc.cn')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ UC网盘</a>
+                    </div>
+                    <p class="text-white/30 text-[10px] mt-1">点击网盘在浏览器打开 → 登录后获取Token/Cookie粘贴下方</p>
+                </div>
+                <div>
                     <label class="text-white/60 text-[11px] mb-1.5 block">选择网盘</label>
                     <select id="driveTypeSelect2" class="w-full glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none cursor-pointer" onchange="onDrivePanelTypeChange()">
                         <option value="alipan" class="bg-gray-800">☁️ 阿里云盘</option>
                         <option value="quark" class="bg-gray-800">☁️ 夸克网盘</option>
                         <option value="baidu" class="bg-gray-800">☁️ 百度网盘</option>
                         <option value="uc" class="bg-gray-800">☁️ UC网盘</option>
+                        <option value="115" class="bg-gray-800">☁️ 115网盘</option>
                         <option value="123pan" class="bg-gray-800">☁️ 123云盘</option>
                         <option value="139pan" class="bg-gray-800">☁️ 139云盘</option>
                     </select>
