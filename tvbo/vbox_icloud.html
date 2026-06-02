@@ -3470,8 +3470,23 @@
                                     const baseUrl = apiDef.url.replace(/\/+$/, '');
                                     const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
                                     const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + encodeURIComponent(keyword);
-                                    // 代理优先，失败降级直连
-                                    let text = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
+                // 流程4.5: 16个网盘爬虫搜索（每站独立Tab，代理失败降级直连）
+                if (CLOUD_DRIVE_SEARCH_API.length > 0) {
+                    promises.push(
+                        (async () => {
+                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源');
+                            for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
+                                try {
+                                    if (apiDef.type !== 'crawler') continue;
+                                    const baseUrl = apiDef.url.replace(/\/+$/, '');
+                                    const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
+                                    const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + encodeURIComponent(keyword);
+                                    // 代理优先，失败后重试1次，再失败降级直连
+                                    let text = await fetchFastWithProxy(fullUrl, 10000).catch(() => null);
+                                    if (!text) {
+                                        await new Promise(r => setTimeout(r, 300));
+                                        text = await fetchFastWithProxy(fullUrl, 10000).catch(() => null);
+                                    }
                                     if (!text) text = await fetchDirect(fullUrl, 8000).catch(() => null);
                                     if (!text || text.length < 100) continue;
                                     const parser = new DOMParser();
