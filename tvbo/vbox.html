@@ -4690,20 +4690,37 @@
             const loadingEl = document.getElementById('driveFileList');
             loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">加载分享内容中...</div>';
             let allFiles = [];
+            let lastError = '';
 
             let shareToken = null;
             try {
                 if (type === 'alipan') {
-                    const body = JSON.stringify({ share_id: shareId, share_pwd: sharePwd || '' });
-                    const resp = await apiFetch(cfg.shareTokenUrl, {
-                        method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
-                    });
-                    const data = JSON.parse(resp);
-                    shareToken = data.share_token;
-                    if (!shareToken) throw new Error('无法获取share_token');
+                    // 阿里云盘分享：用Token验证 + 匿名降级
+                    try {
+                        const body = JSON.stringify({ share_id: shareId, share_pwd: sharePwd || '' });
+                        const resp = await apiFetch(cfg.shareTokenUrl, {
+                            method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
+                        });
+                        const data = JSON.parse(resp);
+                        shareToken = data.share_token;
+                        if (!shareToken) throw new Error('share_token为空');
+                    } catch(e) {
+                        lastError = e.message;
+                        // Token失败，尝试匿名访问
+                        try {
+                            const resp = await apiFetch(cfg.shareTokenUrl, {
+                                method: 'POST', body: JSON.stringify({ share_id: shareId, share_pwd: sharePwd || '' }),
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            const data = JSON.parse(resp);
+                            shareToken = data.share_token;
+                        } catch(e2) {
+                            throw new Error('Token认证失败，匿名访问也失败: ' + (e.message || e2.message));
+                        }
+                    }
 
                     const listResp = await apiFetch(cfg.shareAnonymousUrl + '?share_id=' + shareId, {
-                        headers: { 'x-share-token': shareToken, ...cfg.getAuthHeader(tokn) }
+                        headers: { 'x-share-token': shareToken, ...(shareToken ? cfg.getAuthHeader(tokn) : {}) }
                     });
                     const listData = JSON.parse(listResp);
                     driveState.driveId = listData.drive_id || null;
