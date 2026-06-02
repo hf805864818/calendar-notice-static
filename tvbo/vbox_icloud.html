@@ -3404,9 +3404,9 @@
                         console.log(`流程2完成，找到 ${sliceResults.length} 个结果`);
                     })(),
 
-                    // 流程3: 分批搜索其他接口
+                    // 流程3: 分批搜索剩余采集源
                     (async () => {
-                        console.log(`流程3: 分批搜索${otherInterfaces.length}个其他接口`);
+                        console.log(`流程3: 分批搜索${otherInterfaces.length}个剩余采集源`);
                         // 每批8个接口
                         const batchSize = 8;
                         for (let i = 0; i < otherInterfaces.length; i += batchSize) {
