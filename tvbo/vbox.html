@@ -1943,7 +1943,7 @@
                 // 异步解析视频地址
                 // m3u8/mp4通过代理域名播放（仅在代理开启时）
                 const isDirectStream = originalUrl.includes('.m3u8') || originalUrl.includes('.mp4') || originalUrl.includes('.ts') || originalUrl.includes('.flv');
-                const proxyPlayUrl = (useProxyEnabled && isDirectStream) ? PROXY_LIST[1] + encodeURIComponent(originalUrl) + '&token=' + PROXY_TOKEN : originalUrl;
+                const proxyPlayUrl = originalUrl; // M3U8/MP4直链不走代理直接播放
                 parseVideoUrl(proxyPlayUrl, 3, currentAbortController)
                     .then(realUrl => {
                         // 检查是否已被新的请求替换
@@ -2501,7 +2501,7 @@
         let currentProxyIndex = 0;
 
         // 代理开关：从 localStorage 读取设置（默认关闭，因为代理服务器可能不稳定）
-        let useProxyEnabled = localStorage.getItem('useProxyEnabled') === 'true';
+        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== 'false';
         function toggleProxy() {
             useProxyEnabled = !useProxyEnabled;
             localStorage.setItem('useProxyEnabled', useProxyEnabled);
@@ -2547,8 +2547,56 @@
 
         // ===== 网盘聚合搜索接口 =====
         // 使用网盘聚合搜索引擎API，搜索各大网盘的资源分享链接
+        // 16个网盘爬虫站，每个站独立Tab展示
         const CLOUD_DRIVE_SEARCH_API = [
-            { url: 'https://so.252035.xyz/api/search?keyword=', name: '盘搜', type: 'pan_api' }
+            { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler', 
+              searchUrl: '/vodsearch/-------------.html?wd=', searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title', 
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'http://feimao888.fun', name: '蜡笔云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://tv.yydsys.top', name: '多多云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://sd.sduc.site', name: '闪电云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'http://2xiaopan.fun', name: '二小云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://oog.nxog.eu.org', name: '欧歌云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'http://www.miqk.cc', name: '至臻云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'http://103.45.162.207:20720', name: '虎斑云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'http://xsayang.fun:12512', name: '小斑云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://www.91panta.cn', name: '盘Ta云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://www.leijing.xyz', name: '雷鲸云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://www.nanf.cc', name: '南风云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://pan.funletu.com', name: '趣盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://4ktop.com', name: '4KTop云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://libvio.mov', name: 'LibVio云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' },
+            { url: 'https://666.666291.xyz', name: '木偶云盘', type: 'crawler', searchUrl: '/vodsearch/-------------.html?wd=',
+              searchname: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@title',
+              searchid: '//div[contains(@class,"module-search-item")]//a[contains(@class,"video-serial")]/@href', searchpic: '//div[contains(@class,"module-search-item")]//img/@data-src' }
         ];
 
         // 优先搜索的平台关键词：命中这些名称/URL的平台会排在最前面搜索和展示
@@ -3283,33 +3331,22 @@
                     console.warn('获取zhanyuan爬虫源失败:', e.message);
                 }
 
-                // 提取前8个切片资源接口（不足8个用zhanyuan补）
-                const apiInterfaces = searchInterfaces.filter(url => {
-                    const name = SEARCH_INTERFACE_NAME_MAP[url] || '';
-                    const urlText = url.toLowerCase();
-                    return url.includes('/api') || url.includes('/vod') || url.includes('.php') || name.includes('api');
-                });
-                const topSliceInterfaces = apiInterfaces.slice(0, 8);
-                if (topSliceInterfaces.length < 8) {
-                    const zyFill = zhanyuanInterfaces.filter(z => !topSliceInterfaces.includes(z)).slice(0, 8 - topSliceInterfaces.length);
-                    topSliceInterfaces.push(...zyFill);
-                }
-                console.log('流程2切片资源接口:', topSliceInterfaces.map(u => ({url: u.substring(0,80), name: SEARCH_INTERFACE_NAME_MAP[u] || extractInterfaceName(u)})));
                 
                 // 固定平台开关（从localStorage读取，默认开启）
                 const useFixedSources = localStorage.getItem('useFixedSources') !== 'false';
                 
-                // 提取固定平台接口（根据开关决定是否搜索）
-                const fixedPlatformInterfaces = useFixedSources ? searchInterfaces.slice(0, Math.min(2, searchInterfaces.length)) : [];
+                // 前8个作为切片资源接口（同时并发搜索）
+                const topSliceInterfaces = searchInterfaces.slice(0, Math.min(8, searchInterfaces.length));
+                const fixedPlatformInterfaces = useFixedSources ? topSliceInterfaces : [];
                 
-                // 其他接口（排除前两个和zhanyuan）
-                const otherInterfaces = searchInterfaces.slice(2).filter(url => !zhanyuanInterfaces.includes(url));
+                // 其他接口（排除前8个和zhanyuan）
+                const otherInterfaces = searchInterfaces.slice(8).filter(url => !zhanyuanInterfaces.includes(url));
 
                 // 同时执行三个搜索流程
                 const promises = [
-                    // 流程1: 立即搜索2个固定平台
+                    // 流程1: 搜索8个切片资源接口
                     (async () => {
-                        console.log('流程1: 搜索2个固定平台');
+                        console.log('流程1: 搜索', fixedPlatformInterfaces.length, '个切片资源接入');
                         const fixedResults = [];
                         const tasks = fixedPlatformInterfaces.map(async (interfaceUrl) => {
                             try {
@@ -3324,11 +3361,11 @@
                                     }
                                 }
                             } catch (error) {
-                                console.warn(`固定平台搜索失败: ${interfaceUrl}`, error);
+                                console.warn(`切片资源搜索失败: ${interfaceUrl}`, error);
                             }
                         });
                         await Promise.allSettled(tasks);
-                        console.log(`流程1完成，找到 ${fixedResults.length} 个固定平台结果`);
+                        console.log(`流程1完成,找到 ${fixedResults.length} 个切片资源结果`);
                     })(),
 
                     // 流程2: 同时搜索前8个zhanyuan接口
@@ -3355,9 +3392,9 @@
                         console.log(`流程2完成，找到 ${sliceResults.length} 个结果`);
                     })(),
 
-                    // 流程3: 分批搜索其他接口
+                    // 流程3: 分批搜索剩余采集源
                     (async () => {
-                        console.log(`流程3: 分批搜索${otherInterfaces.length}个其他接口`);
+                        console.log(`流程3: 分批搜索${otherInterfaces.length}个剩余采集源`);
                         // 每批8个接口
                         const batchSize = 8;
                         for (let i = 0; i < otherInterfaces.length; i += batchSize) {
@@ -3411,64 +3448,54 @@
                     );
                 }
 
-                // 流程4.5: 网盘聚合搜索（使用盘搜API扫描各大网盘资源）
+                // 流程4.5: 16个网盘爬虫搜索（每站独立Tab，代理失败降级直连）
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘聚合搜索', CLOUD_DRIVE_SEARCH_API.length, '个源');
-                            const allItems = [];
-                            const mergedKey = 'clouddrive-aggr:pan';
-
-                            for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
-                                try {
-                                    const searchUrl = apiDef.url + encodeURIComponent(keyword);
-                                    let respText;
-                                    if (useProxyEnabled) {
-                                        respText = await fetchFastWithProxy(searchUrl, 8000).catch(() => null);
-                                    } else {
-                                        respText = await fetchDirect(searchUrl, 8000).catch(() => null);
-                                    }
-                                    if (!respText || respText.length < 10) continue;
-
-                                    const json = JSON.parse(respText);
-                                    const merged = json.data && json.data.merged_by_type;
-                                    if (!merged) continue;
-
-                                    // 遍历所有网盘类型
-                                    const panTypes = Object.keys(merged);
-                                    for (const ptype of panTypes) {
-                                        const entries = merged[ptype] || [];
-                                        for (const entry of entries) {
-                                            const noteClean = (entry.note || '').replace(/[\(\）\（\]\[\【\】].*$/, '').trim();
-                                            allItems.push({
-                                                vod_id: entry.url || '',
-                                                vod_name: noteClean || entry.url || '',
-                                                vod_pic: (entry.images && entry.images[0]) || '',
-                                                vod_url: entry.url || '',
-                                                vod_remarks: ptype.toUpperCase() + (entry.password ? ' ' + entry.password : ''),
-                                                type_name: ptype,
-                                                _driveType: ptype,
-                                                _fileId: entry.url || '',
-                                                _panPassword: entry.password || '',
-                                                _cloudIndex: allItems.length,
-                                                _isVideo: true
+                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，5并发');
+                            // 8个一批并发
+                            for (let bi = 0; bi < CLOUD_DRIVE_SEARCH_API.length; bi += 5) {
+                                const batch = CLOUD_DRIVE_SEARCH_API.slice(bi, bi + 5);
+                                const tasks = batch.map(async (apiDef) => {
+                                    if (apiDef.type !== 'crawler') return null;
+                                    const baseUrl = apiDef.url.replace(/\/+$/, '');
+                                    const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
+                                    const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + encodeURIComponent(keyword);
+                                    let text = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
+                                    if (!text) text = await fetchDirect(fullUrl, 6000).catch(() => null);
+                                    if (!text || text.length < 100) return null;
+                                    const parser = new DOMParser();
+                                    const doc = parser.parseFromString(text, 'text/html');
+                                    const items = [];
+                                    doc.querySelectorAll('.module-search-item').forEach(c => {
+                                        const link = c.querySelector('.video-serial');
+                                        const img = c.querySelector('img');
+                                        const title = link?.getAttribute('title') || link?.textContent || '';
+                                        const href = link?.getAttribute('href') || '';
+                                        if (title) {
+                                            let absUrl = href;
+                                            if (!href.startsWith('http')) absUrl = baseUrl + (href.startsWith('/') ? '' : '/') + href;
+                                            items.push({
+                                                vod_id: absUrl, vod_name: title.trim(), vod_pic: img?.getAttribute('data-src') || '',
+                                                _detailPageUrl: absUrl, _panSource: apiDef, _isVideo: true
                                             });
                                         }
+                                    });
+                                    return { name: apiDef.name, items };
+                                });
+                                const results = await Promise.allSettled(tasks);
+                                results.forEach((r, ti) => {
+                                    if (r.status === 'fulfilled' && r.value && r.value.items.length > 0) {
+                                        const key = 'cloud-pan:' + r.value.name;
+                                        if (!seenPlatforms.has(key)) {
+                                            seenPlatforms.add(key);
+                                            allResults.push({ interfaceUrl: key, interfaceName: r.value.name, data: r.value.items });
+                                            displayResultsBatch();
+                                        }
                                     }
-                                } catch(e) {
-                                    console.warn('网盘聚合搜索[' + apiDef.name + ']失败:', e.message);
-                                }
+                                });
                             }
-
-                            if (allItems.length > 0) {
-                                const key = mergedKey;
-                                if (!seenPlatforms.has(key)) seenPlatforms.add(key);
-                                allResults.push({ interfaceUrl: key, interfaceName: '☁️ 网盘资源', data: allItems });
-                                displayResultsBatch();
-                                console.log('流程4.5完成，共', allItems.length, '个网盘资源结果');
-                            } else {
-                                console.log('流程4.5完成，无结果');
-                            }
+                            console.log('流程4.5完成');
                         })()
                     );
                 }
