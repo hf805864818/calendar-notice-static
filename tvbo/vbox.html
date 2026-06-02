@@ -4030,7 +4030,14 @@
                                 }
                                 
                                 if (matchedAny) {
-                                    throw new Error('所有分享链接均无法播放（Token无效或网盘API异常）');
+                                    // 收集诊断信息
+                                    const diagMsgs = ['分享链接提取到 ' + shareLinks.length + ' 个:'];
+                                    for (const su of shareLinks) {
+                                        const pt = identifyPanType(su);
+                                        const hasToken = savedDriveTokens[pt ? (pt === '阿里云盘' ? 'alipan' : pt === '夸克' ? 'quark' : pt === '百度' ? 'baidu' : pt === '115' ? '115' : '') : ''] ? '有Token' : '无Token';
+                                        diagMsgs.push(pt ? (pt + ' (' + hasToken + ')') : su.substring(0, 50));
+                                    }
+                                    throw new Error('所有分享链接均无法播放\n\n' + diagMsgs.join('\n') + '\n\n请在设置→☁️网盘管理中填写对应网盘的Token');
                                 } else {
                                     // 没有匹配到已知网盘，走直链提取
                                     let playUrl = '';
@@ -5039,6 +5046,29 @@
                     '<button class="glass-btn px-1.5 py-0.5 rounded text-[10px] text-red-400 cursor-pointer" onclick="removeTokenForType(\x27'+t+'\x27);renderTokenListPanel()">x</button></div></div>';
             }).join("");
         }
+        function copyAndGuideToken() {
+            const url = 'https://cookie-butler.douer.me';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showAlert('✅ 已复制链接!\n\n已复制到剪贴板，请粘贴到浏览器打开获取Token\n\n链接: ' + url, '获取Token');
+                }).catch(() => {
+                    // clipboard失败，创建临时输入框复制
+                    fallbackCopy(url);
+                });
+            } else {
+                fallbackCopy(url);
+            }
+        }
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
+            showAlert('✅ 已复制链接!\n\n已复制到剪贴板，请粘贴到浏览器打开获取Token', '获取Token');
+        }
         function useDriveTokenPanel(type) {
             document.getElementById("driveTypeSelect2").value = type;
             onDrivePanelTypeChange();
@@ -5185,17 +5215,10 @@
             </div>
             <div class="p-4 space-y-4 overflow-y-auto" style="max-height: calc(85vh - 55px);">
                 <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="text-white/60 text-[11px]">获取Token</label>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        <a href="javascript:;" onclick="window.open('https://aliyundrive.com')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 阿里云盘</a>
-                        <a href="javascript:;" onclick="window.open('https://pan.quark.cn')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 夸克网盘</a>
-                        <a href="javascript:;" onclick="window.open('https://pan.baidu.com')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 百度网盘</a>
-                        <a href="javascript:;" onclick="window.open('https://115.com')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ 115网盘</a>
-                        <a href="javascript:;" onclick="window.open('https://drive.uc.cn')" class="glass-btn px-2 py-1 rounded text-[10px] text-white/80 cursor-pointer hover:text-white">☁️ UC网盘</a>
-                    </div>
-                    <p class="text-white/30 text-[10px] mt-1">点击网盘在浏览器打开 → 登录后获取Token/Cookie粘贴下方</p>
+                    <button class="w-full glass-btn px-3 py-2 rounded-xl text-yellow-400 text-xs cursor-pointer flex items-center justify-center gap-2 mb-2" onclick="copyAndGuideToken()">
+                        <span>🔗 一键获取Token</span>
+                    </button>
+                    <p class="text-white/30 text-[10px] text-center">已复制链接到剪贴板，请粘贴到浏览器打开获取Token</p>
                 </div>
                 <div>
                     <label class="text-white/60 text-[11px] mb-1.5 block">选择网盘</label>
