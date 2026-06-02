@@ -3474,10 +3474,10 @@
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，8并发');
+                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，5并发');
                             // 8个一批并发
-                            for (let bi = 0; bi < CLOUD_DRIVE_SEARCH_API.length; bi += 8) {
-                                const batch = CLOUD_DRIVE_SEARCH_API.slice(bi, bi + 8);
+                            for (let bi = 0; bi < CLOUD_DRIVE_SEARCH_API.length; bi += 5) {
+                                const batch = CLOUD_DRIVE_SEARCH_API.slice(bi, bi + 5);
                                 const tasks = batch.map(async (apiDef) => {
                                     if (apiDef.type !== 'crawler') return null;
                                     const baseUrl = apiDef.url.replace(/\/+$/, '');
