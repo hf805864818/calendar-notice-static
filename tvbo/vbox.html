@@ -2934,9 +2934,8 @@
                         if (headers && typeof headers === 'object') {
                             const headerParams = [];
                             for (const [hk, hv] of Object.entries(headers)) {
-                                if (hk.toLowerCase() !== 'content-type') {
-                                    headerParams.push('h_' + hk.replace(/-/g, '_') + '=' + encodeURIComponent(hv));
-                                }
+                                // 所有 Header 都传给 Worker，包括 Content-Type
+                                headerParams.push('h_' + hk.replace(/-/g, '_') + '=' + encodeURIComponent(hv));
                             }
                             if (headerParams.length > 0) {
                                 finalUrl += '&' + headerParams.join('&');
@@ -4004,138 +4003,122 @@
                                     throw new Error('该页面既无分享链接也无播放地址');
                                 }
 
-                                // 对每个分享链接，尝试用已保存的Token解析播放
+                                // 提取分享链接后，只取第一个匹配的已知网盘类型
+                                // 阿里云盘支持匿名 share_token 播放
+                                // 夸克/百度/UC/115 需要 Cookie，直接尝试播放
                                 const savedDriveTokens = loadDriveTokens();
                                 loadingEl.textContent = '正在解析分享链接...';
-                                let matchedAny = false;
-                                const loadingErrors = [];
-                                let browseLastError = null;
+                                let triedAny = false;
+                                let lastError = '';
                                 
                                 for (const shareUrl of shareLinks) {
-                                    try {
-                                        let driveType = '';
-                                        if (/aliyundrive\.com|alipan\.com/i.test(shareUrl)) driveType = 'alipan';
-                                        else if (/pan\.quark\.cn/i.test(shareUrl)) driveType = 'quark';
-                                        else if (/pan\.baidu\.com/i.test(shareUrl)) driveType = 'baidu';
-                                        else if (/115\.com/i.test(shareUrl)) driveType = '115';
-                                        else if (/123pan/i.test(shareUrl)) driveType = '123pan';
-                                        else if (/uc\.cn/i.test(shareUrl)) driveType = 'uc';
-                                        else if (/cloud\.189\.cn/i.test(shareUrl)) driveType = '189';
-                                        else if (/pikpak/i.test(shareUrl)) driveType = 'pikpak';
-                                        // 暂不支持的网盘跳过（无playUrl实现）
-                                        if (driveType === '189' || driveType === 'pikpak' || driveType === '123pan') continue;
-                                        
-                                        if (!driveType) continue;
-                                        matchedAny = true;
-                                        
-                                        const token = savedDriveTokens[driveType];
-                                        const driveName = DRIVE_CONFIGS[driveType]?.name || driveType;
-                                        
-                                        // ★ 夸克的分享链接必须通过 Cookie 才能转存+播放
-                                        // 阿里云盘的分享链接可以通过 share_token 匿名访问
-                                        // 百度/115/UC 必须需要 Token
-                                        const needsToken = (driveType === 'quark' || driveType === 'baidu' || driveType === '115' || driveType === 'uc');
-                                        if (needsToken && !token) {
-                                            loadingErrors.push(driveName + ': 未添加Token');
-                                            continue;
-                                        }
-                                        
-                                        loadingEl.textContent = `正在用${driveName}播放...`;
-                                        
-                                        const shareIdMatch = shareUrl.match(/\/s\/([a-zA-Z0-9_\-]+)/i);
-                                        if (!shareIdMatch) { loadingErrors.push(driveName + ': 无法从链接提取share_id'); continue; }
-                                        const shareId = shareIdMatch[1];
-                                        const pwdMatch = shareUrl.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || shareUrl.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/);
-                                        const sharePwd = pwdMatch ? pwdMatch[1] : '';
-                                        
-                                        loadingEl.textContent = `正在解析${driveName}分享...`;
-                                        let files = [];
-                                        
-                                        // ★ 夸克/UC的sharepage/detail API需要设备签名，无法直接调用
-                                        // 直接获取 share_token 后设置 driveState，让 resolveDrivePlay 走转存模式
-                                        if (driveType === 'quark' || driveType === 'uc') {
-                                            try {
-                                                const tokenEndpoint = driveType === 'quark' 
-                                                    ? 'https://drive-pc.quark.cn/1/clouddrive/share/sharepage/token'
-                                                    : 'https://drive.uc.cn/share/sharepage/token';
-                                                const tokenBody = JSON.stringify({ share_id: shareId, passcode: sharePwd || '' });
-                                                const tokenResp = await apiFetch(tokenEndpoint, {
-                                                    method: 'POST', body: tokenBody,
-                                                    headers: { 'Content-Type': 'application/json' }
-                                                });
-                                                const tokenData = JSON.parse(tokenResp);
-                                                const st = tokenData.data?.share_token || tokenData.share_token || '';
-                                                if (st) {
-                                                    driveState.shareToken = st;
-                                                    driveState.shareId = shareId;
-                                                    driveState.driveId = '';
-                                                    // 直接调 resolveDrivePlay（它会做转存+play）
-                                                    await resolveDrivePlay(driveType, token, '', '1', shareUrl, false);
-                                                    loadingEl.classList.add('hidden');
-                                                    closeSearchPanel();
-                                                    return;
-                                                }
-                                            } catch(stErr) {
-                                                loadingErrors.push(driveName + ': ' + stErr.message);
-                                                continue;
-                                            }
-                                        } else {
-                                            try {
-                                                files = await browseShareFiles(driveType, shareId, sharePwd, token || '');
-                                            } catch(err) {
-                                                loadingErrors.push(driveName + ': 获取文件列表失败 - ' + err.message);
-                                                continue;
-                                            }
-                                        }
-                                        
-                                        if (files && files.length > 0) {
-                                            const videoFile = files.find(function(f) { return f.isVideo; }) || files.find(function(f) { return /\.(mp4|m3u8|mkv|avi|mov|flv|ts|webm)$/i.test(f.name || ''); });
+                                    if (triedAny) break; // 只试第一条匹配的
+                                    
+                                    let driveType = '';
+                                    if (/aliyundrive\.com|alipan\.com/i.test(shareUrl)) driveType = 'alipan';
+                                    else if (/pan\.quark\.cn/i.test(shareUrl)) driveType = 'quark';
+                                    else if (/pan\.baidu\.com/i.test(shareUrl)) driveType = 'baidu';
+                                    else if (/115\.com/i.test(shareUrl)) driveType = '115';
+                                    else if (/123pan/i.test(shareUrl)) driveType = '123pan';
+                                    else if (/uc\.cn/i.test(shareUrl)) driveType = 'uc';
+                                    else if (/cloud\.189\.cn/i.test(shareUrl)) driveType = '189';
+                                    else if (/pikpak/i.test(shareUrl)) driveType = 'pikpak';
+                                    if (!driveType || driveType === '189' || driveType === 'pikpak' || driveType === '123pan') continue;
+                                    
+                                    triedAny = true;
+                                    const token = savedDriveTokens[driveType];
+                                    const driveName = DRIVE_CONFIGS[driveType]?.name || driveType;
+                                    
+                                    // 如果没有 Token，提示用户
+                                    if (driveType !== 'alipan' && !token) {
+                                        showAlert(`需要 ${driveName} Cookie/Token\n请在设置→☁️网盘中添加`, '提示');
+                                        loadingEl.classList.add('hidden');
+                                        return;
+                                    }
+                                    
+                                    loadingEl.textContent = `正在用${driveName}播放...`;
+                                    
+                                    const shareIdMatch = shareUrl.match(/\/s\/([a-zA-Z0-9_\-]+)/i);
+                                    if (!shareIdMatch) {
+                                        showAlert('无法从链接提取 share_id', '解析失败');
+                                        loadingEl.classList.add('hidden');
+                                        return;
+                                    }
+                                    const shareId = shareIdMatch[1];
+                                    const pwdMatch = shareUrl.match(/pwd[=:]\s*([a-zA-Z0-9]{4})/i) || shareUrl.match(/提取码[:：]\s*([a-zA-Z0-9]{4})/);
+                                    const sharePwd = pwdMatch ? pwdMatch[1] : '';
+                                    
+                                    if (driveType === 'alipan') {
+                                        // 阿里云盘：匿名模式，不需要 Token
+                                        try {
+                                            const files = await browseShareFiles('alipan', shareId, sharePwd, '');
+                                            const videoFile = files.find(function(f) { return f.isVideo; }) || null;
                                             if (videoFile) {
-                                                loadingEl.textContent = '获取播放地址...';
-                                                try {
-                                                    const shareDriveId = driveState.driveId || '';
-                                                    await resolveDrivePlay(driveType, token, shareDriveId, videoFile.id, videoFile.name || '视频', false);
-                                                    loadingEl.classList.add('hidden');
-                                                    closeSearchPanel();
-                                                    return;
-                                                } catch(err) {
-                                                    loadingErrors.push(driveName + ': 获取播放地址失败 - ' + err.message);
-                                                    continue;
-                                                }
-                                            } else {
-                                                loadingErrors.push(driveName + ': 文件列表为空或无视频文件');
+                                                driveState.shareToken = driveState.shareToken || '';
+                                                await resolveDrivePlay('alipan', '', driveState.driveId, videoFile.id, videoFile.name, false);
+                                                loadingEl.classList.add('hidden');
+                                                closeSearchPanel();
+                                                return;
                                             }
-                                        } else {
-                                            // browseShareFiles返回了空数组但没有抛异常
-                                            const lastErr = browseLastError || '未返回文件列表';
-                                            loadingErrors.push(driveName + ': ' + lastErr);
+                                        } catch(e) {
+                                            showAlert('阿里云盘播放失败: ' + e.message, '播放失败');
+                                            loadingEl.classList.add('hidden');
+                                            return;
                                         }
-                                    } catch(e) {
-                                        loadingErrors.push((DRIVE_CONFIGS[driveType]?.name || driveType) + ': 异常 - ' + e.message);
-                                        continue;
+                                    } else if (driveType === 'quark' || driveType === 'uc') {
+                                        // 夸克/UC：尝试获取 share_token → 转存播放
+                                        try {
+                                            const tokenEndpoint = driveType === 'quark'
+                                                ? 'https://drive-pc.quark.cn/1/clouddrive/share/sharepage/token'
+                                                : 'https://drive.uc.cn/share/sharepage/token';
+                                            const tokenResp = await apiFetch(tokenEndpoint, {
+                                                method: 'POST',
+                                                body: JSON.stringify({ share_id: shareId, passcode: sharePwd || '' }),
+                                                headers: { 'Content-Type': 'application/json' }
+                                            });
+                                            const tokenData = JSON.parse(tokenResp);
+                                            const st = tokenData.data?.share_token || tokenData.share_token || '';
+                                            if (!st) {
+                                                showAlert('获取 ' + driveName + ' share_token 失败\nAPI可能被拦截，请尝试在夸克App中手动转存', '转存失败');
+                                                loadingEl.classList.add('hidden');
+                                                return;
+                                            }
+                                            driveState.shareToken = st;
+                                            driveState.shareId = shareId;
+                                            driveState.driveId = '';
+                                            await resolveDrivePlay(driveType, token, '', '1', shareUrl, false);
+                                            loadingEl.classList.add('hidden');
+                                            closeSearchPanel();
+                                            return;
+                                        } catch(e) {
+                                            showAlert(`${driveName} 播放失败: ${e.message}\n\n提示: 夸克分享需要Cookie，且API受CORS限制\n建议在夸克App中手动保存文件后播放`, '播放失败');
+                                            loadingEl.classList.add('hidden');
+                                            return;
+                                        }
+                                    } else {
+                                        // 百度/115：走 browseShareFiles → resolveDrivePlay
+                                        try {
+                                            const files = await browseShareFiles(driveType, shareId, sharePwd, token);
+                                            const videoFile = files.find(function(f) { return f.isVideo; }) || null;
+                                            if (videoFile) {
+                                                await resolveDrivePlay(driveType, token, '', videoFile.id, videoFile.name, false);
+                                                loadingEl.classList.add('hidden');
+                                                closeSearchPanel();
+                                                return;
+                                            }
+                                            showAlert(driveName + ' 未找到视频文件', '播放失败');
+                                        } catch(e) {
+                                            showAlert(`${driveName} 播放失败: ${e.message}`, '播放失败');
+                                        }
+                                        loadingEl.classList.add('hidden');
+                                        return;
                                     }
                                 }
                                 
-                                if (matchedAny) {
-                                    // 改用可关闭的可滚动弹窗
-                                    let diagMsg = '播放链路诊断:\n\n';
-                                    diagMsg += '提取到 ' + shareLinks.length + ' 个分享链接:\n';
-                                    for (const su of shareLinks) {
-                                        const pt = identifyPanType(su);
-                                        diagMsg += '  ' + (pt || su.substring(0, 50)) + '\n';
-                                    }
-                                    diagMsg += '\n详细错误:\n';
-                                    for (const err of loadingErrors) {
-                                        diagMsg += '  ✗ ' + err + '\n';
-                                    }
-                                    diagMsg += '\n点击确定关闭后继续测试其他资源';
-                                    // 用 showAlert 而不是 throw（弹窗已改为可滚动）
-                                    showAlert(diagMsg, '夸克播放诊断');
+                                if (!triedAny) {
+                                    showAlert('提取到的分享链接没有匹配的网盘类型\n目前支持：阿里云盘、夸克、百度、115、UC', '无法播放');
                                     loadingEl.classList.add('hidden');
                                     return;
-                                } else {
-                                    // 没有匹配到已知网盘的分享链接，第一步已试过直链提取且也失败了
-                                    throw new Error('未找到可播放的分享链接');
                                 }
                             } catch (e) {
                                 console.warn('网盘聚合源获取详情失败:', e.message);
