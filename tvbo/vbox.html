@@ -3943,6 +3943,20 @@
                                 }
 
                                 console.log('提取到分享链接:', shareLinks);
+
+                                // 诊断：打印提取到的详情页关键信息
+                                if (shareLinks.length === 0) {
+                                    console.log('未找到分享链接，页面信息:');
+                                    console.log('  标题:', doc.title);
+                                    console.log('  所有链接:', Array.from(doc.querySelectorAll('a[href]')).slice(0, 10).map(a => a.href.substring(0, 80)));
+                                    console.log('  页面文本前500字:', (doc.body?.textContent || '').substring(0, 500));
+                                    // 特殊查找：查找所有文本中是否包含 pan.quark.cn
+                                    const bodyText = doc.body?.textContent || '';
+                                    const quarkMatch = bodyText.match(/pan\.quark\.cn[^\s"'<>]*/gi);
+                                    console.log('  夸克相关文本:', quarkMatch || '无');
+                                    const allUrls = bodyText.match(/https?:\/\/[^\s"'<>]+/gi);
+                                    console.log('  页面URL列表:', (allUrls || []).slice(0, 10).map(u => u.substring(0, 80)));
+                                }
                                 
                                 if (shareLinks.length === 0) {
                                     // 没有分享链接，可能是直链站，走之前的video/iframe提取逻辑
@@ -5780,7 +5794,14 @@ API 限制较多，暂未实现`
                 </div>
                 <div>
                     <label class="text-white/60 text-[11px] mb-1.5 block">选择网盘</label>
-                    <select id="driveTypeSelect2" class="w-full glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none cursor-pointer" onchange="onDrivePanelTypeChange()"><option value="alipan" class="bg-gray-800">☁️ 阿里云盘</option>
+                    <select id="driveTypeSelect2" class="w-full glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none cursor-pointer" onchange="onDrivePanelTypeChange()">
+                        <option value="alipan" class="bg-gray-800">☁️ 阿里云盘</option>
+                        <option value="quark" class="bg-gray-800">☁️ 夸克网盘</option>
+                        <option value="uc" class="bg-gray-800">☁️ UC网盘</option>
+                        <option value="baidu" class="bg-gray-800">☁️ 百度网盘</option>
+                        <option value="115" class="bg-gray-800">☁️ 115网盘</option>
+                        <option value="123pan" class="bg-gray-800">☁️ 123云盘</option>
+                        <option value="139pan" class="bg-gray-800">☁️ 139云盘</option>
                     </select>
                     <div id="tokenHelpText" class="text-white/40 text-[10px] mt-1.5 p-2 rounded-lg bg-white/5 leading-relaxed"></div>
                 </div>
