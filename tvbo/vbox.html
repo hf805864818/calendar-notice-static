@@ -374,14 +374,15 @@
     </svg>
 
     <div id="customModal" class="fixed inset-0 hidden items-center justify-center z-[9999] p-4" style="background: rgba(0,0,0,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-        <div class="w-full max-w-sm rounded-2xl border border-white/10 shadow-2xl" style="background: rgba(30, 24, 60, 0.92); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
-            <div class="px-4 pt-4 pb-2">
+        <div class="w-full max-w-sm rounded-2xl border border-white/10 shadow-2xl max-h-[70vh] flex flex-col" style="background: rgba(30, 24, 60, 0.92); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
+            <div class="px-4 pt-4 pb-2 flex items-center justify-between">
                 <div id="customModalTitle" class="text-white text-sm font-semibold">提示</div>
+                <button onclick="closeCustomModal(false)" class="text-white/40 hover:text-white cursor-pointer text-lg leading-none">&times;</button>
             </div>
-            <div class="px-4 pb-4">
+            <div class="px-4 pb-4 overflow-y-auto min-h-0 max-h-[calc(70vh-80px)]">
                 <div id="customModalMessage" class="text-white/80 text-xs leading-5 whitespace-pre-wrap break-words"></div>
             </div>
-            <div id="customModalActions" class="px-4 pb-4 flex items-center justify-end gap-2"></div>
+            <div id="customModalActions" class="px-4 pb-4 flex items-center justify-end gap-2 flex-shrink-0"></div>
         </div>
     </div>
 
@@ -4078,18 +4079,22 @@
                                 }
                                 
                                 if (matchedAny) {
+                                    // 改用可关闭的可滚动弹窗
                                     let diagMsg = '播放链路诊断:\n\n';
                                     diagMsg += '提取到 ' + shareLinks.length + ' 个分享链接:\n';
                                     for (const su of shareLinks) {
                                         const pt = identifyPanType(su);
-                                        diagMsg += '  ' + (pt || su.substring(0, 40)) + '\n';
+                                        diagMsg += '  ' + (pt || su.substring(0, 50)) + '\n';
                                     }
                                     diagMsg += '\n详细错误:\n';
                                     for (const err of loadingErrors) {
                                         diagMsg += '  ✗ ' + err + '\n';
                                     }
-                                    diagMsg += '\n请在设置→☁️网盘管理中检查Token';
-                                    throw new Error(diagMsg);
+                                    diagMsg += '\n点击确定关闭后继续测试其他资源';
+                                    // 用 showAlert 而不是 throw（弹窗已改为可滚动）
+                                    showAlert(diagMsg, '夸克播放诊断');
+                                    loadingEl.classList.add('hidden');
+                                    return;
                                 } else {
                                     // 没有匹配到已知网盘，走直链提取
                                     let playUrl = '';
@@ -4773,21 +4778,27 @@
                         size: f.size
                     }));
                 } else if (type === 'quark') {
-                    // 夸克分享：无需Cookie即可获取share_token和文件列表
+                    console.log('夸克分享: shareId=' + shareId + ' passwd=' + (sharePwd || '无'));
                     let shareTokenVal = '';
                     let listDataSafe = null;
 
                     // 第一步：获取 share_token（不需要Cookie）
                     const tokenBody = JSON.stringify({ share_id: shareId, passcode: sharePwd || '' });
                     try {
+                        console.log('请求share_token: POST ' + 'https://drive-pc.quark.cn/1/clouddrive/share/sharepage/token');
                         const tokenResp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/token', {
                             method: 'POST', body: tokenBody, headers: { 'Content-Type': 'application/json' }
                         });
                         const tokenData = JSON.parse(tokenResp);
+                        console.log('share_token响应:', JSON.stringify(tokenData).substring(0, 200));
                         if (tokenData.data && tokenData.data.share_token) {
                             shareTokenVal = tokenData.data.share_token;
+                            console.log('获取到share_token:', shareTokenVal.substring(0, 20) + '...');
+                        } else if (tokenData.status === 200 || tokenData.code === 0) {
+                            // 有些版本直接返回 share_token 在顶层
+                            shareTokenVal = tokenData.share_token || tokenData.data || '';
                         } else {
-                            throw new Error(tokenData.message || '获取share_token失败');
+                            throw new Error(tokenData.message || tokenData.msg || '获取share_token失败(code:' + tokenData.code + ')');
                         }
                     } catch(e) {
                         throw new Error('获取夸克分享Token失败: ' + e.message);
@@ -4796,17 +4807,23 @@
                     // 第二步：用 share_token 获取文件列表（不需要Cookie）
                     if (shareTokenVal) {
                         const listUrl = 'https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail?share_id=' + shareId + '&pdir_fid=0&_page=1&_size=100&share_token=' + encodeURIComponent(shareTokenVal);
+                        console.log('请求文件列表: GET ' + listUrl.substring(0, 120) + '...');
                         const listResp = await apiFetch(listUrl, {
                             headers: { 'Content-Type': 'application/json', 'Share-Token': shareTokenVal }
                         });
                         listDataSafe = typeof listResp === 'string' ? JSON.parse(listResp) : listResp;
+                        console.log('文件列表响应:', JSON.stringify(listDataSafe).substring(0, 300));
                     }
 
-                    if (!listDataSafe || (listDataSafe.status && listDataSafe.status !== 'ok')) {
-                        throw new Error('夸克返回错误: ' + ((listDataSafe && (listDataSafe.message || listDataSafe.msg)) || listDataSafe.status || '未知'));
+                    if (!listDataSafe) {
+                        throw new Error('夸克返回空数据');
+                    }
+                    if (listDataSafe.status && listDataSafe.status !== 'ok' && listDataSafe.code !== 200) {
+                        throw new Error('夸克返回错误: ' + (listDataSafe.message || listDataSafe.msg || 'code=' + listDataSafe.code));
                     }
 
-                    const fileList = (listDataSafe.data && listDataSafe.data.list) || [];
+                    const fileList = (listDataSafe.data && listDataSafe.data.list) || listDataSafe.list || [];
+                    console.log('文件列表数量:', fileList.length);
                     if (fileList.length === 0) {
                         throw new Error('分享文件列表为空（可能提取码错误或分享已过期）');
                     }
