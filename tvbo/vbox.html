@@ -4410,8 +4410,8 @@
             const method = options.method || 'GET';
             const body = options.body || null;
             const headers = options.headers || {};
+            const noProxy = options.noProxy || false; // 网盘请求不走代理（代理不传Cookie）
             
-            // POST请求不能走直连代理(因为代理只转发GET参数)
             // 直接原生fetch并添加headers
             try {
                 const controller = new AbortController();
@@ -4421,6 +4421,8 @@
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 return await resp.text();
             } catch(e) {
+                // 网盘请求不走代理（代理不传Cookie和自定义Header）
+                if (noProxy) throw e;
                 // 如果直连失败，尝试用代理转发GET方式的请求(仅适用于GET)
                 if (method === 'GET' || !options.forcePost) {
                     return await fetchWithProxy(url, 15000);
@@ -4687,7 +4689,8 @@
 
         async function browseShareFiles(type, shareId, sharePwd, tokn) {
             const cfg = DRIVE_CONFIGS[type];
-            const loadingEl = document.getElementById('driveFileList');
+            const loadingEl = document.getElementById('driveFileListPanel');
+            if (!loadingEl) { showAlert('界面元素未找到', '错误'); return; }
             loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">加载分享内容中...</div>';
             let allFiles = [];
             let lastError = '';
@@ -4699,7 +4702,7 @@
                     try {
                         const body = JSON.stringify({ share_id: shareId, share_pwd: sharePwd || '' });
                         const resp = await apiFetch(cfg.shareTokenUrl, {
-                            method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
+                            method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }, noProxy: true
                         });
                         const data = JSON.parse(resp);
                         shareToken = data.share_token;
@@ -4710,7 +4713,7 @@
                         try {
                             const resp = await apiFetch(cfg.shareTokenUrl, {
                                 method: 'POST', body: JSON.stringify({ share_id: shareId, share_pwd: sharePwd || '' }),
-                                headers: { 'Content-Type': 'application/json' }
+                                headers: { 'Content-Type': 'application/json' }, noProxy: true
                             });
                             const data = JSON.parse(resp);
                             shareToken = data.share_token;
@@ -4720,7 +4723,7 @@
                     }
 
                     const listResp = await apiFetch(cfg.shareAnonymousUrl + '?share_id=' + shareId, {
-                        headers: { 'x-share-token': shareToken, ...(shareToken ? cfg.getAuthHeader(tokn) : {}) }
+                        headers: { 'x-share-token': shareToken, ...(shareToken ? cfg.getAuthHeader(tokn) : {}) }, noProxy: true
                     });
                     const listData = JSON.parse(listResp);
                     driveState.driveId = listData.drive_id || null;
@@ -4732,24 +4735,56 @@
                         size: f.size
                     }));
                 } else if (type === 'quark') {
-                    const body = JSON.stringify({ share_id: shareId, passcode: sharePwd || '', pdir_fid: '0', _page: 1, _size: 100, _fetch_total: 1 });
-                    const resp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail', {
-                        method: 'POST', body, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
-                    });
-                    const data = JSON.parse(resp);
-                    // 夸克分享详情返回share_token等信息
-                    const shareToken = data.data?.share_token || '';
-                    // 用share_token获取文件列表
-                    let listResp;
-                    if (shareToken) {
-                        listResp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail?share_id=' + shareId + '&pdir_fid=0&_page=1&_size=100', {
-                            headers: { 'Content-Type': 'application/json', 'Share-Token': shareToken, ...cfg.getAuthHeader(tokn) }
+                    // 夸克分享：先获取 share_token，再获取文件列表
+                    let shareTokenVal = '';
+                    try {
+                        // 第一步：获取 share_token
+                        const tokenBody = JSON.stringify({ share_id: shareId, passcode: sharePwd || '' });
+                        const tokenResp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/token', { noProxy: true,
+                            method: 'POST', body: tokenBody, headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(tokn) }
                         });
-                    } else {
-                        listResp = resp; // 第一次请求已经返回了文件列表
+                        const tokenData = JSON.parse(tokenResp);
+                        if (tokenData.data && tokenData.data.share_token) {
+                            shareTokenVal = tokenData.data.share_token;
+                        } else if (tokenData.status && tokenData.status !== 'ok' && tokenData.message) {
+                            throw new Error('获取share_token失败: ' + tokenData.message);
+                        }
+                    } catch(e1) {
+                        console.warn('夸克获取share_token失败(带Cookie):', e1.message);
+                        // 尝试不带Cookie
+                        try {
+                            const tokenBody2 = JSON.stringify({ share_id: shareId, passcode: sharePwd || '' });
+                            const tokenResp2 = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/token', { noProxy: true,
+                                method: 'POST', body: tokenBody2, headers: { 'Content-Type': 'application/json' }
+                            });
+                            const tokenData2 = JSON.parse(tokenResp2);
+                            if (tokenData2.data && tokenData2.data.share_token) {
+                                shareTokenVal = tokenData2.data.share_token;
+                            } else {
+                                throw new Error('获取share_token失败(匿名): ' + (tokenData2.message || tokenData2.msg || '未知错误'));
+                            }
+                        } catch(e2) {
+                            throw new Error('获取夸克分享Token失败: ' + e2.message);
+                        }
                     }
+
+                    // 第二步：用 share_token 获取文件列表
+                    if (!shareTokenVal) {
+                        throw new Error('未获取到夸克share_token');
+                    }
+
+                    const listUrl = 'https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail?share_id=' + shareId + '&pdir_fid=0&_page=1&_size=100&share_token=' + encodeURIComponent(shareTokenVal);
+                    const listResp = await apiFetch(listUrl, {
+                        headers: { 'Content-Type': 'application/json', 'Share-Token': shareTokenVal, ...cfg.getAuthHeader(tokn) }
+                    });
                     const listData = typeof listResp === 'string' ? JSON.parse(listResp) : listResp;
-                    allFiles = (listData.data && listData.data.list || []).map(f => ({
+
+                    if (listData.status && listData.status !== 'ok') {
+                        throw new Error('夸克返回错误: ' + (listData.message || listData.msg || listData.status));
+                    }
+
+                    const fileList = (listData.data && listData.data.list) || [];
+                    allFiles = fileList.map(f => ({
                         id: f.fid, name: f.file_name || f.name, type: f.file ? 'file' : 'folder',
                         isFolder: !f.file,
                         isVideo: /\.(mp4|mkv|mov|avi|flv|ts|m3u8|wmv|webm|rmvb)$/i.test(f.file_name || f.name),
@@ -4757,6 +4792,8 @@
                     }));
                     // 夸克不需要driveId，播放时用fid即可
                     driveState.driveId = '';
+                    // 保存 share_token 供后续播放使用
+                    driveState.shareToken = shareTokenVal;
                 } else {
                     loadingEl.innerHTML = '<div class="text-white/40 text-xs text-center py-4">该网盘分享需手动输入路径</div>';
                     return [];
@@ -4798,7 +4835,7 @@
                         // 换取新的 access_token
                         try {
                             console.log('正在用 refresh_token 换取 access_token...');
-                            const tokenResp = await apiFetch('https://api.aliyundrive.com/token/get_access_token', {
+                            const tokenResp = await apiFetch('https://api.aliyundrive.com/token/get_access_token', { noProxy: true,
                                 method: 'POST',
                                 body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: dtkn }),
                                 headers: { 'Content-Type': 'application/json' }
@@ -4840,7 +4877,7 @@
 
                     // 先用 getVideoPreviewPlayInfo 获取转码流
                     const body = JSON.stringify({ drive_id: dId, file_id: fId, category: 'live_transcoding', template_id: '' });
-                    let resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_video_preview_play_info', {
+                    let resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_video_preview_play_info', { noProxy: true,
                         method: 'POST', body, headers: authHeaders
                     });
                     let data = JSON.parse(resp);
@@ -4869,7 +4906,7 @@
                     }
                     // 降级：用 getDownloadUrl 获取直链
                     if (!playUrl) {
-                        resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_download_url', {
+                        resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_download_url', { noProxy: true,
                             method: 'POST', body: JSON.stringify({ drive_id: dId, file_id: fId, expire_sec: 14400 }),
                             headers: authHeaders
                         });
@@ -4881,38 +4918,78 @@
                         return;
                     }
                 } else if (dtype === 'quark') {
-                    // 夸克播放：检查 Cookie 是否有效
-                    try {
-                        // 先测试 Cookie 是否有效
-                        const testResp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/file/sort?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=1', {
-                            headers: cfg.getAuthHeader(dtkn)
-                        });
-                        const testData = JSON.parse(testResp);
-                        if (testData.status && testData.status !== 'ok') {
-                            showAlert('夸克网盘 Cookie 已过期\n请重新获取 Cookie 后在设置中更新', 'Token失效');
-                            return;
-                        }
-                    } catch(e) {
-                        if (e.message.includes('401') || e.message.includes('403')) {
-                            showAlert('夸克网盘 Cookie 已过期\n请重新获取 Cookie 后在设置中更新', 'Token失效');
-                            return;
-                        }
-                    }
+                    // 夸克播放：区分「分享链接文件」和「自己网盘文件」
+                    if (driveState.shareToken && driveState.shareId) {
+                        // 分享链接资源：先转存到自己网盘，再获取播放地址
+                        console.log('夸克分享链接播放, shareId:', driveState.shareId);
+                        try {
+                            const saveBody = JSON.stringify({
+                                share_id: driveState.shareId,
+                                share_token: driveState.shareToken,
+                                file_list: [{ fid: fId }],
+                                to_dir_fid: '0'
+                            });
+                            const saveResp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/share/sharepage/save', { noProxy: true,
+                                method: 'POST',
+                                body: saveBody,
+                                headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(dtkn) }
+                            });
+                            const saveData = JSON.parse(saveResp);
 
-                    // Cookie 有效，获取播放地址
-                    const playUrlEndpoint = cfg.playUrl || 'https://drive-pc.quark.cn/1/clouddrive/file/v2/play';
-                    const params = new URLSearchParams({ fid: fId, pr: 'ucpro', fr: 'pc', uc_param_str: '' });
-                    const resp = await apiFetch(playUrlEndpoint + '?' + params.toString(), { headers: cfg.getAuthHeader(dtkn) });
-                    const d = JSON.parse(resp);
-                    playUrl = d.data?.play_url || d.play_url || '';
-                    if (!playUrl && d.data?.video_list) {
-                        const videos = d.data.video_list;
-                        const best = videos.find(v => v.code === 'fhd') || videos.find(v => v.code === 'hd') || videos.find(v => v.code === 'sd') || videos[0];
-                        if (best) playUrl = best.video_info?.url || best.url || '';
-                    }
-                    if (!playUrl) {
-                        showAlert('无法获取播放地址\n可能：文件类型不支持 / 文件被删除', '播放失败');
-                        return;
+                            if (saveData.data && saveData.data.save_as && saveData.data.save_as.length > 0) {
+                                const savedFid = saveData.data.save_as[0].fid || saveData.data.save_as[0].file_id;
+                                if (savedFid) {
+                                    const playUrlEndpoint = cfg.playUrl || 'https://drive-pc.quark.cn/1/clouddrive/file/v2/play';
+                                    const params = new URLSearchParams({ fid: savedFid, pr: 'ucpro', fr: 'pc', uc_param_str: '' });
+                                    const playResp = await apiFetch(playUrlEndpoint + '?' + params.toString(), { headers: cfg.getAuthHeader(dtkn) });
+                                    const playData = JSON.parse(playResp);
+                                    playUrl = playData.data?.play_url || playData.play_url || '';
+                                    if (!playUrl && playData.data?.video_list) {
+                                        const best = playData.data.video_list.find(v => v.code === 'fhd') || playData.data.video_list.find(v => v.code === 'hd') || playData.data.video_list[0];
+                                        if (best) playUrl = best.video_info?.url || best.url || '';
+                                    }
+                                }
+                            }
+
+                            if (!playUrl) {
+                                showAlert('无法获取夸克分享文件播放地址\n\n可能原因：\n1. Cookie 未配置或已过期\n2. 分享链接已失效\n3. 文件不支持在线播放\n\n请确保设置中配置了有效的夸克Cookie', '播放失败');
+                                return;
+                            }
+                        } catch(e) {
+                            console.error('夸克分享播放失败:', e);
+                            showAlert('夸克分享播放失败: ' + e.message + '\n\n请确保夸克Cookie有效', '播放失败');
+                            return;
+                        }
+                    } else {
+                        // 自己网盘的文件：用 Cookie 直接获取播放地址
+                        console.log('夸克网盘文件播放, fid:', fId);
+                        try {
+                            const playUrlEndpoint = cfg.playUrl || 'https://drive-pc.quark.cn/1/clouddrive/file/v2/play';
+                            const params = new URLSearchParams({ fid: fId, pr: 'ucpro', fr: 'pc', uc_param_str: '' });
+                            const resp = await apiFetch(playUrlEndpoint + '?' + params.toString(), { headers: cfg.getAuthHeader(dtkn) });
+                            const d = JSON.parse(resp);
+                            playUrl = d.data?.play_url || d.play_url || '';
+                            if (!playUrl && d.data?.video_list) {
+                                const videos = d.data.video_list;
+                                const best = videos.find(v => v.code === 'fhd') || videos.find(v => v.code === 'hd') || videos.find(v => v.code === 'sd') || videos[0];
+                                if (best) playUrl = best.video_info?.url || best.url || '';
+                            }
+                            if (!playUrl) {
+                                if (d.status === 401 || d.code === 401) {
+                                    showAlert('夸克网盘 Cookie 已过期\n请重新获取 Cookie 后在设置中更新', 'Token失效');
+                                } else {
+                                    showAlert('无法获取播放地址\n可能：文件类型不支持 / Cookie已过期 / 文件被删除', '播放失败');
+                                }
+                                return;
+                            }
+                        } catch(e) {
+                            if (e.message.includes('401') || e.message.includes('403')) {
+                                showAlert('夸克网盘 Cookie 已过期\n请重新获取 Cookie 后在设置中更新', 'Token失效');
+                            } else {
+                                showAlert('夸克网盘播放失败: ' + e.message, '播放失败');
+                            }
+                            return;
+                        }
                     }
                 } else if (dtype === 'uc') {
                     // UC网盘：检查 Cookie 是否有效
@@ -4922,7 +4999,7 @@
                     try {
                         if (!isToken) {
                             // Cookie 方式：先测试有效性
-                            const testResp = await apiFetch('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
+                            const testResp = await apiFetch('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', { noProxy: true,
                                 headers: { 'Cookie': dtkn }
                             });
                             const testData = JSON.parse(testResp);
@@ -4932,7 +5009,7 @@
                             }
 
                             // Cookie 有效，获取播放地址
-                            const playResp = await apiFetch('https://drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', {
+                            const playResp = await apiFetch('https://drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', { noProxy: true,
                                 headers: { 'Cookie': dtkn }
                             });
                             const pd = JSON.parse(playResp);
@@ -4943,7 +5020,7 @@
                             }
                         } else {
                             // UC Open API Token 方式
-                            const testResp = await apiFetch('https://open-api-drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
+                            const testResp = await apiFetch('https://open-api-drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', { noProxy: true,
                                 headers: { 'Authorization': 'Bearer ' + dtkn }
                             });
                             const testData = JSON.parse(testResp);
@@ -4953,7 +5030,7 @@
                             }
 
                             // Token 有效，获取播放地址
-                            const playResp = await apiFetch('https://open-api-drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', {
+                            const playResp = await apiFetch('https://open-api-drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', { noProxy: true,
                                 headers: { 'Authorization': 'Bearer ' + dtkn }
                             });
                             const pd = JSON.parse(playResp);
@@ -4974,14 +5051,14 @@
                     // 百度网盘：使用BDUSS通过pcs接口获取直链
                     try {
                         // 先尝试用bdstoken方式（需要先获取bdstoken）
-                        const bdstokenResp = await apiFetch('https://pan.baidu.com/api/getbdstoken?channel=chunlei&web=1&app_id=250528&clienttype=0', {
+                        const bdstokenResp = await apiFetch('https://pan.baidu.com/api/getbdstoken?channel=chunlei&web=1&app_id=250528&clienttype=0', { noProxy: true,
                             headers: { 'Cookie': 'BDUSS=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
                         });
                         const bdData = JSON.parse(bdstokenResp);
                         const bdstoken = bdData.data?.bdstoken || bdData.bdstoken || '';
 
                         // 用filemetas获取文件信息
-                        const metaResp = await apiFetch('https://pan.baidu.com/api/filemetas?target=' + JSON.stringify([fId]) + '&dlink=1&bdstoken=' + bdstoken + '&channel=chunlei&web=1&app_id=250528&clienttype=0', {
+                        const metaResp = await apiFetch('https://pan.baidu.com/api/filemetas?target=' + JSON.stringify([fId]) + '&dlink=1&bdstoken=' + bdstoken + '&channel=chunlei&web=1&app_id=250528&clienttype=0', { noProxy: true,
                             headers: { 'Cookie': 'BDUSS=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
                         });
                         const metaData = JSON.parse(metaResp);
@@ -4994,7 +5071,7 @@
                         console.warn('百度网盘播放失败:', e.message);
                         // 降级：尝试pcs下载接口
                         try {
-                            const dlResp = await apiFetch('https://pcs.baidu.com/rest/2.0/pcs/file?app_id=250528&method=download&path=/' + fName + '&ver=2&time=' + Date.now(), {
+                            const dlResp = await apiFetch('https://pcs.baidu.com/rest/2.0/pcs/file?app_id=250528&method=download&path=/' + fName + '&ver=2&time=' + Date.now(), { noProxy: true,
                                 headers: { 'Cookie': 'BDUSS=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
                             });
                             if (dlResp && dlResp.startsWith('http')) playUrl = dlResp;
@@ -5004,14 +5081,14 @@
                     // 115网盘：通过Cookie获取文件下载直链
                     try {
                         // 115的pickcode就是文件ID
-                        const playResp = await apiFetch('https://webapi.115.com/files/download?pickcode=' + fId, {
+                        const playResp = await apiFetch('https://webapi.115.com/files/download?pickcode=' + fId, { noProxy: true,
                             headers: { 'Cookie': 'CID=' + dtkn, 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)' }
                         });
                         const pd = JSON.parse(playResp);
                         playUrl = pd.file_url || pd.url || '';
                         if (!playUrl) {
                             // 降级：尝试video播放接口
-                            const vResp = await apiFetch('https://v.115.com/files/video?pickcode=' + fId, {
+                            const vResp = await apiFetch('https://v.115.com/files/video?pickcode=' + fId, { noProxy: true,
                                 headers: { 'Cookie': 'CID=' + dtkn, 'User-Agent': 'Mozilla/5.0' }
                             });
                             const vd = JSON.parse(vResp);
@@ -5086,7 +5163,7 @@
                     // 先取 drive_id
                     let driveId = null;
                     try {
-                        const infoResp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', {
+                        const infoResp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', { noProxy: true,
                             headers: cfg.getAuthHeader(token)
                         });
                         const info = JSON.parse(infoResp);
@@ -5104,7 +5181,7 @@
                         image_thumbnail_process: 'image/resize,w_200',
                         video_thumbnail_process: 'video/snapshot,t_1000,f_jpg,w_200'
                     });
-                    const resp = await apiFetch('https://api.aliyundrive.com/adrive/v2/file/search', {
+                    const resp = await apiFetch('https://api.aliyundrive.com/adrive/v2/file/search', { noProxy: true,
                         method: 'POST', body: searchBody,
                         headers: { 'Content-Type': 'application/json', ...cfg.getAuthHeader(token) }
                     });
@@ -5290,43 +5367,59 @@ API 限制较多，暂未实现`
                 let result = '';
                 if (type === 'alipan') {
                     // 测试阿里云盘：尝试获取用户信息
-                    const resp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', {
+                    const resp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', { noProxy: true,
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
                     const data = JSON.parse(resp);
                     if (data.default_drive_id) {
                         result = '✅ Token 有效！\nDrive ID: ' + data.default_drive_id;
                     } else {
-                        result = '❌ Token 无效或已过期';
+                        result = '❌ Token 无效或已过期\n' + (data.message || data.code || '');
                     }
                 } else if (type === 'quark') {
-                    // 测试夸克：不使用代理，直接请求
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    // 测试夸克：通过代理请求（直连会被CORS拦截）
+                    const cfg = DRIVE_CONFIGS['quark'];
                     try {
+                        // 先尝试直连（同源或无CORS限制的情况）
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 8000);
                         const resp = await fetch('https://drive-pc.quark.cn/1/clouddrive/file/sort?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=1', {
-                            headers: { 'Cookie': token }
+                            headers: { 'Cookie': token },
+                            signal: controller.signal
                         });
                         clearTimeout(timeout);
                         const data = await resp.json();
                         if (data.status && data.status === 'ok') {
                             result = '✅ Cookie 有效！\n可以浏览和播放文件';
-                        } else if (data.status === 401 || data.status === 403) {
+                        } else if (data.status === 401 || data.status === 403 || data.code === 401 || data.code === 403) {
                             result = '❌ Cookie 已过期\n请重新获取 Cookie';
                         } else {
-                            result = '❌ Cookie 无效\n状态: ' + (data.status || data.msg || '未知');
+                            result = '❌ Cookie 无效\n状态: ' + (data.status || data.msg || data.message || '未知');
                         }
-                    } catch(e) {
-                        clearTimeout(timeout);
-                        throw e;
+                    } catch(directErr) {
+                        // 直连失败（CORS），尝试通过代理但不带Cookie（只能验证网络可达）
+                        console.log('夸克直连测试失败，尝试代理:', directErr.message);
+                        try {
+                            const proxyResp = await fetchWithProxy('https://drive-pc.quark.cn/1/clouddrive/file/sort?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=1', 8000);
+                            // 代理请求成功但没带Cookie，返回的可能是401
+                            const data = JSON.parse(proxyResp);
+                            if (data.status === 401 || data.code === 401) {
+                                result = '⚠️ 网络可达但无法验证Cookie\n代理不支持转发Cookie头\n\n建议：直接点击「浏览」按钮测试\n如果能看到文件列表则Cookie有效';
+                            } else {
+                                result = '⚠️ 代理测试返回未知结果\n建议：直接点击「浏览」按钮测试\n如果能看到文件列表则Cookie有效';
+                            }
+                        } catch(proxyErr) {
+                            result = '❌ 网络不可达\n直连和代理均失败\n\n请检查：\n1. 网络连接是否正常\n2. 代理是否开启\n3. Cookie 是否正确';
+                        }
                     }
                 } else if (type === 'uc') {
-                    // 测试 UC：不使用代理，直接请求
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    // 测试 UC：直连 + 代理回退
                     try {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 8000);
                         const resp = await fetch('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
-                            headers: { 'Cookie': token }
+                            headers: { 'Cookie': token },
+                            signal: controller.signal
                         });
                         clearTimeout(timeout);
                         const data = await resp.json();
@@ -5337,20 +5430,27 @@ API 限制较多，暂未实现`
                         } else {
                             result = '❌ Cookie 无效\n错误码: ' + (data.code || '未知') + '\n信息: ' + (data.msg || '未知');
                         }
-                    } catch(e) {
-                        clearTimeout(timeout);
-                        throw e;
+                    } catch(directErr) {
+                        console.log('UC直连测试失败:', directErr.message);
+                        try {
+                            const proxyResp = await fetchWithProxy('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', 8000);
+                            const data = JSON.parse(proxyResp);
+                            result = '⚠️ 网络可达但无法验证Cookie\n建议：直接点击「浏览」按钮测试';
+                        } catch(proxyErr) {
+                            result = '❌ 网络不可达\n请检查网络连接和代理设置';
+                        }
                     }
                 } else if (type === 'baidu') {
-                    // 测试百度：不使用代理，直接请求
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    // 测试百度：直连 + 代理回退
                     try {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 8000);
                         const resp = await fetch('https://pan.baidu.com/api/getuserinfo?channel=chunlei&web=1&app_id=250528&clienttype=0', {
                             headers: { 
                                 'Cookie': 'BDUSS=' + token,
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                            }
+                            },
+                            signal: controller.signal
                         });
                         clearTimeout(timeout);
                         const data = await resp.json();
@@ -5361,20 +5461,27 @@ API 限制较多，暂未实现`
                         } else {
                             result = '❌ BDUSS 无效\n错误码: ' + data.errno + '\n信息: ' + (data.errmsg || data.msg || '未知');
                         }
-                    } catch(e) {
-                        clearTimeout(timeout);
-                        throw e;
+                    } catch(directErr) {
+                        console.log('百度直连测试失败:', directErr.message);
+                        try {
+                            const proxyResp = await fetchWithProxy('https://pan.baidu.com/api/getuserinfo?channel=chunlei&web=1&app_id=250528&clienttype=0', 8000);
+                            const data = JSON.parse(proxyResp);
+                            result = '⚠️ 网络可达但无法验证BDUSS\n建议：直接点击「浏览」按钮测试';
+                        } catch(proxyErr) {
+                            result = '❌ 网络不可达\n请检查网络连接和代理设置';
+                        }
                     }
                 } else if (type === '115') {
-                    // 测试 115：不使用代理，直接请求
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    // 测试 115：直连 + 代理回退
                     try {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 8000);
                         const resp = await fetch('https://webapi.115.com/files?page=1&limit=1&aid=1&cid=0', {
                             headers: { 
                                 'Cookie': 'CID=' + token,
                                 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
-                            }
+                            },
+                            signal: controller.signal
                         });
                         clearTimeout(timeout);
                         const data = await resp.json();
@@ -5385,9 +5492,15 @@ API 限制较多，暂未实现`
                         } else {
                             result = '❌ Cookie 无效\n状态: ' + JSON.stringify(data);
                         }
-                    } catch(e) {
-                        clearTimeout(timeout);
-                        throw e;
+                    } catch(directErr) {
+                        console.log('115直连测试失败:', directErr.message);
+                        try {
+                            const proxyResp = await fetchWithProxy('https://webapi.115.com/files?page=1&limit=1&aid=1&cid=0', 8000);
+                            const data = JSON.parse(proxyResp);
+                            result = '⚠️ 网络可达但无法验证Cookie\n建议：直接点击「浏览」按钮测试';
+                        } catch(proxyErr) {
+                            result = '❌ 网络不可达\n请检查网络连接和代理设置';
+                        }
                     }
                 } else if (type === '123pan') {
                     result = '❌ 123云盘暂不支持测试\n当前版本未实现';
@@ -5402,8 +5515,8 @@ API 限制较多，暂未实现`
                 let errorMsg = '❌ 测试失败: ' + e.message;
                 if (e.name === 'AbortError') {
                     errorMsg = '❌ 请求超时，请检查网络连接';
-                } else if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
-                    errorMsg = '❌ 网络错误，请检查网络连接\n\n可能原因：\n1. 网络连接失败\n2. 需要开启代理\n3. Cookie 已过期\n4. 网盘服务器暂时不可用';
+                } else if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('Load failed')) {
+                    errorMsg = '❌ 网络错误（CORS限制或网络不可达）\n\n这通常是因为：\n1. 浏览器跨域限制（正常现象）\n2. 网盘服务器不允许浏览器直接访问\n\n💡 建议：直接点击「浏览」按钮测试\n如果能看到文件列表则Cookie有效';
                 } else if (e.message.includes('401') || e.message.includes('403')) {
                     errorMsg = '❌ Cookie/Token 已过期\n请重新获取';
                 }
