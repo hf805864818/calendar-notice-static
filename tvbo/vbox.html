@@ -5221,10 +5221,13 @@
                 'quark': `✅ <b>夸克网盘</b><br>
 获取方式：<br>
 1. 浏览器打开 pan.quark.cn 并登录<br>
-2. F12 打开开发者工具 → Network<br>
-3. 刷新页面，找到任意请求的 Cookie<br>
-4. 复制完整 Cookie 字符串（含 _nt_=_...）<br>
-5. 粘贴到下方输入框<br>
+2. 按 F12 打开开发者工具 → Network 标签<br>
+3. 刷新页面，找到任意请求<br>
+4. 点击请求 → Headers → Request Headers<br>
+5. 复制 Cookie 字段的完整值<br>
+<br>
+<b>⚠️ Cookie 格式示例：</b><br>
+<code class="text-[10px] text-white/50">_nt_=xxxxx; _jcp_=xxxxx; _kua_2=xxxxx; ...</code><br>
 <br>
 📌 Cookie 可能会过期，需重新获取<br>
 🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('quark')">测试Cookie</button>`,
@@ -5233,7 +5236,9 @@
 1. 浏览器打开 drive.uc.cn 并登录<br>
 2. F12 → Network → 找到请求的 Cookie<br>
 3. 复制完整 Cookie<br>
-4. 粘贴到下方输入框<br>
+<br>
+<b>⚠️ Cookie 格式示例：</b><br>
+<code class="text-[10px] text-white/50">COOKIE_TOKEN=xxxxx; USER_TOKEN=xxxxx; ...</code><br>
 <br>
 📌 Cookie 可能会过期<br>
 🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('uc')">测试Cookie</button>`,
@@ -5242,7 +5247,9 @@
 1. 浏览器打开 pan.baidu.com 并登录<br>
 2. F12 → Network → 找到请求头中的 Cookie<br>
 3. 复制 BDUSS 值（以 "..." 开头）<br>
-4. 粘贴到下方输入框<br>
+<br>
+<b>⚠️ Cookie 格式示例：</b><br>
+<code class="text-[10px] text-white/50">填写 BDUSS 的值，如：BDRG8xxx...</code><br>
 <br>
 📌 仅支持 BDUSS，Cookie 会定期过期<br>
 🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('baidu')">测试Cookie</button>`,
@@ -5251,7 +5258,9 @@
 1. 浏览器打开 115.com 并登录<br>
 2. F12 → Network → 找到请求的 Cookie<br>
 3. 复制 CID 值<br>
-4. 粘贴到下方输入框<br>
+<br>
+<b>⚠️ Cookie 格式示例：</b><br>
+<code class="text-[10px] text-white/50">填写 CID 的值，如：8A3Dxxx...</code><br>
 <br>
 📌 Cookie 过期需重新获取<br>
 🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('115')">测试Cookie</button>`,
@@ -5291,56 +5300,114 @@ API 限制较多，暂未实现`
                         result = '❌ Token 无效或已过期';
                     }
                 } else if (type === 'quark') {
-                    // 测试夸克：尝试列出根目录
-                    const resp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/file/sort?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=1', {
-                        headers: { 'Cookie': token }
-                    });
-                    const data = JSON.parse(resp);
-                    if (data.status && data.status === 'ok') {
-                        result = '✅ Cookie 有效！';
-                    } else {
-                        result = '❌ Cookie 无效或已过期';
+                    // 测试夸克：不使用代理，直接请求
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    try {
+                        const resp = await fetch('https://drive-pc.quark.cn/1/clouddrive/file/sort?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=1', {
+                            headers: { 'Cookie': token }
+                        });
+                        clearTimeout(timeout);
+                        const data = await resp.json();
+                        if (data.status && data.status === 'ok') {
+                            result = '✅ Cookie 有效！\n可以浏览和播放文件';
+                        } else if (data.status === 401 || data.status === 403) {
+                            result = '❌ Cookie 已过期\n请重新获取 Cookie';
+                        } else {
+                            result = '❌ Cookie 无效\n状态: ' + (data.status || data.msg || '未知');
+                        }
+                    } catch(e) {
+                        clearTimeout(timeout);
+                        throw e;
                     }
                 } else if (type === 'uc') {
-                    // 测试 UC
-                    const resp = await apiFetch('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
-                        headers: { 'Cookie': token }
-                    });
-                    const data = JSON.parse(resp);
-                    if (data.code === 0 && data.data) {
-                        result = '✅ Cookie 有效！';
-                    } else {
-                        result = '❌ Cookie 无效或已过期';
+                    // 测试 UC：不使用代理，直接请求
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    try {
+                        const resp = await fetch('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
+                            headers: { 'Cookie': token }
+                        });
+                        clearTimeout(timeout);
+                        const data = await resp.json();
+                        if (data.code === 0 && data.data) {
+                            result = '✅ Cookie 有效！\n可以浏览和播放文件';
+                        } else if (data.code === 401 || data.code === 403) {
+                            result = '❌ Cookie 已过期\n请重新获取 Cookie';
+                        } else {
+                            result = '❌ Cookie 无效\n错误码: ' + (data.code || '未知') + '\n信息: ' + (data.msg || '未知');
+                        }
+                    } catch(e) {
+                        clearTimeout(timeout);
+                        throw e;
                     }
                 } else if (type === 'baidu') {
-                    // 测试百度：获取用户信息
-                    const resp = await apiFetch('https://pan.baidu.com/api/getuserinfo?channel=chunlei&web=1&app_id=250528&clienttype=0', {
-                        headers: { 'Cookie': 'BDUSS=' + token, 'User-Agent': 'Mozilla/5.0' }
-                    });
-                    const data = JSON.parse(resp);
-                    if (data.errno === 0) {
-                        result = '✅ BDUSS 有效！\n用户名: ' + (data.info?.name || '未知');
-                    } else {
-                        result = '❌ BDUSS 无效或已过期';
+                    // 测试百度：不使用代理，直接请求
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    try {
+                        const resp = await fetch('https://pan.baidu.com/api/getuserinfo?channel=chunlei&web=1&app_id=250528&clienttype=0', {
+                            headers: { 
+                                'Cookie': 'BDUSS=' + token,
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                            }
+                        });
+                        clearTimeout(timeout);
+                        const data = await resp.json();
+                        if (data.errno === 0) {
+                            result = '✅ BDUSS 有效！\n用户名: ' + (data.info?.name || '未知');
+                        } else if (data.errno === -6 || data.errno === 2) {
+                            result = '❌ BDUSS 已过期\n请重新获取 BDUSS';
+                        } else {
+                            result = '❌ BDUSS 无效\n错误码: ' + data.errno + '\n信息: ' + (data.errmsg || data.msg || '未知');
+                        }
+                    } catch(e) {
+                        clearTimeout(timeout);
+                        throw e;
                     }
                 } else if (type === '115') {
-                    // 测试 115
-                    const resp = await apiFetch('https://webapi.115.com/files?page=1&limit=1&aid=1&cid=0', {
-                        headers: { 'Cookie': 'CID=' + token, 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)' }
-                    });
-                    const data = JSON.parse(resp);
-                    if (data.state === true) {
-                        result = '✅ Cookie 有效！';
-                    } else {
-                        result = '❌ Cookie 无效或已过期';
+                    // 测试 115：不使用代理，直接请求
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 10000);
+                    try {
+                        const resp = await fetch('https://webapi.115.com/files?page=1&limit=1&aid=1&cid=0', {
+                            headers: { 
+                                'Cookie': 'CID=' + token,
+                                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+                            }
+                        });
+                        clearTimeout(timeout);
+                        const data = await resp.json();
+                        if (data.state === true && data.data) {
+                            result = '✅ Cookie 有效！\n可以浏览文件';
+                        } else if (data.err_msg) {
+                            result = '❌ Cookie 无效\n错误: ' + data.err_msg;
+                        } else {
+                            result = '❌ Cookie 无效\n状态: ' + JSON.stringify(data);
+                        }
+                    } catch(e) {
+                        clearTimeout(timeout);
+                        throw e;
                     }
+                } else if (type === '123pan') {
+                    result = '❌ 123云盘暂不支持测试\n当前版本未实现';
+                } else if (type === '139pan') {
+                    result = '❌ 139云盘暂不支持测试\n当前版本未实现';
                 } else {
                     result = '⚠️ 此网盘暂不支持测试';
                 }
 
                 showAlert(result, '测试结果');
             } catch(e) {
-                showAlert('❌ 测试失败: ' + e.message, '错误');
+                let errorMsg = '❌ 测试失败: ' + e.message;
+                if (e.name === 'AbortError') {
+                    errorMsg = '❌ 请求超时，请检查网络连接';
+                } else if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+                    errorMsg = '❌ 网络错误，请检查网络连接\n\n可能原因：\n1. 网络连接失败\n2. 需要开启代理\n3. Cookie 已过期\n4. 网盘服务器暂时不可用';
+                } else if (e.message.includes('401') || e.message.includes('403')) {
+                    errorMsg = '❌ Cookie/Token 已过期\n请重新获取';
+                }
+                showAlert(errorMsg, '错误');
             }
         }
         function renderTokenListPanel() {
@@ -5390,11 +5457,41 @@ API 限制较多，暂未实现`
             var token = input ? input.value.trim() : "";
             if (!token) { showAlert("请输入Token", "提示"); return; }
             var type = document.getElementById("driveTypeSelect2") ? document.getElementById("driveTypeSelect2").value : "alipan";
+
+            // Cookie 格式验证和提示
+            if (type === 'quark' || type === 'uc') {
+                if (!token.includes('=') || token.length < 20) {
+                    showAlert('Cookie 格式不正确！\n\n应该包含 "=" 号，例如：\n_nt_=xxxxx; _jcp_=xxxxx; ...\n\n请按 F12 → Network → 复制完整的 Cookie', '格式错误');
+                    return;
+                }
+            } else if (type === 'baidu') {
+                if (token.startsWith('BDUSS=')) {
+                    token = token.replace('BDUSS=', ''); // 去掉 BDUSS= 前缀
+                }
+                if (token.length < 10) {
+                    showAlert('BDUSS 格式不正确！\n\n应该是一个长字符串，例如：\nBDRG8xxxx...\n\n请只复制 BDUSS 的值（不含 BDUSS=）', '格式错误');
+                    return;
+                }
+            } else if (type === '115') {
+                if (token.startsWith('CID=')) {
+                    token = token.replace('CID=', ''); // 去掉 CID= 前缀
+                }
+                if (token.length < 10) {
+                    showAlert('CID 格式不正确！\n\n应该是一个长字符串，例如：\n8A3Dxxxx...\n\n请只复制 CID 的值（不含 CID=）', '格式错误');
+                    return;
+                }
+            } else if (type === 'alipan') {
+                if (token.length < 50) {
+                    showAlert('阿里云盘 RefreshToken 格式不正确！\n\n应该是一个很长的字符串（50+字符）\n\n请重新扫码获取 Token', '格式错误');
+                    return;
+                }
+            }
+
             setTokenForType(type, token);
             driveState.type = type; driveState.token = token;
             document.getElementById("driveStatusPanel").textContent = "已登录";
             input.value = ""; renderTokenListPanel();
-            showAlert("已保存 " + (DRIVE_CONFIGS[type] ? DRIVE_CONFIGS[type].name : type) + " Token", "成功");
+            showAlert("已保存 " + (DRIVE_CONFIGS[type] ? DRIVE_CONFIGS[type].name : type) + " Token\n\n💡 建议点击「测试Cookie」验证是否有效", "成功");
         }
         function resolveShareUrlFromPanel() {
             var input = document.getElementById("driveShareInputPanel");
