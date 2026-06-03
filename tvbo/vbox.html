@@ -4785,36 +4785,89 @@
             let playUrl = null;
             try {
                 if (dtype === 'alipan') {
-                    // 阿里云盘：需要先用RefreshToken换access_token
+                    // 阿里云盘：使用 refresh_token 换取 access_token，并缓存
                     let accessToken = dtkn;
-                    try {
-                        const tokenResp = await fetch('https://api.aliyundrive.com/token/get_access_token', {
-                            method: 'POST',
-                            body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: dtkn }),
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                        if (tokenResp.ok) {
-                            const tokenData = await tokenResp.json();
-                            if (tokenData.access_token) accessToken = tokenData.access_token;
+                    let refreshToken = dtkn;
+
+                    // 检查缓存的 access_token 是否可用
+                    const cached = getCachedAccessToken('alipan');
+                    if (cached) {
+                        accessToken = cached;
+                        console.log('使用缓存的 access_token');
+                    } else {
+                        // 换取新的 access_token
+                        try {
+                            console.log('正在用 refresh_token 换取 access_token...');
+                            const tokenResp = await apiFetch('https://api.aliyundrive.com/token/get_access_token', {
+                                method: 'POST',
+                                body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: dtkn }),
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            const tokenData = JSON.parse(tokenResp);
+
+                            if (tokenData.access_token) {
+                                accessToken = tokenData.access_token;
+                                refreshToken = tokenData.refresh_token || dtkn; // 如果返回了新的 refresh_token，更新它
+
+                                // 缓存 access_token，设置过期时间（通常 2 小时，保守设置 7000 秒）
+                                const expiresAt = Date.now() + (tokenData.expires_in || 7200) * 1000;
+                                setTokenCache('alipan', accessToken, expiresAt);
+
+                                // 更新存储的 refresh_token（如果更新了）
+                                if (tokenData.refresh_token && tokenData.refresh_token !== dtkn) {
+                                    const savedTokens = loadDriveTokens();
+                                    savedTokens['alipan'] = tokenData.refresh_token;
+                                    saveDriveTokens(savedTokens);
+                                    console.log('已更新 refresh_token');
+                                }
+
+                                console.log('Token 刷新成功，有效期至:', new Date(expiresAt).toLocaleString());
+                            } else if (tokenData.error === 'invalid_grant') {
+                                showAlert('阿里云盘 RefreshToken 已失效\n请重新扫码获取 Token', 'Token失效');
+                                return;
+                            }
+                        } catch(e) {
+                            console.warn('换取 access_token 失败，尝试直接使用原Token:', e.message);
+                            // 如果是 401 或 403 错误，说明 refresh_token 无效
+                            if (e.message.includes('401') || e.message.includes('403') || e.message.includes('invalid_grant')) {
+                                showAlert('阿里云盘 RefreshToken 已失效\n请重新扫码获取 Token', 'Token失效');
+                                return;
+                            }
                         }
-                    } catch(e) {
-                        console.warn('换取access_token失败，直接使用原Token:', e.message);
                     }
-                    
+
                     const authHeaders = { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' };
-                    
-                    // 先用getVideoPreviewPlayInfo获取转码流
+
+                    // 先用 getVideoPreviewPlayInfo 获取转码流
                     const body = JSON.stringify({ drive_id: dId, file_id: fId, category: 'live_transcoding', template_id: '' });
                     let resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_video_preview_play_info', {
                         method: 'POST', body, headers: authHeaders
                     });
                     let data = JSON.parse(resp);
+
+                    if (data.code === 'AccessTokenInvalid' || data.code === 'InvalidAccessToken') {
+                        // access_token 过期，清除缓存并重试一次
+                        console.log('access_token 过期，清除缓存重试...');
+                        const cache = getTokenCache();
+                        delete cache['alipan'];
+                        localStorage.setItem(TOKEN_CACHE_KEY, JSON.stringify(cache));
+                        // 递归调用自己（只重试一次）
+                        if (!window._alipanRetry) {
+                            window._alipanRetry = true;
+                            await resolveDrivePlay(dtype, dtkn, dId, fId, fName, closePanel);
+                            window._alipanRetry = false;
+                            return;
+                        }
+                        showAlert('阿里云盘 Token 已失效\n请重新扫码获取 Token', 'Token失效');
+                        return;
+                    }
+
                     const tasks = data.video_preview_play_info && data.video_preview_play_info.live_transcoding_task_list;
                     if (tasks && tasks.length > 0) {
                         const best = tasks.find(t => t.template_id === 'FHD') || tasks.find(t => t.template_id === 'HD') || tasks.find(t => t.template_id === 'SD') || tasks[0];
                         playUrl = best.url;
                     }
-                    // 降级：用getDownloadUrl获取直链
+                    // 降级：用 getDownloadUrl 获取直链
                     if (!playUrl) {
                         resp = await apiFetch('https://api.aliyundrive.com/v2/file/get_download_url', {
                             method: 'POST', body: JSON.stringify({ drive_id: dId, file_id: fId, expire_sec: 14400 }),
@@ -4823,12 +4876,30 @@
                         data = JSON.parse(resp);
                         playUrl = data.url || data.download_url;
                     }
-                    if (!playUrl && data.code === 'AccessTokenInvalid') {
-                        showAlert('阿里云盘Token已过期或无效\n请在设置→☁️网盘管理中重新获取RefreshToken', 'Token失效');
+                    if (!playUrl) {
+                        showAlert('无法获取播放地址\n可能：文件类型不支持 / Token已失效 / 文件被删除', '播放失败');
                         return;
                     }
                 } else if (dtype === 'quark') {
-                    // 夸克播放：直接用fid请求play接口，不需要drive_id
+                    // 夸克播放：检查 Cookie 是否有效
+                    try {
+                        // 先测试 Cookie 是否有效
+                        const testResp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/file/sort?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=1', {
+                            headers: cfg.getAuthHeader(dtkn)
+                        });
+                        const testData = JSON.parse(testResp);
+                        if (testData.status && testData.status !== 'ok') {
+                            showAlert('夸克网盘 Cookie 已过期\n请重新获取 Cookie 后在设置中更新', 'Token失效');
+                            return;
+                        }
+                    } catch(e) {
+                        if (e.message.includes('401') || e.message.includes('403')) {
+                            showAlert('夸克网盘 Cookie 已过期\n请重新获取 Cookie 后在设置中更新', 'Token失效');
+                            return;
+                        }
+                    }
+
+                    // Cookie 有效，获取播放地址
                     const playUrlEndpoint = cfg.playUrl || 'https://drive-pc.quark.cn/1/clouddrive/file/v2/play';
                     const params = new URLSearchParams({ fid: fId, pr: 'ucpro', fr: 'pc', uc_param_str: '' });
                     const resp = await apiFetch(playUrlEndpoint + '?' + params.toString(), { headers: cfg.getAuthHeader(dtkn) });
@@ -4839,18 +4910,28 @@
                         const best = videos.find(v => v.code === 'fhd') || videos.find(v => v.code === 'hd') || videos.find(v => v.code === 'sd') || videos[0];
                         if (best) playUrl = best.video_info?.url || best.url || '';
                     }
-                    if (!playUrl && (d.status === 401 || d.code === 401)) {
-                        showAlert('夸克网盘Cookie已过期\n请重新获取Cookie后在设置中更新', 'Token失效');
+                    if (!playUrl) {
+                        showAlert('无法获取播放地址\n可能：文件类型不支持 / 文件被删除', '播放失败');
                         return;
                     }
                 } else if (dtype === 'uc') {
-                    // UC网盘：优先用UC_Token(Open API)，降级用Cookie
+                    // UC网盘：检查 Cookie 是否有效
                     let ucToken = dtkn;
-                    // 判断用户填的是Token还是Cookie
                     const isToken = dtkn.startsWith('UC_') || dtkn.includes('.');
+
                     try {
                         if (!isToken) {
-                            // Cookie方式：用UCCookie请求播放
+                            // Cookie 方式：先测试有效性
+                            const testResp = await apiFetch('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
+                                headers: { 'Cookie': dtkn }
+                            });
+                            const testData = JSON.parse(testResp);
+                            if (testData.code !== 0) {
+                                showAlert('UC网盘 Cookie 已过期\n请重新获取 Cookie 后在设置中更新', 'Token失效');
+                                return;
+                            }
+
+                            // Cookie 有效，获取播放地址
                             const playResp = await apiFetch('https://drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', {
                                 headers: { 'Cookie': dtkn }
                             });
@@ -4861,18 +4942,32 @@
                                 playUrl = best?.video_info?.url || best?.url || '';
                             }
                         } else {
-                            // UC Open API Token方式
+                            // UC Open API Token 方式
+                            const testResp = await apiFetch('https://open-api-drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
+                                headers: { 'Authorization': 'Bearer ' + dtkn }
+                            });
+                            const testData = JSON.parse(testResp);
+                            if (testData.code !== 0) {
+                                showAlert('UC网盘 Token 已过期\n请重新获取 Token', 'Token失效');
+                                return;
+                            }
+
+                            // Token 有效，获取播放地址
                             const playResp = await apiFetch('https://open-api-drive.uc.cn/file/v2/play?fid=' + fId + '&pr=ucpro&fr=pc', {
                                 headers: { 'Authorization': 'Bearer ' + dtkn }
                             });
                             const pd = JSON.parse(playResp);
                             playUrl = pd.data?.play_url || pd.play_url || '';
                         }
-                        if (!playUrl && (pd?.status === 401 || pd?.code === 401)) {
-                            showAlert('UC网盘Token/Cookie已过期', 'Token失效');
+                        if (!playUrl) {
+                            showAlert('无法获取播放地址\n可能：文件类型不支持 / 文件被删除', '播放失败');
                             return;
                         }
                     } catch(e) {
+                        if (e.message.includes('401') || e.message.includes('403')) {
+                            showAlert('UC网盘 Token/Cookie 已过期\n请重新获取', 'Token失效');
+                            return;
+                        }
                         console.warn('UC网盘播放失败:', e.message);
                     }
                 } else if (dtype === 'baidu') {
@@ -4952,6 +5047,27 @@
 
         async function getDriveVideoUrl(fileId, fileName) {
             await resolveDrivePlay(driveState.type, driveState.token, driveState.driveId, fileId, fileName, true);
+        }
+
+        // Token 缓存：存储 access_token 及其过期时间
+        const TOKEN_CACHE_KEY = 'drive_token_cache';
+        function getTokenCache() {
+            try { return JSON.parse(localStorage.getItem(TOKEN_CACHE_KEY) || '{}'); } catch(e) { return {}; }
+        }
+        function setTokenCache(type, accessToken, expiresAt) {
+            const cache = getTokenCache();
+            cache[type] = { accessToken, expiresAt };
+            localStorage.setItem(TOKEN_CACHE_KEY, JSON.stringify(cache));
+        }
+        function getCachedAccessToken(type) {
+            const cache = getTokenCache();
+            const item = cache[type];
+            if (!item) return null;
+            // 如果还没过期（提前5分钟刷新），直接返回
+            if (item.expiresAt && Date.now() < item.expiresAt - 300000) {
+                return item.accessToken;
+            }
+            return null;
         }
 
         async function getDriveVideoUrlByToken(dtype, dtkn, dId, fId, fName) {
@@ -5072,6 +5188,160 @@
             document.getElementById("driveFileListPanel").innerHTML = '<div class="text-white/40 text-xs text-center py-6">切换网盘后请点击"浏览"</div>';
             document.getElementById("driveBreadcrumbPanel").innerHTML = "";
             renderTokenListPanel();
+            updateTokenHelpText();
+
+            // Cookie 类型的网盘显示过期警告
+            const warningDiv = document.getElementById("cookieExpireWarning");
+            if (warningDiv) {
+                const cookieTypes = ['quark', 'uc', 'baidu', '115'];
+                if (cookieTypes.includes(driveState.type)) {
+                    warningDiv.classList.remove('hidden');
+                } else {
+                    warningDiv.classList.add('hidden');
+                }
+            }
+        }
+
+        // 更新 Token 帮助文本
+        function updateTokenHelpText() {
+            const helpDiv = document.getElementById("tokenHelpText");
+            if (!helpDiv) return;
+
+            const type = driveState.type;
+            const helpTexts = {
+                'alipan': `✅ <b>阿里云盘</b>（推荐）<br>
+获取方式：<br>
+1. 点击上方"一键获取Token"<br>
+2. 浏览器打开链接后扫码授权<br>
+3. 复制返回的 RefreshToken（很长，以 "..." 开头）<br>
+4. 粘贴到下方输入框<br>
+<br>
+📌 Token 有效期 90 天，会自动刷新<br>
+🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('alipan')">测试Token</button>`,
+                'quark': `✅ <b>夸克网盘</b><br>
+获取方式：<br>
+1. 浏览器打开 pan.quark.cn 并登录<br>
+2. F12 打开开发者工具 → Network<br>
+3. 刷新页面，找到任意请求的 Cookie<br>
+4. 复制完整 Cookie 字符串（含 _nt_=_...）<br>
+5. 粘贴到下方输入框<br>
+<br>
+📌 Cookie 可能会过期，需重新获取<br>
+🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('quark')">测试Cookie</button>`,
+                'uc': `✅ <b>UC网盘</b><br>
+获取方式：<br>
+1. 浏览器打开 drive.uc.cn 并登录<br>
+2. F12 → Network → 找到请求的 Cookie<br>
+3. 复制完整 Cookie<br>
+4. 粘贴到下方输入框<br>
+<br>
+📌 Cookie 可能会过期<br>
+🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('uc')">测试Cookie</button>`,
+                'baidu': `⚠️ <b>百度网盘</b><br>
+获取方式：<br>
+1. 浏览器打开 pan.baidu.com 并登录<br>
+2. F12 → Network → 找到请求头中的 Cookie<br>
+3. 复制 BDUSS 值（以 "..." 开头）<br>
+4. 粘贴到下方输入框<br>
+<br>
+📌 仅支持 BDUSS，Cookie 会定期过期<br>
+🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('baidu')">测试Cookie</button>`,
+                '115': `⚠️ <b>115网盘</b><br>
+获取方式：<br>
+1. 浏览器打开 115.com 并登录<br>
+2. F12 → Network → 找到请求的 Cookie<br>
+3. 复制 CID 值<br>
+4. 粘贴到下方输入框<br>
+<br>
+📌 Cookie 过期需重新获取<br>
+🔍 测试：<button class="glass-btn px-2 py-0.5 rounded text-[10px] text-yellow-400 cursor-pointer ml-1" onclick="testToken('115')">测试Cookie</button>`,
+                '123pan': `❌ <b>123云盘</b><br>
+当前版本暂不支持此网盘<br>
+需要 Cookie 获取下载链接<br>
+Cookie 过期快且不稳定`,
+                '139pan': `❌ <b>139云盘</b><br>
+当前版本暂不支持此网盘<br>
+API 限制较多，暂未实现`
+            };
+
+            helpDiv.innerHTML = helpTexts[type] || '';
+        }
+
+        // 测试 Token 是否有效
+        async function testToken(type) {
+            const token = getTokenForType(type);
+            if (!token) {
+                showAlert('请先保存 ' + (DRIVE_CONFIGS[type]?.name || type) + ' Token', '提示');
+                return;
+            }
+
+            showAlert('正在测试 Token...', '测试中');
+
+            try {
+                let result = '';
+                if (type === 'alipan') {
+                    // 测试阿里云盘：尝试获取用户信息
+                    const resp = await apiFetch('https://api.aliyundrive.com/adrive/v1/user/getDriveInfo', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const data = JSON.parse(resp);
+                    if (data.default_drive_id) {
+                        result = '✅ Token 有效！\nDrive ID: ' + data.default_drive_id;
+                    } else {
+                        result = '❌ Token 无效或已过期';
+                    }
+                } else if (type === 'quark') {
+                    // 测试夸克：尝试列出根目录
+                    const resp = await apiFetch('https://drive-pc.quark.cn/1/clouddrive/file/sort?pr=ucpro&fr=pc&uc_param_str=&pdir_fid=0&_page=1&_size=1', {
+                        headers: { 'Cookie': token }
+                    });
+                    const data = JSON.parse(resp);
+                    if (data.status && data.status === 'ok') {
+                        result = '✅ Cookie 有效！';
+                    } else {
+                        result = '❌ Cookie 无效或已过期';
+                    }
+                } else if (type === 'uc') {
+                    // 测试 UC
+                    const resp = await apiFetch('https://drive.uc.cn/file/list?pr=ucpro&fr=pc&pdir_fid=0&_page=1&_size=1', {
+                        headers: { 'Cookie': token }
+                    });
+                    const data = JSON.parse(resp);
+                    if (data.code === 0 && data.data) {
+                        result = '✅ Cookie 有效！';
+                    } else {
+                        result = '❌ Cookie 无效或已过期';
+                    }
+                } else if (type === 'baidu') {
+                    // 测试百度：获取用户信息
+                    const resp = await apiFetch('https://pan.baidu.com/api/getuserinfo?channel=chunlei&web=1&app_id=250528&clienttype=0', {
+                        headers: { 'Cookie': 'BDUSS=' + token, 'User-Agent': 'Mozilla/5.0' }
+                    });
+                    const data = JSON.parse(resp);
+                    if (data.errno === 0) {
+                        result = '✅ BDUSS 有效！\n用户名: ' + (data.info?.name || '未知');
+                    } else {
+                        result = '❌ BDUSS 无效或已过期';
+                    }
+                } else if (type === '115') {
+                    // 测试 115
+                    const resp = await apiFetch('https://webapi.115.com/files?page=1&limit=1&aid=1&cid=0', {
+                        headers: { 'Cookie': 'CID=' + token, 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)' }
+                    });
+                    const data = JSON.parse(resp);
+                    if (data.state === true) {
+                        result = '✅ Cookie 有效！';
+                    } else {
+                        result = '❌ Cookie 无效或已过期';
+                    }
+                } else {
+                    result = '⚠️ 此网盘暂不支持测试';
+                }
+
+                showAlert(result, '测试结果');
+            } catch(e) {
+                showAlert('❌ 测试失败: ' + e.message, '错误');
+            }
         }
         function renderTokenListPanel() {
             var c = document.getElementById("driveTokenListPanel"); if (!c) return;
@@ -5265,12 +5535,13 @@
                     <select id="driveTypeSelect2" class="w-full glass-btn px-3 py-2 rounded-xl text-white text-xs bg-transparent outline-none cursor-pointer" onchange="onDrivePanelTypeChange()">
                         <option value="alipan" class="bg-gray-800">☁️ 阿里云盘</option>
                         <option value="quark" class="bg-gray-800">☁️ 夸克网盘</option>
-                        <option value="baidu" class="bg-gray-800">☁️ 百度网盘</option>
                         <option value="uc" class="bg-gray-800">☁️ UC网盘</option>
+                        <option value="baidu" class="bg-gray-800">☁️ 百度网盘</option>
                         <option value="115" class="bg-gray-800">☁️ 115网盘</option>
                         <option value="123pan" class="bg-gray-800">☁️ 123云盘</option>
                         <option value="139pan" class="bg-gray-800">☁️ 139云盘</option>
                     </select>
+                    <div id="tokenHelpText" class="text-white/40 text-[10px] mt-1.5 p-2 rounded-lg bg-white/5 leading-relaxed"></div>
                 </div>
                 <div>
                     <label class="text-white/60 text-[11px] mb-1.5 block">已保存的Token <span class="text-white/30">(点击使用)</span></label>
@@ -5298,6 +5569,12 @@
                             <button class="glass-btn px-2 py-1 rounded-lg text-white/60 text-[10px] cursor-pointer" onclick="refreshDriveFilesFromPanel()">刷新</button>
                             <button class="glass-btn px-2 py-1 rounded-lg text-emerald-400 text-[10px] cursor-pointer" onclick="openDriveBrowserFromPanel()">浏览</button>
                         </div>
+                    </div>
+                    <div id="cookieExpireWarning" class="hidden mb-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                        <p class="text-yellow-400 text-[10px] flex items-center gap-1">
+                            <span>⚠️</span>
+                            <span>Cookie 可能已过期，播放失败时请重新获取</span>
+                        </p>
                     </div>
                     <div class="drive-breadcrumb" id="driveBreadcrumbPanel"></div>
                     <div id="driveFileListPanel" class="max-h-[200px] overflow-y-auto space-y-0.5 rounded-xl bg-white/5 p-2">
