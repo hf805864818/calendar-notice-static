@@ -2825,8 +2825,6 @@
         const PROXY_LIST = [
           null,
           'https://vbox.ltd/?url=',
-          // 如需自建 Cloudflare Worker 代理（支持 POST + Cookie），添加：
-          // 'https://你的域名.workers.dev/proxy?url='
         ];
         const PROXY_TOKEN = '199114';
         const TIMEOUT_MS = 15000;
@@ -2955,11 +2953,16 @@ const SAVED_API_URLS = [
             
             for (let i = 0; i <= retries; i++) {
                 try {
-                    // 夸克/UC/百度/115 的 API 请求强制走 Worker 代理（绕过 CORS）
-                    const needProxy = url.includes('quark.cn') || url.includes('pan.baidu.com') || 
-                                      url.includes('115.com') || url.includes('uc.cn') ||
-                                      url.includes('pikpak') || url.includes('aliyundrive') ||
-                                      url.includes('aliyundrive.com') || url.includes('pdsapi.com');
+                    // 只对网盘 API 端点走 Worker 代理，不影响搜索和其他请求
+                    let needProxy = false;
+                    if (url.includes('drive-pc.quark.cn') || url.includes('drive.uc.cn') ||
+                        url.includes('pan.baidu.com/share') || url.includes('pan.baidu.com/rest') ||
+                        url.includes('115.com') ||
+                        url.includes('pikpakdrive.com') || url.includes('mypikpak.com') ||
+                        url.includes('api.aliyundrive.com') || url.includes('auth.aliyundrive.com') ||
+                        url.includes('pdsapi.com') || url.includes('userapi.com')) {
+                      needProxy = true;
+                    }
                     
                     let fetchUrl = url;
                     let fetchOptions = { ...options };
