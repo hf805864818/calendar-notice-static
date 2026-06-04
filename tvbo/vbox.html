@@ -726,6 +726,10 @@
                                         <button class="text-[10px] text-green-400 hover:text-green-300 cursor-pointer" onclick="testSingleSearchInterface()">测试搜索</button>
                                     </div>
                                     <div class="flex items-center justify-between pt-1">
+                                        <span class="text-white/70 text-xs">网盘Token状态</span>
+                                        <button class="text-[10px] text-purple-400 hover:text-purple-300 cursor-pointer" onclick="checkDriveTokenUI()">检查状态</button>
+                                    </div>
+                                    <div class="flex items-center justify-between pt-1">
                                         <span class="text-white/70 text-xs">详情爬取(测试用)</span>
                                         <div class="flex items-center gap-1.5">
                                             <span id="detailCrawlLabel" class="text-white/40 text-[10px]">已关闭</span>
@@ -2945,6 +2949,44 @@
 
             console.log('========== 测试结束 ==========');
         }
+
+        // 检查网盘Token配置状态
+        function checkDriveTokenStatus() {
+            const driveTokens = loadDriveTokens();
+            const activeDrives = Object.entries(driveTokens).filter(([,v]) => v);
+
+            console.log('========== 网盘Token状态检查 ==========');
+            console.log('已配置的网盘Token:', Object.keys(driveTokens));
+            console.log('有效Token数量:', activeDrives.length);
+            console.log('有效网盘类型:', activeDrives.map(([type]) => type));
+
+            let statusMessage = `网盘Token状态:\n\n`;
+
+            if (activeDrives.length === 0) {
+                statusMessage += '❌ 未配置任何网盘Token\n\n';
+                statusMessage += '要搜索网盘资源，请按以下步骤配置:\n';
+                statusMessage += '1. 点击设置 → 网盘管理\n';
+                statusMessage += '2. 选择网盘类型（阿里云盘/夸克/百度）\n';
+                statusMessage += '3. 输入对应的Token或Cookie\n';
+                statusMessage += '4. 保存后即可搜索网盘资源';
+            } else {
+                statusMessage += `✅ 已配置 ${activeDrives.length} 个网盘:\n`;
+                activeDrives.forEach(([type, token]) => {
+                    const driveName = DRIVE_CONFIGS[type]?.name || type;
+                    statusMessage += `  - ${driveName}: ${token ? '已配置' : '未配置'}\n`;
+                });
+                statusMessage += `\n网盘搜索功能已启用，搜索时将自动搜索网盘中的文件`;
+            }
+
+            console.log('========== 检查结束 ==========');
+            return statusMessage;
+        }
+
+        // UI函数：检查网盘Token状态
+        async function checkDriveTokenUI() {
+            const statusMessage = checkDriveTokenStatus();
+            await showAlert(statusMessage, '网盘Token状态');
+        }
         // 页面初始化时将复选框状态同步为默认值
         (function initProxyUI() {
             const sw = document.getElementById('proxySwitch');
@@ -3362,42 +3404,10 @@ const SAVED_API_URLS = [
         }
 
         const CLOUD_DRIVE_SEARCH_API = [
-            { url: 'http://wogg.xxooo.cf', name: '玩偶云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '✅' },
-            { url: 'http://feimao888.fun', name: '蜡笔云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
-            { url: 'https://tv.yydsys.top', name: '多多云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
-            { url: 'https://sd.sduc.site', name: '闪电云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
-            { url: 'http://2xiaopan.fun', name: '二小云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
-            { url: 'https://oog.nxog.eu.org', name: '欧歌云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
+            { url: 'https://vbox.ltd/proxy.php', name: '网盘代理搜索', type: 'proxy',
+              searchUrl: '', status: '✅', proxyMode: true },
             { url: 'http://www.miqk.cc', name: '至臻云盘', type: 'crawler',
               searchUrl: '/index.php/vod/search.html?wd=', status: '✅' },
-            { url: 'http://103.45.162.207:20720', name: '虎斑云盘', type: 'crawler',
-              searchUrl: '/index.php/vod/search.html?wd=', status: '✅' },
-            { url: 'http://xsayang.fun:12512', name: '小斑云盘', type: 'crawler',
-              searchUrl: '/index.php/vod/search.html?wd=', status: '✅' },
-            { url: 'https://www.91panta.cn', name: '盘Ta云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '⚠️' },
-            { url: 'https://www.leijing.xyz', name: '雷鲸云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
-            { url: 'https://www.nanf.cc', name: '南风云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
-            { url: 'https://pan.funletu.com', name: '趣盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
-            { url: 'https://4ktop.com', name: '4KTop云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '✅',
-              itemSelector: '.module-card-item, .module-search-item',
-              titleSelector: 'a[href*="/voddetail/"] strong, .module-card-item-title a, .video-serial',
-              titleAttr: '',
-              linkSelector: '.module-card-item-poster, a[href*="/voddetail/"]',
-              linkAttr: 'href',
-              imgAttr: 'data-original' },
-            { url: 'https://libvio.mov', name: 'LibVio云盘', type: 'crawler',
-              searchUrl: '/vodsearch/-------------.html?wd=', status: '❌' },
             { url: 'https://666.666291.xyz', name: '木偶云盘', type: 'crawler',
               searchUrl: '/index.php/vod/search.html?wd=', status: '✅' }
         ];
@@ -4371,16 +4381,78 @@ async function fetchFastWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
                 if (CLOUD_DRIVE_SEARCH_API.length > 0) {
                     promises.push(
                         (async () => {
-                            console.log('流程4.5: 网盘爬虫搜索', CLOUD_DRIVE_SEARCH_API.length, '个源，每站间隔1秒');
+                            console.log('========== 网盘聚合搜索开始 ==========');
+                            console.log('网盘源数量:', CLOUD_DRIVE_SEARCH_API.length);
+                            console.log('搜索关键词:', keyword);
+
+                            const cloudResults = [];
+                            let successCount = 0;
+                            let failCount = 0;
+
                             for (const apiDef of CLOUD_DRIVE_SEARCH_API) {
                                 try {
-                                    if (apiDef.type !== 'crawler') continue;
+                                    console.log(`\n>>> 搜索网盘: ${apiDef.name}`);
+                                    console.log(`    URL: ${apiDef.url}`);
+                                    console.log(`    Type: ${apiDef.type}`);
+
+                                    // 代理模式搜索
+                                    if (apiDef.proxyMode) {
+                                        console.log(`    🔥 使用代理模式搜索`);
+                                        const proxyResults = await searchViaProxy(keyword);
+                                        if (proxyResults && proxyResults.length > 0) {
+                                            console.log(`    ✅ 代理搜索成功，找到 ${proxyResults.length} 个结果`);
+                                            successCount++;
+                                            cloudResults.push(...proxyResults);
+                                            
+                                            const key = 'cloud-pan:' + apiDef.name;
+                                            if (!seenPlatforms.has(key)) {
+                                                seenPlatforms.add(key);
+                                                allResults.push({ interfaceUrl: key, interfaceName: apiDef.name, data: proxyResults });
+                                                displayResultsBatch();
+                                            }
+                                        } else {
+                                            console.log(`    ⚠️ 代理搜索未找到结果`);
+                                            failCount++;
+                                        }
+                                        continue;
+                                    }
+
+                                    if (apiDef.type !== 'crawler') {
+                                        console.log(`    ⚠️ 跳过：类型不是crawler`);
+                                        continue;
+                                    }
+
                                     const baseUrl = apiDef.url.replace(/\/+$/, '');
                                     const p = (apiDef.searchUrl || '/vodsearch/-------------.html?wd=');
                                     const fullUrl = baseUrl + (p.startsWith('/') ? '' : '/') + p + keyword;
-                                    let text = await fetchFastWithProxy(fullUrl, 8000).catch(() => null);
-                                    if (!text) text = await fetchDirect(fullUrl, 6000).catch(() => null);
-                                    if (!text || text.length < 100) continue;
+
+                                    console.log(`    搜索URL: ${fullUrl}`);
+
+                                    // 先尝试代理
+                                    console.log(`    🔄 尝试代理访问...`);
+                                    let text = await fetchFastWithProxy(fullUrl, 8000).catch(err => {
+                                        console.log(`    ❌ 代理失败: ${err.message}`);
+                                        return null;
+                                    });
+
+                                    // 代理失败则直连
+                                    if (!text) {
+                                        console.log(`    🔄 尝试直连访问...`);
+                                        text = await fetchDirect(fullUrl, 6000).catch(err => {
+                                            console.log(`    ❌ 直连失败: ${err.message}`);
+                                            return null;
+                                        });
+                                    }
+
+                                    if (!text || text.length < 100) {
+                                        console.log(`    ❌ 响应无效或过短 (长度: ${text?.length || 0})`);
+                                        failCount++;
+                                        continue;
+                                    }
+
+                                    console.log(`    ✅ 获取响应成功，长度: ${text.length}`);
+
+                                    // 解析HTML
                                     const parser = new DOMParser();
                                     const doc = parser.parseFromString(text, 'text/html');
                                     const items = [];
@@ -4434,6 +4506,10 @@ async function fetchFastWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
                                         }
                                     }
                                     if (items.length > 0) {
+                                        console.log(`    ✅ 解析成功，找到 ${items.length} 个结果`);
+                                        successCount++;
+                                        cloudResults.push(...items);
+
                                         const key = 'cloud-pan:' + apiDef.name;
                                         if (!seenPlatforms.has(key)) {
                                             // 如果开启了详情爬取开关，异步爬取每个结果的详情页识别网盘类型
@@ -4443,7 +4519,7 @@ async function fetchFastWithProxy(url, timeout = SEARCH_TIMEOUT_MS) {
                                                         const detailUrl = item.vod_id || '';
                                                         if (!detailUrl) continue;
                                                         try {
-const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + encodeURIComponent(PROXY_TOKEN);
+                                                            const proxyUrl = PROXY_LIST[1] + detailUrl + '&token=' + encodeURIComponent(PROXY_TOKEN);
                                                             const resp = await fetchWithTimeout(proxyUrl, {}, 10000);
                                                             if (!resp.ok) continue;
                                                             const html = await resp.text();
@@ -4480,14 +4556,23 @@ const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + enc
                                             allResults.push({ interfaceUrl: key, interfaceName: apiDef.name, data: items });
                                             displayResultsBatch();
                                         }
+                                    } else {
+                                        console.log(`    ⚠️ 未解析到任何结果`);
+                                        failCount++;
                                     }
                                 } catch (error) {
-                                    console.warn('网盘爬虫搜索失败:', apiDef.name, error.message);
+                                    console.log(`    ❌ 搜索异常: ${error.message}`);
+                                    failCount++;
                                 }
                                 // 每站间隔1秒，避免被限流
+                                console.log(`    等待1秒后搜索下一个网盘...`);
                                 await new Promise(resolve => setTimeout(resolve, 1000));
                             }
-                            console.log('流程4.5完成');
+
+                            console.log(`\n========== 网盘聚合搜索完成 ==========`);
+                            console.log(`成功: ${successCount} 个网盘，失败: ${failCount} 个网盘`);
+                            console.log(`总共找到: ${cloudResults.length} 个资源`);
+                            console.log(`========================================`);
                         })()
                     );
                 }
@@ -4495,13 +4580,22 @@ const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + enc
                 // 流程5: 网盘搜索（扫描所有已登录网盘中匹配关键词的文件）
                 const driveTokens = loadDriveTokens();
                 const activeDrives = Object.entries(driveTokens).filter(([,v]) => v);
+
+                console.log('网盘Token检查:');
+                console.log('  加载到的所有Token:', driveTokens);
+                console.log('  有效Token数量:', activeDrives.length);
+                console.log('  有效网盘类型:', activeDrives.map(([type]) => type));
+
                 if (activeDrives.length > 0) {
                     promises.push(
                         (async () => {
                             console.log('流程5: 网盘搜索', activeDrives.length, '个网盘');
                             for (const [driveType, token] of activeDrives) {
                                 try {
+                                    console.log(`开始搜索网盘[${driveType}]，token长度:`, token ? token.length : 0);
                                     const driveResults = await searchCloudDrive(driveType, token, keyword);
+                                    console.log(`网盘[${driveType}]搜索完成，结果数量:`, driveResults?.data?.length || 0);
+
                                     if (driveResults && driveResults.data && driveResults.data.length > 0) {
                                         const result = {
                                             interfaceUrl: 'clouddrive:' + driveType,
@@ -4515,6 +4609,8 @@ const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + enc
                                             displayResultsBatch();
                                             console.log(`网盘[${driveType}]搜索结果:`, driveResults.data.length, '个');
                                         }
+                                    } else {
+                                        console.log(`网盘[${driveType}]未找到匹配文件`);
                                     }
                                 } catch (e) {
                                     console.warn(`网盘[${driveType}]搜索失败:`, e.message);
@@ -4523,6 +4619,9 @@ const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + enc
                             console.log('流程5全部完成');
                         })()
                     );
+                } else {
+                    console.log('未配置网盘Token，跳过网盘搜索');
+                    console.log('提示：如需搜索网盘资源，请在设置中配置网盘Token');
                 }
 
                 // 等待所有流程完成或超时（25秒，因为流程4.5每站间隔1秒共需16秒+）
@@ -4542,6 +4641,80 @@ const proxyUrl = PROXY_LIST[1] + encodeURIComponent(detailUrl) + '&token=' + enc
             } finally {
                 loadingEl.classList.add('hidden');
             }
+        }
+
+        // 通过代理Worker搜索多个网盘聚合站
+        async function searchViaProxy(keyword) {
+            const proxySites = [
+                { name: '至臻云盘', url: 'http://www.miqk.cc/index.php/vod/search.html?wd=' },
+                { name: '木偶云盘', url: 'https://666.666291.xyz/index.php/vod/search.html?wd=' }
+            ];
+
+            const allResults = [];
+
+            for (const site of proxySites) {
+                try {
+                    console.log(`    代理搜索 ${site.name}...`);
+                    const searchUrl = site.url + keyword;
+                    console.log(`    目标URL: ${searchUrl}`);
+                    
+                    // 构建代理URL - 按照Worker要求的格式
+                    const proxyUrl = `https://vbox.ltd/?url=${searchUrl}&token=199114`;
+                    console.log(`    代理URL: ${proxyUrl}`);
+
+                    const response = await fetch(proxyUrl);
+                    if (!response.ok) {
+                        const errorText = await response.text().catch(() => '');
+                        console.log(`    ${site.name} 代理请求失败: ${response.status} ${errorText ? '(' + errorText.substring(0, 100) + ')' : ''}`);
+                        continue;
+                    }
+
+                    const html = await response.text();
+                    if (html.length < 100) {
+                        console.log(`    ${site.name} 响应过短`);
+                        continue;
+                    }
+
+                    console.log(`    ${site.name} 代理请求成功，长度: ${html.length}`);
+
+                    // 解析HTML
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const items = doc.querySelectorAll('.module-search-item');
+
+                    items.forEach(item => {
+                        const titleEl = item.querySelector('.video-serial') || item.querySelector('a');
+                        const linkEl = item.querySelector('.video-serial') || item.querySelector('a');
+                        const imgEl = item.querySelector('img');
+
+                        if (titleEl && linkEl) {
+                            const title = titleEl.textContent.trim();
+                            const href = linkEl.getAttribute('href') || '';
+                            const imgUrl = imgEl ? (imgEl.getAttribute('data-src') || imgEl.getAttribute('src')) : '';
+
+                            if (title && href) {
+                                const absUrl = href.startsWith('http') ? href : site.url.split('/index.php')[0] + href;
+                                allResults.push({
+                                    vod_id: absUrl,
+                                    vod_name: title,
+                                    vod_pic: imgUrl,
+                                    _detailPageUrl: absUrl,
+                                    _panSource: { name: site.name },
+                                    _isVideo: true,
+                                    _panAggrSource: { name: site.name }
+                                });
+                            }
+                        }
+                    });
+
+                    console.log(`    ${site.name} 解析结果: ${items.length} 个搜索项，提取: ${allResults.filter(r => r._panSource.name === site.name).length} 个`);
+
+                } catch (error) {
+                    console.log(`    ${site.name} 搜索异常: ${error.message}`);
+                }
+            }
+
+            return allResults;
         }
 
         // 单个接口搜索函数
