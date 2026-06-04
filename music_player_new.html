@@ -551,6 +551,8 @@
         <div class="btn" onclick="openSearch()">搜索</div>
         <div class="btn" onclick="openInput()">歌单</div>
         <div class="btn" onclick="openSquare()">广场</div>
+        <div class="btn" onclick="openVideo()">视频</div>
+        <div class="btn" onclick="jumpToCalendar()">返回</div>
     </div>
     <div id="apiTextDisplay" class="api-text-container">极简播放器@阿锋啊vlog</div>
 </div>
@@ -2301,6 +2303,9 @@ function openSquare(){
     if(!squareState.platform) squareState.platform='tx';
     if(dom.squarePlatform) dom.squarePlatform.value=squareState.platform||'tx';
     loadSquarePlatform(dom.squarePlatform?.value||'tx');
+}
+function openVideo(){
+    window.location.href = 'vbox.html';
 }
 function setSquareStatus(t){ if(dom.squareStatus) dom.squareStatus.textContent=t; }
 function loadSquarePlatform(p){
