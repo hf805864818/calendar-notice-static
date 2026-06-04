@@ -32,6 +32,8 @@
         body {
             background: transparent;
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
         }
 
         .video-card {
@@ -41,6 +43,7 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 1.5rem;
             overflow: hidden;
+            margin: 0 auto;
         }
 
         .tv-base {
@@ -183,44 +186,33 @@
         }
 
         .back-to-music {
-            position: absolute;
-            left: 12px;
-            top: 12px;
-            z-index: 50;
-            background: rgba(35, 30, 75, 0.8);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
-        
+
         .back-to-music:hover {
-            background: rgba(35, 30, 75, 0.95);
-            border-color: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
         }
-        
+
         .back-to-music:active {
             transform: scale(0.95);
         }
-        
+
         .back-to-music svg {
             width: 14px;
             height: 14px;
-        }
-        
-        .back-to-music span {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 12px;
-            font-weight: 500;
+            color: white;
         }
 
         .user-select-none {
@@ -485,7 +477,7 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center p-4">
+<body class="p-4">
     <!-- SVG Icons - Direct inline SVG for better browser compatibility -->
     <svg class="hidden" aria-hidden="true">
       <defs>
@@ -556,14 +548,8 @@
         </div>
     </div>
 
-    <div class="max-w-6xl w-full">
+    <div class="max-w-6xl w-full mx-auto">
         <div class="video-card">
-            <button class="back-to-music" onclick="backToMusic()">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span>返回音乐播放器</span>
-            </button>
             <div class="relative bg-black aspect-video group">
                 <div class="absolute inset-0 video-placeholder flex items-center justify-center">
                     <div class="text-center">
@@ -581,7 +567,12 @@
                 </video>
 
                 <div class="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div class="flex items-center justify-end">
+                    <div class="flex items-center justify-between">
+                        <button class="back-to-music" onclick="backToMusic()">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
                         <button class="glass-btn p-2 rounded-lg text-white/80 hover:text-white cursor-pointer" title="全屏" onclick="toggleFullscreen()">
                           <svg id="fullscreenIcon" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -2909,14 +2900,15 @@
         const SEARCH_TIMEOUT_MS = 8000;
         const DISCOVER_CACHE_TTL = 10 * 60 * 1000;
         const SEARCH_CONCURRENCY = 12;
+        const FAST_SEARCH_LIMIT = 4;
         
         let cachedSearchInterfaces = null;
         let cachedSearchInterfacesKey = '';
         let cachedSearchInterfacesTime = 0;
         let currentProxyIndex = 0;
 
-        // 代理开关：从 localStorage 读取设置（默认关闭，因为代理可能失效）
-        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== null ? localStorage.getItem('useProxyEnabled') === 'true' : false;
+        // 代理开关：从 localStorage 读取设置（默认开启）
+        let useProxyEnabled = localStorage.getItem('useProxyEnabled') !== null ? localStorage.getItem('useProxyEnabled') === 'true' : true;
 
         // 测试代理连接
         async function testProxyConnection() {
