@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Glass Video Player</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -227,6 +228,12 @@
         }
 
         .settings-panel { max-height: 80vh !important; overflow-y: auto !important; }
+        #settingsPanel {
+            position: fixed !important;
+            bottom: auto !important;
+            margin-bottom: 0 !important;
+            z-index: 9999 !important;
+        }
         /* 隐藏滚动条但保持滚动功能 */
         .scrollbar-hide {
             -ms-overflow-style: none;
@@ -460,6 +467,38 @@
             height: 10px;
         }
 
+        .short-video-panel {
+            background: rgba(15, 15, 25, 0.96);
+            backdrop-filter: blur(26px);
+            -webkit-backdrop-filter: blur(26px);
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+        }
+
+        .short-video-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+        }
+
+        .short-video-item {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.88);
+            border-radius: 10px;
+            padding: 8px 9px;
+            font-size: 11px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .short-video-item:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
         /* 多网盘列表滚动条样式 */
         #multiDriveList::-webkit-scrollbar {
             width: 4px;
@@ -475,9 +514,15 @@
         #multiDriveList::-webkit-scrollbar-thumb:hover {
             background: rgba(255,255,255,0.25);
         }
+
+        .player-shell {
+            transform: none;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
     </style>
 </head>
-<body class="flex items-center justify-center p-4">
+<body class="flex items-start justify-center px-4 pt-0 pb-4">
     <!-- SVG Icons - Direct inline SVG for better browser compatibility -->
     <svg class="hidden" aria-hidden="true">
       <defs>
@@ -548,7 +593,20 @@
         </div>
     </div>
 
-    <div class="max-w-6xl w-full mx-auto">
+    <div id="shortVideoPanel" class="fixed inset-0 hidden items-center justify-center z-[9997] p-4" style="background: rgba(0,0,0,0.58); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+        <div class="short-video-panel w-full max-w-sm rounded-2xl flex flex-col" style="max-height: 72vh;">
+            <div class="px-4 py-3 flex items-center justify-between border-b border-white/10 flex-shrink-0">
+                <div>
+                    <div class="text-white text-sm font-semibold">短视频接口</div>
+                    <div class="text-white/45 text-[10px] mt-0.5">点击名称后自动播放接口里的视频</div>
+                </div>
+                <button onclick="closeShortVideoPanel()" class="glass-btn px-2 py-1 rounded-lg text-white/80 hover:text-white cursor-pointer text-xs">关闭</button>
+            </div>
+            <div id="shortVideoList" class="p-3 overflow-y-auto flex-1"></div>
+        </div>
+    </div>
+
+    <div class="player-shell max-w-6xl w-full mx-auto">
         <div class="video-card">
             <div class="relative bg-black aspect-video group">
                 <div class="absolute inset-0 video-placeholder flex items-center justify-center">
@@ -724,6 +782,7 @@
                                         <div class="flex gap-1.5">
                                             <input type="text" id="videoUrlInput" placeholder="输入视频URL" class="flex-1 glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs bg-transparent outline-none placeholder:text-white/40">
                                             <button class="glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs cursor-pointer" onclick="addVideoUrl()">添加</button>
+                                            <button class="glass-btn px-2.5 py-1.5 rounded-lg text-white text-xs cursor-pointer whitespace-nowrap" onclick="openShortVideoPanel()">短视频</button>
                                         </div>
                                     </div>
                                     <div>
@@ -1118,24 +1177,33 @@
         function toggleSettings() {
             const isHidden = settingsPanel.classList.contains('hidden');
             if (isHidden) {
-                // 以 video-card（整个播放器容器）为中心
                 const videoCard = document.querySelector('.video-card');
                 const settingsPanelEl = document.getElementById('settingsPanel');
-                const panelWidth = 256;
-                
-                // 计算 video-card 的宽度，并找到其中心点
-                const videoCardWidth = videoCard.offsetWidth;
-                const videoCardRect = videoCard.getBoundingClientRect();
-                
-                // 获取 settingsPanel 的父元素（settings 按钮的 relative 容器）
                 const settingsBtn = document.querySelector('button[onclick="toggleSettings()"]');
-                const parentRect = settingsBtn.parentElement.getBoundingClientRect();
+                const videoCardRect = videoCard.getBoundingClientRect();
+                const btnRect = settingsBtn.getBoundingClientRect();
+                const gap = 10;
+                const viewportPadding = 8;
+                const panelWidth = Math.min(256, window.innerWidth - viewportPadding * 2);
+                const panelHeight = Math.min(settingsPanelEl.scrollHeight || 360, window.innerHeight - viewportPadding * 2);
+                const cardCenter = videoCardRect.left + videoCardRect.width / 2;
+                const leftPos = Math.max(viewportPadding, Math.min(cardCenter - panelWidth / 2, window.innerWidth - panelWidth - viewportPadding));
+                const spaceAbove = btnRect.top - viewportPadding - gap;
+                const spaceBelow = window.innerHeight - btnRect.bottom - viewportPadding - gap;
+                let topPos;
                 
-                // 计算 video-card 中心相对于父容器的偏移
-                const videoCardCenter = videoCardRect.left - parentRect.left + videoCardWidth / 2;
-                const leftPos = videoCardCenter - panelWidth / 2;
+                settingsPanelEl.style.width = `${panelWidth}px`;
+                settingsPanelEl.style.maxHeight = `${Math.max(180, panelHeight)}px`;
                 
+                if (spaceAbove >= Math.min(panelHeight, 220) || spaceAbove >= spaceBelow) {
+                    topPos = Math.max(viewportPadding, btnRect.top - gap - panelHeight);
+                } else {
+                    topPos = Math.min(btnRect.bottom + gap, window.innerHeight - panelHeight - viewportPadding);
+                }
+
                 settingsPanelEl.style.left = `${leftPos}px`;
+                settingsPanelEl.style.top = `${topPos}px`;
+                settingsPanelEl.style.bottom = 'auto';
                 settingsPanelEl.style.right = 'auto';
                 settingsPanelEl.style.transform = 'none';
                 settingsPanelEl.classList.remove('hidden');
@@ -1183,6 +1251,60 @@
 
         // 播放模式: 'sequence' = 顺序, 'loop' = 循环, 'random' = 随机
         let playMode = 'sequence';
+
+        const SHORT_VIDEO_APIS = [
+            { name: '随机美女', url: 'http://api.yujn.cn/api/juhexjj.php?type=video' },
+            { name: '随机妹子', url: 'http://api.xzboke.cn/api/sjmnsp.php' },
+            { name: '随机小姐姐', url: 'https://api.suyanw.cn/api/xjj/api.php' },
+            { name: '快手小姐姐', url: 'http://api.yujn.cn/api/ksxjjsp.php' },
+            { name: '快手大姐姐', url: 'https://openapi.dwo.cc/api/ksvideo' },
+            { name: '抖音小姐姐', url: 'http://api.qemao.com/api/douyin' },
+            { name: '抖音大姐姐', url: 'https://api.yujn.cn/api/zzxjj.php?type=video' },
+            { name: '抖音妹子', url: 'https://api.yujn.cn/api/xjj.php?type=video' },
+            { name: '抖音随机', url: 'https://api.yujn.cn/api/dy_sj.php' },
+            { name: '快手随机', url: 'http://api.yujn.cn/api/ks_sj.php' },
+            { name: '快手女大', url: 'https://api.yujn.cn/api/nvda.php' },
+            { name: '怼脸自拍', url: 'https://api.yujn.cn/api/duilian.php?type=video' },
+            { name: '擦边视频', url: 'https://api.s01s.cn/API/wmsc/' },
+            { name: '黑丝美女', url: 'http://api.yujn.cn/api/heisis.php?type=video' },
+            { name: '白丝美女', url: 'http://api.yujn.cn/api/baisis.php?type=video' },
+            { name: '白丝美腿', url: 'https://openapi.dwo.cc/api/bsv' },
+            { name: '漫展现场', url: 'https://api.yujn.cn/api/manzhan.php?type=video' },
+            { name: 'JK视频', url: 'https://api.suyanw.cn/api/jksp.php' },
+            { name: '美女穿搭', url: 'http://api.yujn.cn/api/chuanda.php?type=video' },
+            { name: '鞠婧祎', url: 'http://api.yujn.cn/api/jjy.php?type=video' },
+            { name: '丝滑舞蹈', url: 'http://api.yujn.cn/api/shwd.php' },
+            { name: '完美身材', url: 'http://api.yujn.cn/api/wmsc.php?type=video' },
+            { name: '抖音潇潇', url: 'http://api.yujn.cn/api/xiaoxiao.php' },
+            { name: '蛇姐', url: 'http://api.yujn.cn/api/shejie.php?type=video' },
+            { name: '章若楠', url: 'http://api.yujn.cn/api/zrn.php?type=video' },
+            { name: '萌娃系列', url: 'http://api.yujn.cn/api/mengwa.php?type=video' },
+            { name: '古风系列', url: 'http://api.yujn.cn/api/hanfu.php?type=video' },
+            { name: '玉足系列', url: 'http://api.yujn.cn/api/jpmt.php?type=video' },
+            { name: '慢摇系列', url: 'http://api.yujn.cn/api/manyao.php?type=video' },
+            { name: '吊带系列', url: 'http://api.yujn.cn/api/diaodai.php?type=video' },
+            { name: '青纯系列', url: 'http://api.yujn.cn/api/qingchun.php?type=video' },
+            { name: 'COS系列', url: 'http://api.yujn.cn/api/COS.php?type=video' },
+            { name: '女高系列', url: 'http://api.yujn.cn/api/nvgao.php?type=video' },
+            { name: '街拍系列', url: 'http://api.yujn.cn/api/jiepai.php?type=video' },
+            { name: '快手变装', url: 'http://api.yujn.cn/api/ksbianzhuang.php?type=video' },
+            { name: '抖音变装', url: 'http://api.yujn.cn/api/bianzhuang.php?' },
+            { name: '双倍快乐', url: 'http://api.yujn.cn/api/sbkl.php?type=video' },
+            { name: '萝莉系列', url: 'http://api.yujn.cn/api/luoli.php?type=video' },
+            { name: '你的欲梦', url: 'http://api.yujn.cn/api/ndym.php?type=video' },
+            { name: '甜妹系列', url: 'http://api.yujn.cn/api/tianmei.php?type=video' },
+            { name: 'JK系列', url: 'http://api.yujn.cn/api/jksp.php?type=video' },
+            { name: '女仆系列', url: 'http://api.xingchenfu.xyz/API/tianmei.php' },
+            { name: '玉足美腿', url: 'http://api.yujn.cn/api/yuzu.php?type=video' },
+            { name: '帅哥系列', url: 'http://api.yujn.cn/api/xgg.php?type=video' },
+            { name: '高清帅哥', url: 'https://api.52vmy.cn/api/video/boy' },
+            { name: '热舞系列', url: 'http://api.yujn.cn/api/rewu.php?type=video' },
+            { name: '随机动漫', url: 'http://api.yujn.cn/api/dmsp.php' },
+            { name: '快手翻唱', url: 'http://api.yujn.cn/api/ks_fc.php?type=video' },
+            { name: '抖音翻唱', url: 'http://api.yujn.cn/api/fanchang.php' },
+            { name: '懒羊羊翻唱', url: 'http://api.yujn.cn/api/lyy.php?type=video' },
+            { name: '小新翻唱', url: 'http://api.yujn.cn/api/xiaoxin.php?type=video' }
+        ];
 
         // ===== 微信X5内核阻止系统播放器弹窗 =====
         // X5内核只要触摸到<video>标签就会自动弹出系统播放器，无法通过属性完全阻止。
@@ -1314,6 +1436,91 @@
             });
             
             return newChannels;
+        }
+
+        function addShortVideoCacheBuster(url) {
+            const separator = url.endsWith('?') || url.endsWith('&') ? '' : (url.includes('?') ? '&' : '?');
+            return `${url}${separator}_t=${Date.now()}`;
+        }
+
+        function stripShortVideoCacheBuster(url) {
+            return String(url || '').replace(/([?&])_t=\d+$/, '').replace(/([?&])_t=\d+&/, '$1');
+        }
+
+        function isShortVideoApiUrl(url) {
+            const cleanUrl = stripShortVideoCacheBuster(url);
+            return SHORT_VIDEO_APIS.some(api => cleanUrl === api.url || cleanUrl.startsWith(api.url + '&'));
+        }
+
+        function renderShortVideoList() {
+            const list = document.getElementById('shortVideoList');
+            if (!list) return;
+            list.innerHTML = '';
+            const grid = document.createElement('div');
+            grid.className = 'short-video-grid';
+            SHORT_VIDEO_APIS.forEach((api, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'short-video-item';
+                btn.textContent = `${index + 1}. ${api.name}`;
+                btn.onclick = () => playShortVideoApi(index);
+                grid.appendChild(btn);
+            });
+            list.appendChild(grid);
+        }
+
+        function openShortVideoPanel() {
+            renderShortVideoList();
+            document.getElementById('shortVideoPanel').classList.remove('hidden');
+            document.getElementById('shortVideoPanel').classList.add('flex');
+        }
+
+        function closeShortVideoPanel() {
+            document.getElementById('shortVideoPanel').classList.add('hidden');
+            document.getElementById('shortVideoPanel').classList.remove('flex');
+        }
+
+        function prepareDirectPlayback(url) {
+            if (currentAbortController) {
+                currentAbortController.abort();
+            }
+            currentResolvedVideoUrl = null;
+            currentLoadingUrl = url;
+            video.pause();
+            video.src = '';
+            video.classList.add('hidden');
+            document.querySelector('.video-placeholder').classList.remove('hidden');
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            if (onCanPlayHandler) {
+                video.removeEventListener('canplay', onCanPlayHandler);
+                onCanPlayHandler = null;
+            }
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        function playShortVideoApi(index) {
+            const api = SHORT_VIDEO_APIS[index];
+            if (!api) return;
+            const playUrl = addShortVideoCacheBuster(api.url);
+            videoList.push(playUrl);
+            currentVideoIndex = videoList.length - 1;
+            if (!categorizedChannels['短视频接口']) {
+                categorizedChannels['短视频接口'] = [];
+            }
+            categorizedChannels['短视频接口'].push({
+                name: api.name,
+                url: playUrl
+            });
+            closeShortVideoPanel();
+            document.getElementById('settingsPanel').classList.add('hidden');
+            document.getElementById('episodeMenu').classList.add('hidden');
+            updateEpisodeBtn();
+            renderCategorizedList();
+            renderEpisodeList();
+            prepareDirectPlayback(playUrl);
+            loadVideoByUrl(playUrl);
         }
 
         function addVideoUrl() {
@@ -2288,6 +2495,14 @@
 
                 // 显示loading
                 loadingIndicator.classList.remove('hidden');
+
+                if (isShortVideoApiUrl(originalUrl)) {
+                    currentResolvedVideoUrl = originalUrl;
+                    loadVideoByUrl(originalUrl);
+                    renderEpisodeList();
+                    document.getElementById('episodeMenu').classList.add('hidden');
+                    return;
+                }
 
                 // 异步解析视频地址
                 // m3u8/mp4通过代理域名播放（仅在代理开启时）
