@@ -548,6 +548,7 @@
     </div>
     <div class="bottom">
         <div class="btn" onclick="openPlaylist()">列表</div>
+        <div class="btn" onclick="openFavorites()">收藏</div>
         <div class="btn" onclick="openSearch()">搜索</div>
         <div class="btn" onclick="openInput()">歌单</div>
         <div class="btn" onclick="openSquare()">广场</div>
@@ -560,7 +561,10 @@
     <div class="modalBox">
         <div style="display:flex;justify-content:space-between">
             <div>播放列表</div>
-            <div onclick="closeModal(listModal)">关闭</div>
+            <div style="display:flex;gap:10px;align-items:center">
+                <div onclick="openFavorites()">歌曲收藏</div>
+                <div onclick="closeModal(listModal)">关闭</div>
+            </div>
         </div>
         <div id="listBox"></div>
     </div>
@@ -1959,14 +1963,90 @@ function fetchTextApi(){
 
 // ===== 收藏喜欢功能 =====
 const FAVORITES_KEY='favorites_v1';
+const FAVORITES_BACKUP_KEY='musicplayer_favorites_v1';
+const FAVORITES_IDB_NAME='musicplayer_favorites_db';
+const FAVORITES_IDB_STORE='kv';
 let favorites=[];
 
+function parseFavoritesData(raw){
+    if(!raw)return [];
+    try{
+        const data=JSON.parse(raw);
+        if(Array.isArray(data))return data;
+        if(data&&Array.isArray(data.items))return data.items;
+    }catch(e){}
+    return [];
+}
+
+function openFavoritesDB(){
+    return new Promise((resolve,reject)=>{
+        if(!window.indexedDB){reject(new Error('IndexedDB not supported'));return}
+        const req=indexedDB.open(FAVORITES_IDB_NAME,1);
+        req.onupgradeneeded=e=>{
+            const db=e.target.result;
+            if(!db.objectStoreNames.contains(FAVORITES_IDB_STORE))db.createObjectStore(FAVORITES_IDB_STORE);
+        };
+        req.onsuccess=()=>resolve(req.result);
+        req.onerror=()=>reject(req.error);
+    });
+}
+
+async function saveFavoritesToDB(raw){
+    try{
+        const db=await openFavoritesDB();
+        await new Promise((resolve,reject)=>{
+            const tx=db.transaction(FAVORITES_IDB_STORE,'readwrite');
+            tx.objectStore(FAVORITES_IDB_STORE).put(raw,FAVORITES_KEY);
+            tx.oncomplete=resolve;
+            tx.onerror=()=>reject(tx.error);
+        });
+        db.close();
+    }catch(e){}
+}
+
+async function loadFavoritesFromDB(){
+    try{
+        const db=await openFavoritesDB();
+        const raw=await new Promise((resolve,reject)=>{
+            const tx=db.transaction(FAVORITES_IDB_STORE,'readonly');
+            const req=tx.objectStore(FAVORITES_IDB_STORE).get(FAVORITES_KEY);
+            req.onsuccess=()=>resolve(req.result||'');
+            req.onerror=()=>reject(req.error);
+        });
+        db.close();
+        return raw;
+    }catch(e){
+        return '';
+    }
+}
+
 function loadFavorites(){
-    try{favorites=JSON.parse(localStorage.getItem(FAVORITES_KEY)||'[]')||[]}catch(e){favorites=[]}
+    let raw='';
+    try{
+        raw=localStorage.getItem(FAVORITES_KEY)||localStorage.getItem(FAVORITES_BACKUP_KEY)||localStorage.getItem('musicplayer_misc_'+FAVORITES_KEY)||'';
+    }catch(e){}
+    favorites=parseFavoritesData(raw);
+    loadFavoritesFromDB().then(dbRaw=>{
+        const dbFavorites=parseFavoritesData(dbRaw);
+        if(dbFavorites.length&&!favorites.length){
+            favorites=dbFavorites;
+            saveFavorites();
+            updateFavoriteButton();
+            if(dom.favoritesModal&&dom.favoritesModal.style.display==='flex')renderFavorites();
+        }
+    });
 }
 
 function saveFavorites(){
-    try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(favorites))}catch(e){alert('收藏保存失败，可能存储空间不足')}
+    const raw=JSON.stringify({version:1,savedAt:Date.now(),items:favorites});
+    try{
+        localStorage.setItem(FAVORITES_KEY,raw);
+        localStorage.setItem(FAVORITES_BACKUP_KEY,raw);
+        localStorage.setItem('musicplayer_misc_'+FAVORITES_KEY,raw);
+    }catch(e){
+        alert('收藏保存失败，可能存储空间不足');
+    }
+    saveFavoritesToDB(raw);
 }
 
 function addToFavorites(song){
@@ -2054,30 +2134,29 @@ function updateFavoriteButton(){
 
 function bindFavoriteButtonEvents(){
     if(!dom.favoriteBtn)return;
-    let longPressTimer=null;
-    let isLongPress=false;
-    let touchHandled=false;
     
-    dom.favoriteBtn.addEventListener('touchstart',e=>{
-        isLongPress=false;
-        touchHandled=true;
-        longPressTimer=setTimeout(()=>{
-            isLongPress=true;
-            openFavorites();
-        },600);
-    },{passive:true});
+    // 重新克隆爱心按钮，彻底清掉旧版 touchstart/touchend/长按监听，避免微信里一次点击被执行两次。
+    const oldBtn=dom.favoriteBtn;
+    const newBtn=oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(newBtn,oldBtn);
+    dom.favoriteBtn=newBtn;
     
-    dom.favoriteBtn.addEventListener('touchend',e=>{
-        clearTimeout(longPressTimer);
-        if(!isLongPress){
-            toggleFavorite();
-        }
-        setTimeout(()=>{touchHandled=false;isLongPress=false;},350);
-    });
+    let lastToggleAt=0;
+    const safeToggleFavorite=()=>{
+        const now=Date.now();
+        if(now-lastToggleAt<800)return;
+        lastToggleAt=now;
+        toggleFavorite();
+    };
     
     dom.favoriteBtn.addEventListener('click',e=>{
-        if(touchHandled)return;
-        toggleFavorite();
+        e.preventDefault();
+        e.stopPropagation();
+        safeToggleFavorite();
+    });
+    
+    dom.favoriteBtn.addEventListener('contextmenu',e=>{
+        e.preventDefault();
     });
 }
 
