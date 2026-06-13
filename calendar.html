@@ -45,12 +45,83 @@ html,body {
     backdrop-filter: blur(18px); 
     -webkit-backdrop-filter: blur(18px); 
 }
+.card-liquid {
+    position: relative;
+    isolation: isolate;
+    overflow: visible;
+    background:
+        radial-gradient(circle at 18% 12%, rgba(255,255,255,0.78), transparent 34%),
+        radial-gradient(circle at 84% 8%, rgba(176,224,255,0.52), transparent 32%),
+        radial-gradient(circle at 72% 86%, rgba(255,212,229,0.34), transparent 36%),
+        linear-gradient(135deg, rgba(238,249,255,0.58), rgba(255,255,255,0.22) 48%, rgba(218,238,255,0.34));
+    border: 1px solid rgba(255,255,255,0.56);
+    box-shadow:
+        0 12px 42px rgba(70,120,170,0.18),
+        inset 0 1px 1px rgba(255,255,255,0.75),
+        inset 0 -24px 70px rgba(255,255,255,0.12);
+    backdrop-filter: blur(26px) saturate(175%) contrast(108%);
+    -webkit-backdrop-filter: blur(26px) saturate(175%) contrast(108%);
+}
+.card-liquid::before,
+.card-liquid::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+}
+.card-liquid::before {
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 24% 28%, rgba(255,255,255,0.34), transparent 36%),
+        radial-gradient(ellipse at 78% 68%, rgba(132,205,255,0.22), transparent 38%),
+        linear-gradient(120deg, transparent 0 18%, rgba(255,255,255,0.24) 28%, transparent 42% 100%);
+    filter: blur(1px);
+}
+.card-liquid::after {
+    z-index: 0;
+    border: 1px solid rgba(255,255,255,0.26);
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.34),
+        inset 16px 18px 42px rgba(255,255,255,0.14),
+        inset -18px -22px 46px rgba(78,137,189,0.12);
+}
+.card-liquid > * {
+    position: relative;
+    z-index: 1;
+}
+.card-liquid .card-header {
+    position: relative;
+    z-index: 1000;
+}
+.card-liquid .header-right,
+.card-liquid .dropdown,
+.card-liquid .dropdown-menu {
+    position: relative;
+    z-index: 1001;
+}
+.card-liquid .dropdown-menu {
+    position: absolute;
+    z-index: 1002;
+}
 @media (prefers-color-scheme: dark) {
     .card-shadow { 
         box-shadow: 0 4px 18px rgba(0,0,0,0.5); 
     }
     .card-blur { 
         background: rgba(28,28,30,0.55) !important; 
+    }
+    .card-liquid {
+        background:
+            radial-gradient(circle at 18% 12%, rgba(255,255,255,0.22), transparent 34%),
+            radial-gradient(circle at 84% 8%, rgba(80,164,255,0.26), transparent 32%),
+            radial-gradient(circle at 72% 86%, rgba(255,117,178,0.14), transparent 36%),
+            linear-gradient(135deg, rgba(44,56,68,0.58), rgba(18,22,28,0.32) 48%, rgba(56,76,94,0.36));
+        border-color: rgba(255,255,255,0.18);
+        box-shadow:
+            0 12px 42px rgba(0,0,0,0.38),
+            inset 0 1px 1px rgba(255,255,255,0.22),
+            inset 0 -24px 70px rgba(255,255,255,0.05);
     }
 }
 
@@ -60,14 +131,19 @@ html,body {
     align-items: center;
     margin-bottom: 10px;
 }
+.header-left {
+    flex: 0 0 auto;
+}
 .title-tag {
     font-size: 11px;
     color: #888;
+    white-space: nowrap;
 }
 .header-right {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex: 0 0 auto;
 }
 .btn-group {
     display: flex;
@@ -146,6 +222,59 @@ html,body {
     .dropdown-menu { background: #2c2c2e !important; color: #e5e5e5 !important; }
     .dropdown-item:hover { background: #3a3a3c !important; }
 }
+.weekly-card.card-liquid .btn-group {
+    background: rgba(255,255,255,0.26);
+    border: 1px solid rgba(255,255,255,0.36);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.52), 0 8px 22px rgba(86,130,168,0.12);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+.weekly-card.card-liquid .header-right {
+    gap: 4px;
+}
+.weekly-card.card-liquid .btn-group {
+    padding: 2px 4px;
+    background: rgba(255,255,255,0.58);
+    border: none;
+}
+.weekly-card.card-liquid .btn-group button {
+    padding: 2px 2px;
+}
+.weekly-card.card-liquid .dropdown {
+    z-index: 30;
+}
+.weekly-card.card-liquid .btn-option {
+    background: rgba(255,255,255,0.58);
+    border: 1px solid rgba(255,255,255,0.62);
+    color: #1b2a38;
+    font-weight: 600;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.62), 0 6px 18px rgba(74,118,154,0.12);
+    backdrop-filter: blur(16px) saturate(165%);
+    -webkit-backdrop-filter: blur(16px) saturate(165%);
+}
+.weekly-card.card-liquid .dropdown-menu {
+    background:
+        radial-gradient(circle at 18% 10%, rgba(255,255,255,0.82), transparent 34%),
+        linear-gradient(135deg, rgba(255,255,255,0.82), rgba(228,244,255,0.72));
+    color: #12202c;
+    border: 1px solid rgba(255,255,255,0.72);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.84), 0 14px 32px rgba(45,88,122,0.24);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+}
+.weekly-card.card-liquid .dropdown-item {
+    color: #12202c;
+    font-weight: 650;
+    border-radius: 7px;
+    background: rgba(255,255,255,0.34);
+    margin-bottom: 3px;
+}
+.weekly-card.card-liquid .dropdown-item:last-child {
+    margin-bottom: 0;
+}
+.weekly-card.card-liquid .dropdown-item:hover {
+    background: rgba(255,255,255,0.62);
+}
 
 .color-panel{
     display: grid;
@@ -218,6 +347,19 @@ html,body {
     background: #ffffff;
     box-shadow: 0 2px 5px rgba(0,0,0,0.08),0 4px 10px rgba(0,0,0,0.06),inset 0 -1px 2px rgba(0,0,0,0.04);
 }
+.weekly-card.card-liquid .day-card {
+    background: rgba(255,255,255,0.24);
+    border: 1px solid rgba(255,255,255,0.32);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.46), 0 6px 18px rgba(68,118,154,0.10);
+    backdrop-filter: blur(14px) saturate(155%);
+    -webkit-backdrop-filter: blur(14px) saturate(155%);
+}
+.weekly-card.card-liquid .day-card.active {
+    background: rgba(255,255,255,0.76) !important;
+    color: #12202c !important;
+    border-color: rgba(255,255,255,0.82);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.86), 0 8px 24px rgba(56,118,170,0.18);
+}
 @media (prefers-color-scheme: dark) {
     .day-card { background: #2c2c2e; }
     .day-card.active { background: #e5e5e5 !important; color: #1c1c1e !important; }
@@ -244,6 +386,15 @@ html,body {
 .weekly-card.card-shadow .task-detail {
     background: #fff;
     box-shadow: 0 3px 10px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.05),inset 0 0 2px rgba(0,0,0,0.03);
+}
+.weekly-card.card-liquid .task-detail {
+    background:
+        radial-gradient(circle at 18% 18%, rgba(255,255,255,0.48), transparent 34%),
+        linear-gradient(135deg, rgba(255,255,255,0.30), rgba(224,242,255,0.16));
+    border: 1px solid rgba(255,255,255,0.38);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.58), 0 10px 28px rgba(72,128,172,0.12);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
 }
 @media (prefers-color-scheme: dark) {
     .task-detail { background: #2c2c2e; }
@@ -360,6 +511,13 @@ html,body {
     background: #fff;
     box-shadow:0 2px 4px rgba(0,0,0,0.06),0 3px 8px rgba(0,0,0,0.04);
 }
+.weekly-card.card-liquid .task-item {
+    background: rgba(255,255,255,0.28);
+    border: 1px solid rgba(255,255,255,0.34);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.50), 0 6px 18px rgba(72,124,164,0.10);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
 @media (prefers-color-scheme: dark) {
     .task-item { background: #3a3a3c; color:#e5e5e5; }
     .task-item .time { color:#aaa; }
@@ -367,6 +525,43 @@ html,body {
     .weekly-card.card-shadow .task-item { 
         background: #3a3a3c !important; 
         box-shadow:0 2px 6px rgba(0,0,0,0.2),0 4px 10px rgba(0,0,0,0.12); 
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .weekly-card.card-liquid .btn-group,
+    .weekly-card.card-liquid .day-card,
+    .weekly-card.card-liquid .task-detail,
+    .weekly-card.card-liquid .task-item {
+        background: rgba(255,255,255,0.10) !important;
+        border-color: rgba(255,255,255,0.16);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.20);
+    }
+    .weekly-card.card-liquid .day-card.active {
+        background: rgba(255,255,255,0.72) !important;
+        color: #1c1c1e !important;
+        border-color: rgba(255,255,255,0.68);
+    }
+    .weekly-card.card-liquid .btn-option {
+        background: rgba(255,255,255,0.14) !important;
+        border-color: rgba(255,255,255,0.24);
+        color: #ffffff !important;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.18), 0 6px 18px rgba(0,0,0,0.24);
+    }
+    .weekly-card.card-liquid .dropdown-menu {
+        background:
+            radial-gradient(circle at 18% 10%, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, rgba(37,47,58,0.92), rgba(24,30,38,0.86)) !important;
+        color: #ffffff !important;
+        border-color: rgba(255,255,255,0.24);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.18), 0 14px 34px rgba(0,0,0,0.42);
+    }
+    .weekly-card.card-liquid .dropdown-item {
+        color: #ffffff !important;
+        background: rgba(255,255,255,0.10);
+    }
+    .weekly-card.card-liquid .dropdown-item:hover {
+        background: rgba(255,255,255,0.20) !important;
     }
 }
 
@@ -469,6 +664,7 @@ html,body {
                     <div class="dropdown-item" data-effect="normal">正常</div>
                     <div class="dropdown-item" data-effect="shadow">阴影</div>
                     <div class="dropdown-item" data-effect="blur">模糊</div>
+                    <div class="dropdown-item" data-effect="liquid">液态</div>
                 </div>
             </div>
             <div class="dropdown">
@@ -812,9 +1008,15 @@ function initView(){
 
 function setEffectClass(){
     let card = document.getElementById("cardBox");
-    card.classList.remove("card-normal","card-shadow","card-blur");
+    card.classList.remove("card-normal","card-shadow","card-blur","card-liquid");
     card.classList.add("card-"+effectNow);
-    document.getElementById("shadowBtn").innerText = effectNow==="normal"?"正常 ∨":effectNow==="shadow"?"阴影 ∨":"模糊 ∨";
+    const effectNameMap = {
+        normal: "正常 ∨",
+        shadow: "阴影 ∨",
+        blur: "模糊 ∨",
+        liquid: "液态 ∨"
+    };
+    document.getElementById("shadowBtn").innerText = effectNameMap[effectNow] || "阴影 ∨";
     saveEffect();
 }
 
