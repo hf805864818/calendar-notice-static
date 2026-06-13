@@ -121,6 +121,9 @@
             width: 100% !important;
             height: 100% !important;
         }
+        #video {
+            pointer-events: none;
+        }
 
         .settings-panel {
             background: hsla(var(--theme-hue), 40%, 15%, 0.95);
@@ -620,7 +623,7 @@
                     </div>
                 </div>
 
-                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5-playsinline" x5-video-player-fullscreen="false" x5-video-orientation="portraint" disablePictureInPicture preload="metadata">
+                <video id="video" class="absolute inset-0 w-full h-full object-cover hidden" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&q=80" playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5-page" x5-video-player-fullscreen="false" x5-video-orientation="portraint" disablePictureInPicture controlslist="nofullscreen nodownload noremoteplayback" preload="metadata">
                   <source src="" type="video/mp4">
                 </video>
 
@@ -965,6 +968,41 @@
 
         let isPlaying = false;
         let isVideoStarted = false;
+        let allowFullscreenByButton = false;
+
+        function enforceInlinePlayback() {
+            if (!video) return;
+            video.removeAttribute('controls');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('webkit-playsinline', '');
+            video.setAttribute('x5-playsinline', '');
+            video.setAttribute('x5-video-player-type', 'h5-page');
+            video.setAttribute('x5-video-player-fullscreen', 'false');
+            video.setAttribute('x5-video-orientation', 'portraint');
+            video.setAttribute('disablePictureInPicture', '');
+            video.setAttribute('controlslist', 'nofullscreen nodownload noremoteplayback');
+            video.playsInline = true;
+            video.webkitPlaysInline = true;
+            video.disablePictureInPicture = true;
+        }
+
+        enforceInlinePlayback();
+
+        ['click','dblclick','touchstart','touchend'].forEach(eventName => {
+            video.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, { passive: false });
+        });
+
+        video.addEventListener('webkitbeginfullscreen', () => {
+            if (!allowFullscreenByButton && video.webkitExitFullscreen) {
+                setTimeout(() => {
+                    try { video.webkitExitFullscreen(); } catch(e) {}
+                    enforceInlinePlayback();
+                }, 0);
+            }
+        });
 
         // 存储解析接口
         let customParsers = [];
@@ -999,12 +1037,7 @@
                     document.querySelector('.video-placeholder').classList.add('hidden');
                     isVideoStarted = true;
                 }
-                // iOS/微信 强制内嵌播放
-                video.setAttribute('playsinline', '');
-                video.setAttribute('webkit-playsinline', '');
-                video.setAttribute('x5-playsinline', '');
-                video.playsInline = true;
-                video.webkitPlaysInline = true;
+                enforceInlinePlayback();
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
@@ -1156,6 +1189,7 @@
             const container = document.querySelector('.video-card');
             const videoEl = document.getElementById('video');
             if (!videoEl) return;
+            allowFullscreenByButton = true;
             try {
                 const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
                 if (isFullscreen) {
@@ -1171,6 +1205,11 @@
             } catch (e) {
                 console.warn('全屏切换失败:', e);
                 try { videoEl.webkitEnterFullscreen(); } catch(e2) {}
+            } finally {
+                setTimeout(() => {
+                    allowFullscreenByButton = false;
+                    enforceInlinePlayback();
+                }, 800);
             }
         }
 
@@ -2612,16 +2651,11 @@
                 hls.attachMedia(video);
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    enforceInlinePlayback();
                     video.classList.remove('hidden');
                     document.querySelector('.video-placeholder').classList.add('hidden');
                     isVideoStarted = true;
                     loadingIndicator.classList.add('hidden');
-                    // 强制内嵌播放
-                    video.setAttribute('playsinline', '');
-                    video.setAttribute('webkit-playsinline', '');
-                    video.setAttribute('x5-playsinline', '');
-                    video.playsInline = true;
-                    video.webkitPlaysInline = true;
                     video.play().catch(err => {
                         console.log('播放被阻止:', err);
                         if (err.name === 'NotAllowedError') {
@@ -2683,16 +2717,11 @@
 
                 // 定义canplay处理函数
                 onCanPlayHandler = () => {
+                    enforceInlinePlayback();
                     video.classList.remove('hidden');
                     document.querySelector('.video-placeholder').classList.add('hidden');
                     isVideoStarted = true;
                     loadingIndicator.classList.add('hidden');
-                    // 强制内嵌播放
-                    video.setAttribute('playsinline', '');
-                    video.setAttribute('webkit-playsinline', '');
-                    video.setAttribute('x5-playsinline', '');
-                    video.playsInline = true;
-                    video.webkitPlaysInline = true;
                     video.play().catch(err => {
                         console.log('播放被阻止:', err);
                         if (err.name === 'NotAllowedError') {
