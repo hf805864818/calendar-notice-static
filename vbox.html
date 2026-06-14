@@ -37,6 +37,10 @@
             padding: 0;
         }
 
+        .player-shell {
+            width: min(100%, 1100px, calc((100vh - 92px) * 1.78));
+        }
+
         .video-card {
             background: rgba(10, 10, 20, 0.4);
             backdrop-filter: blur(30px);
@@ -45,6 +49,11 @@
             border-radius: 1.5rem;
             overflow: hidden;
             margin: 0 auto;
+        }
+
+        .video-frame {
+            height: min(calc((100vw - 32px) * 0.5625), calc(100vh - 108px), 620px);
+            min-height: 180px;
         }
 
         .tv-base {
@@ -123,6 +132,53 @@
         }
         #video {
             pointer-events: none;
+        }
+
+        @media (max-height: 720px), (max-width: 520px) {
+            body {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+                padding-bottom: 8px !important;
+            }
+            .player-shell {
+                width: min(100%, calc((100vh - 76px) * 1.78));
+            }
+            .video-frame {
+                height: min(calc((100vw - 16px) * 0.5625), calc(100vh - 92px), 420px);
+                min-height: 150px;
+            }
+            .video-card,
+            .tv-base,
+            .control-bar {
+                border-radius: 1rem;
+            }
+            .tv-base {
+                margin-top: 5px;
+            }
+            .control-bar {
+                padding: 0.45rem 0.6rem !important;
+            }
+            .control-bar .flex.items-center {
+                gap: 0.25rem !important;
+            }
+            .glass-btn {
+                box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+            }
+            #playPauseBtn {
+                width: 2.65rem !important;
+                height: 2.65rem !important;
+            }
+            #playPauseIcon {
+                width: 1.1rem !important;
+                height: 1.1rem !important;
+            }
+            .control-bar button {
+                padding: 0.45rem !important;
+            }
+            .control-bar svg {
+                width: 0.9rem !important;
+                height: 0.9rem !important;
+            }
         }
 
         .settings-panel {
@@ -609,9 +665,9 @@
         </div>
     </div>
 
-    <div class="player-shell max-w-6xl w-full mx-auto">
+    <div class="player-shell mx-auto">
         <div class="video-card">
-            <div class="relative bg-black aspect-video group">
+            <div class="video-frame relative bg-black group">
                 <div class="absolute inset-0 video-placeholder flex items-center justify-center">
                     <div class="text-center">
                         <div class="glass-btn rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:scale-110 transition-transform duration-200" onclick="togglePlay()">
