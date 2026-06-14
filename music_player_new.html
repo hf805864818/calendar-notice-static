@@ -368,7 +368,8 @@
             background: var(--bg-modal);
             color: var(--color-modal);
         }
-        #listBox { flex: 1; overflow: auto; }
+        #listBox { flex: 1; overflow: auto; min-height:0; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
+        #favoritesBox { flex: 1; min-height:0; max-height:220px; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; padding-right:2px; }
         #listBox > div { padding: 6px; border-radius: 6px; cursor: pointer; }
         #historyBox { max-height: 120px; overflow-y: auto; padding: 4px 0; }
         .history-item { padding: 6px; border-radius: 6px; cursor: pointer; font-size: 12px; }
@@ -548,7 +549,7 @@
     </div>
     <div class="bottom">
         <div class="btn" onclick="openPlaylist()">列表</div>
-        <div class="btn" onclick="openFavorites()">收藏</div>
+        <div class="btn" onclick="openFavorites()">歌曲收藏</div>
         <div class="btn" onclick="openSearch()">搜索</div>
         <div class="btn" onclick="openInput()">歌单</div>
         <div class="btn" onclick="openSquare()">广场</div>
