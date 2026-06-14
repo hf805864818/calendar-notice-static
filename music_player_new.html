@@ -2078,6 +2078,23 @@ function openFavorites(){
     renderFavorites();
 }
 
+async function playFavoritesFrom(index){
+    if(!favorites.length)return;
+    playlist=favorites.map(s=>({...s}));
+    currentIndex=Math.max(0,Math.min(index,playlist.length-1));
+    currentAudioIndex=-1;
+    lastRandomIndex=-1;
+    renderList();
+    closeModal(dom.favoritesModal);
+    try{
+        await loadSong(currentIndex,true);
+        showTempStatus('正在播放收藏列表');
+    }catch(e){
+        showTempStatus('播放失败，自动切换下一首');
+        safePlayNextOnFail();
+    }
+}
+
 function renderFavorites(){
     dom.favoritesBox.innerHTML='';
     if(!favorites.length){
@@ -2089,19 +2106,7 @@ function renderFavorites(){
         d.className='list-item';
         const cover=getListCoverSync(s);
         d.innerHTML=`<div class="list-info"><div class="list-title">${i+1}. ${escapeHtml(s.name||'未知')}</div><div class="list-meta">${escapeHtml(s.artist||'未知歌手')} · ${escapeHtml(s.sourceName||s.source||'')}</div></div><img class="list-cover" loading="lazy" decoding="async" src="${cover}" onerror="this.src='${DEFAULT_COVER}'">`;
-        d.onclick=async ()=>{
-            const idx=playlist.findIndex(x=>x.name===s.name&&x.artist===s.artist&&x.id===s.id);
-            if(idx!==-1){
-                currentIndex=idx;
-                closeModal(dom.favoritesModal);
-                try{await loadSong(idx,true)}catch(e){showTempStatus('播放失败')}
-            }else{
-                playlist=[s];
-                currentIndex=0;
-                closeModal(dom.favoritesModal);
-                try{await loadSong(0,true)}catch(e){showTempStatus('播放失败')}
-            }
-        };
+        d.onclick=()=>playFavoritesFrom(i);
         dom.favoritesBox.appendChild(d);
     });
 }
